@@ -122,12 +122,13 @@ Wanim.PrimitiveObject = class {
 }
 
 Wanim.Shapes = {
+  _TRIANGLE(...points) {
+    return points.splice(2, Infinity).map(x => x.push(0)).flatten();
+  },
   TRIANGLE(...points) {
-    const vertices = points.splice(2, Infinity).map(x => x.push(0)).flatten();
-    return new Wanim.PrimitiveObject(vertices);
+    return new Wanim.PrimitiveObject(this._TRIANGLE(...points));
   },
   SQUARE(len) {
-    const vertices = new Float32Array
   }
 }
 
