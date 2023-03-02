@@ -6,13 +6,6 @@ Wanim.Shaders = {
   fragment: {} 
 };
 
-Wanim.Colors = {
-  RED: [255, 0, 0],
-  GREEN: [0, 255, 0],
-  BLUE: [0, 0, 255],
-  WHITE: [255, 255, 255],
-}
-
 Wanim.loadShaders = async (...shaders) => {
   for (shader of shaders) {
     await fetch(shader.path).then(async req => {
@@ -34,7 +27,7 @@ Wanim.loadCanvas = (...canvases) => {
 }
 
 Wanim.Canvas = class {
-  constructor(canvas, interactive = true) {
+  constructor(canvas, interactive = true, backgroundColor = Wanim.Colors.BLACK) {
     if (!canvas)
       throw Error(
         "A canvas object must be provided to create a Wanim canvas element."
@@ -42,7 +35,10 @@ Wanim.Canvas = class {
     this.canvas = canvas;
     this.scenes = [];
     this.interactive = interactive;
-    this.gl = canvas.getContext("webgl2"); 
+    this.gl = canvas.getContext("webgl2", {
+      antialias: true
+    });
+    this.backgroundColor = backgroundColor
 
     // If there is no WebGL, say that there is no WebGL
     if (!this.gl)
@@ -52,15 +48,14 @@ Wanim.Canvas = class {
   }
 
   _clear() {
-    this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    this.gl.clearColor(...this.backgroundColor, 1);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
   }
 
   _draw(object) {
-    const vertexShader = object.vertexShader;
-    const fragmentShader = object.fragemntShader; 
-    const vertices = object.vertices; 
-    this._initShaders();
+    const vertices = object.toPixelSpace(this.canvas.width, this.canvas.height);; 
+
+    this._initShaders(object.vertexShader, object.fragmentShader);
 
     const vertexBuffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
@@ -107,28 +102,54 @@ Wanim.Canvas = class {
     this.gl.program = program;
   }
 
-  play() {
-    
+  play(animation) {
+    if (animation instanceof Wanim.PrimitiveObject) {
+      return this._draw(animation);
+    }
   }
 };
 
+Wanim.Colors = {
+  BLACK: [0, 0, 0],
+  RED: [255, 0, 0],
+  GREEN: [0, 255, 0],
+  BLUE: [0, 0, 255],
+  WHITE: [255, 255, 255],
+}
+
 Wanim.PrimitiveObject = class {
-  constructor(vertices, color = Wanim.Colors.WHITE, opacity = 1, vertexShader, fragmentShader, dim = 3) {
-    this.vertices = vertices;
+  constructor(points, color = Wanim.Colors.WHITE, opacity = 1, vertexShader, fragmentShader, dim = 3) {
+    this.points = points;
+    this.color = color;
+    this.opacity = opacity;
     this.vertexShader = vertexShader; 
     this.fragmentShader = fragmentShader;
     this.dim = dim;
   }
+
+  toPixelSpace(width, height) {
+    const canvasDimensions = [width, height];
+    this.vertices = new Float32Array(this.points.map(x => x.map((x_i, i) => x_i * 2 / canvasDimensions[i] - 1)).map(x => (x.push(0), x)).flat());
+    return this.vertices;
+  }
 }
 
 Wanim.Shapes = {
-  _TRIANGLE(...points) {
-    return points.splice(2, Infinity).map(x => x.push(0)).flatten();
+  POLYGON(...points) {
+    const center = points.reduce((prev, curr) => prev.map((x, i) => x + curr[i]/points.length), [0, 0]);
+    let triangles = [];
+    for (point of points) {
+      for (otherPoint of points) {
+        triangles.push(center, point, otherPoint);
+      }
+    }
+    return new Wanim.PrimitiveObject(triangles);
   },
   TRIANGLE(...points) {
-    return new Wanim.PrimitiveObject(this._TRIANGLE(...points));
+    return new Wanim.PrimitiveObject(points);
   },
-  SQUARE(len) {
+  RECTANGLE(width, height, position) {
+
   }
 }
 
