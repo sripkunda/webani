@@ -30,7 +30,8 @@
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             let wanimCanvas = Wanim.loadCanvas(canvas);
-            wanimCanvas.play(Wanim.Shapes.POLYGON([100, 100], [100, 200], [150, 100]));
+            wanimCanvas.play(Wanim.Shapes.POLYGON([100, 100], [150, 150], [200, 100], [150, 101.01]));
+            wanimCanvas.play(Wanim.Shapes.RECTANGLE(100, 100, [300, 300]));
         });
     </script>
 </body>

@@ -135,21 +135,39 @@ Wanim.PrimitiveObject = class {
 }
 
 Wanim.Shapes = {
-  POLYGON(...points) {
-    const center = points.reduce((prev, curr) => prev.map((x, i) => x + curr[i]/points.length), [0, 0]);
-    let triangles = [];
-    for (point of points) {
-      for (otherPoint of points) {
-        triangles.push(center, point, otherPoint);
-      }
-    }
-    return new Wanim.PrimitiveObject(triangles);
-  },
   TRIANGLE(...points) {
     return new Wanim.PrimitiveObject(points);
   },
-  RECTANGLE(width, height, position) {
+  POLYGON(...points) {
+    // Algorithm for generating polygon from points given by 
+    // https://stackoverflow.com/questions/59287928/algorithm-to-create-a-polygon-from-points
 
+    // Compute "center of mass"
+    const center = points.reduce((prev, curr) => prev.map((x, i) => x + curr[i]/points.length), [0, 0]);
+    let triangles = [];
+    
+    const sqrdRadius = (p) => {
+      return (p[0] - center[0])**2 + (p[1] - center[1])**2;
+    }
+    const angle = (p) => {
+      return Math.atan2((p[1] - center[1]), (p[0] - center[0]));
+    }
+
+    // Reorder points according to polar coordinates (with the radius squared)
+    points.sort((x, y) => ((angle(x) - angle(y)) || sqrdRadius(x) - sqrdRadius(y)));
+    
+    // Draw triangles in order
+    for (let i in points) {
+      triangles.push([points[i], points[(i + 1) % points.length], center])
+    }
+    console.log(triangles);
+    return new Wanim.PrimitiveObject(triangles.flat(  ));
+  },
+  RECTANGLE(length_x, length_y, position) {
+    return this.POLYGON(position, 
+                        [position[0] + length_x, position[1]], 
+                        [position[0], position[0] + length_y], 
+                        [position[0] + length_x, position[1] + length_y]);
   }
 }
 
