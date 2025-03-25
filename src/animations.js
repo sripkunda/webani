@@ -79,13 +79,13 @@ class WanimInterpolatedAnimationBase extends WanimAnimationBase {
 export const WanimObjectAnimation = class extends WanimInterpolatedAnimationBase {
 
     get before() {
-        let trueBefore = this._before.copy;
+        let trueBefore = !this.backwards ? this._before.copy : this._after.copy;
         trueBefore.rotation = trueBefore.rotation.map(x => x %= 360); 
         return trueBefore;
     }
 
     get after() { 
-        let trueAfter = this._after.copy;
+        let trueAfter = !this.backwards ? this._after.copy : this._before.copy;
         trueAfter.rotation = trueAfter.rotation.map(x => x % 360);
         return trueAfter;
     }

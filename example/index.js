@@ -12,5 +12,5 @@ const wcanvas = await loadCanvas(canvas);
 
 // Start animating...
 const animation = Text("Hello", ScreenCenter(), 200, Colors.WHITE);
-animation.Scale([2, 2]);
+animation.ZoomIn();
 Play(animation);
