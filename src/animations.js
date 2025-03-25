@@ -54,7 +54,7 @@ class WanimInterpolatedAnimationBase extends WanimAnimationBase {
     }
 
     get after() { 
-        return this._after;
+        return this._after.copy;
     }
 
     set before(value) { 
@@ -78,6 +78,18 @@ class WanimInterpolatedAnimationBase extends WanimAnimationBase {
 
 export const WanimObjectAnimation = class extends WanimInterpolatedAnimationBase {
 
+    get before() {
+        let trueBefore = this._before.copy;
+        trueBefore.rotation = trueBefore.rotation.map(x => x %= 360); 
+        return trueBefore;
+    }
+
+    get after() { 
+        let trueAfter = this._after.copy;
+        trueAfter.rotation = trueAfter.rotation.map(x => x % 360);
+        return trueAfter;
+    }
+
     frame(t, useCached = true) {
         if (useCached) { 
             const cachedFrame = this._cachedFrame(t);
@@ -88,7 +100,7 @@ export const WanimObjectAnimation = class extends WanimInterpolatedAnimationBase
         t = t / this.duration;
         if (t <= 0) return this.backwards ? this.after : this.before;
         if (t >= 1) return this.backwards ? this.before : this.after;
-        if (!(this.before instanceof WanimObject) || !(this.after instanceof WanimObject)) return this.before;
+        if (!(this._before instanceof WanimObject) || !(this._after instanceof WanimObject)) return this.before;
         return new WanimObject(this._getFilledPoints(t), this._getHolePoints(t), this._getColor(t), this._getOpacity(t), this._getRotation(t), this.resolvedBefore._cache, this._getRotationalCenter(t));
     }
 
@@ -174,7 +186,6 @@ export const WanimObjectAnimation = class extends WanimInterpolatedAnimationBase
             this._cache(t);
             t -= this._cacheStep;
         }
-        console.log("done caching");
     }
 
     _cache(...times) { 
@@ -186,17 +197,14 @@ export const WanimObjectAnimation = class extends WanimInterpolatedAnimationBase
     }
 
     _resolveAnimation() {
-        if (!(this.before instanceof WanimObject) || !(this.after instanceof WanimObject)) return;
-        this.resolvedBefore = this.before.copy;
-        this.resolvedAfter = this.after.copy;
+        if (!(this._before instanceof WanimObject) || !(this._after instanceof WanimObject)) return;
+        this.resolvedBefore = this._before.copy;
+        this.resolvedAfter = this._after.copy;
         this._resolvePointArray(this.resolvedBefore.filledPoints, this.resolvedAfter.filledPoints);
         this._equateHoleCount(this.resolvedBefore.holes, this.resolvedAfter.holes, this.resolvedBefore.filledPoints[0], this.resolvedAfter.filledPoints[0]);
         for (let i in this.resolvedBefore.holes) {
             this._resolvePointArray(this.resolvedBefore.holes[i], this.resolvedAfter.holes[i]);
         }
-
-        this.resolvedBefore._triangulate();
-        this.resolvedAfter._triangulate();
     }
 
     _interpolatePoints(beforePoints, afterPoints, t) {
@@ -245,15 +253,24 @@ export const WanimObjectAnimation = class extends WanimInterpolatedAnimationBase
 
 export const WanimCollectionAnimation = class extends WanimInterpolatedAnimationBase {
     constructor(before, after, duration = 1000, backwards = false, interpolationFunction) {
-        before = before instanceof WanimObject ? new WanimCollection(before) : before;
-        after = after instanceof WanimObject ? new WanimCollection(after) : after;
-        super(before, after, duration, backwards, interpolationFunction);
+        const _before = before instanceof WanimObject ? new WanimCollection(before) : before;
+        const _after = after instanceof WanimObject ? new WanimCollection(after) : after;
+        super(_before, _after, duration, backwards, interpolationFunction);
+    }
+
+    get before() {
+        return new WanimCollection(...this._animations.map(x => x.before));
+    }
+
+    get after() {
+        return new WanimCollection(...this._animations.map(x => x.after));
     }
 
     _resolveAnimation() {
-        if (!(this.before instanceof WanimCollection) || !(this.after instanceof WanimCollection)) return;
-        this.resolvedBefore = this.before.copy;
-        this.resolvedAfter = this.after.copy;
+        this._animations = [];
+        if (!(this._before instanceof WanimCollection) || !(this._after instanceof WanimCollection)) return;
+        this.resolvedBefore = this._before.copy;
+        this.resolvedAfter = this._after.copy;
         if (this.resolvedBefore.objects.length == 0 || this.resolvedAfter.objects.length == 0) return;
         while (this.resolvedBefore.objects.length != this.resolvedAfter.objects.length) {
             if (this.resolvedBefore.objects.length < this.resolvedAfter.objects.length) { 
@@ -262,13 +279,13 @@ export const WanimCollectionAnimation = class extends WanimInterpolatedAnimation
                 this.resolvedAfter.add(this.resolvedAfter.objects[this.resolvedAfter.objects.length - 1]);
             }
         }
-        this.animations = this.resolvedBefore.objects.map((before, i) => new WanimObjectAnimation(before, this.resolvedAfter.objects[i], this.duration, this.backwards, this.interpolationFunction));
+        this._animations = this.resolvedBefore.objects.map((before, i) => new WanimObjectAnimation(before, this.resolvedAfter.objects[i], this.duration, this.backwards, this.interpolationFunction));
     }
 
     frame(t) {
         if (t <= 0) return this.backwards ? this.after : this.before;
         if (t >= this.duration) this.backwards ? this.before : this.after;
-        return new WanimCollection(...this.animations.map(animation => animation.frame(t)));
+        return new WanimCollection(...this._animations.map(animation => animation.frame(t)));
     }
 }
 
@@ -344,7 +361,7 @@ export const RenderedCollection = class {
         this.FadeOut(0);
     }
 
-    PositionAt(position) { 
+    PositionCenterAt(position) { 
         return this.MoveCenterTo(position, 0);
     }
 
@@ -378,9 +395,9 @@ export const RenderedCollection = class {
 
     Scale(factor, duration = 1000, asynchronous = false, backwards = false) {
         factor = WanimObject._convertPointTo3D(factor);
+        let center = this.collection.center;
         const afterObjects = this.collection.objects.map((object, i) => {
             let after = object.copy;
-            let center = after.center;
             after.filledPoints = after.filledPoints.map((x) => x.map((y, i) => (y - center[i]) * factor[i] + center[i]));
             after.holes = after.holes.map(points => points.map((x) => x.map((y, i) => (y - center[i]) * factor[i] + center[i])));
             return after;
@@ -408,21 +425,7 @@ export const RenderedCollection = class {
 
     MoveCenterTo(position, duration = 1000, asynchronous = false) {
         position = WanimObject._convertPointTo3D(position);
-        const center = this.collection.center;
-        const afterObjects = this.collection.objects.map(obj => {
-            const a = obj.copy;
-            a.filledPoints = a.filledPoints.map(point => {
-                return WanimObject._add(point, WanimObject._subtract(position, center));
-            });
-            a.holes = a.holes.map(hole => {
-                return hole.map(point => {
-                    return WanimObject._add(point, WanimObject._subtract(position, center));
-                });
-            });
-            return a;
-        });
-        const after = new WanimCollection(...afterObjects);
-        return this._addAnimation(new WanimCollectionAnimation(this.collection, after, duration), asynchronous);
+        return this._addAnimation(new WanimCollectionAnimation(this.collection, this.collection.copyCenteredAt(position), duration), asynchronous);
     }
     
     Rotate(angle, duration = 1000, asynchronous = false) {
@@ -455,7 +458,7 @@ export const RenderedCollection = class {
     }
 
     Wait(duration) { 
-        this._addAnimation(new WanimCollectionAnimation(this.collection, this.collection, duration));
+        return this._addAnimation(new WanimCollectionAnimation(this.collection, this.collection, duration));
     }
 
 }

@@ -9,6 +9,25 @@ export const WanimCollection = class {
     this.add(...objects);
   }
 
+  copyCenteredAt(newCenter) {
+    newCenter = WanimObject._convertPointTo3D(newCenter);
+    const copy = this.copy;
+    let center = this.center;
+    copy.objects = copy.objects.map(obj => {
+      const a = obj.copy;
+      a.filledPoints = a.filledPoints.map(point => {
+          return WanimObject._add(point, WanimObject._subtract(newCenter, center));
+      });
+      a.holes = a.holes.map(hole => {
+          return hole.map(point => {
+              return WanimObject._add(point, WanimObject._subtract(newCenter, center));
+          });
+      });
+      return a;
+    });
+    return copy;
+  }
+
   get copy() { 
     return new WanimCollection(...this.objects.map(obj => obj.copy));
   }
@@ -62,7 +81,14 @@ export const WanimObject = class {
     this._rotationCenter = WanimObject._convertPointsTo3D(rotationCenter);
     this._cache = {};
     this._cacheTriangulation(cache?.triangulation, cache?.points);
-    this._triangulate();
+  }
+
+  copyCenteredAt(newCenter) {
+    const copy = this.copy; 
+    const center = this.center;
+    copy.filledPoints = copy.filledPoints.map(x => WanimObject._add(WanimObject._subtract(x, center), newCenter));
+    copy.holes = copy.holes.map(holePoints => holePoints.map(x => WanimObject._add(WanimObject._subtract(x, center), newCenter)));
+    return copy;
   }
 
   get holeIndices() {
@@ -109,8 +135,7 @@ export const WanimObject = class {
   }
   
   normalizedTriangulation(width, height) {
-    const triangulation = this._triangulate();
-    return WanimObject._normalizePoints(triangulation, width, height);
+    return WanimObject._normalizePoints(this._rotatedTriangulation, width, height);
   }
   
   rotatedCopy(angle, center, axis = 2) {
@@ -127,15 +152,7 @@ export const WanimObject = class {
     if (!this._cachedTriangulationValid()) {
       return null;
     }
-    let triangulation = [];
-    for (let i in this._cache.triangulation) {
-      if (i % 3 == 0) { 
-        triangulation.push([this._cache.triangulation[i]]);
-      } else {
-        triangulation[triangulation.length - 1].push(this._cache.triangulation[i]);
-      }
-    }
-    return this._rotatePointArray(triangulation).flat();
+    return this._cache.triangulation;
   }
 
   static _computeRotation(points, angle, center = [0, 0, 0], axis = 2) {
@@ -160,13 +177,31 @@ export const WanimObject = class {
     return points;
   }
 
-  _triangulate() {
-    if (this._cachedTriangulationValid()) {
-      return this._cache.triangulation;
+  get triangulationPoints() { 
+    let triangulation = this._triangulation;
+    let triangulationPoints = [];
+    for (let i in triangulation) {
+      if (i % 3 == 0) { 
+        triangulationPoints.push([triangulation[i]]);
+      } else {
+        triangulationPoints[triangulationPoints.length - 1].push(triangulation[i]);
+      }
     }
-    let holeIndices = this.holeIndices;
-    let points = holeIndices.length > 0 ? this.rotatedPoints : this.rotatedFilledPoints;
+    return triangulationPoints;
+  }
+
+  get _rotatedTriangulation() { 
+    return new Float32Array(this._rotatePointArray(this.triangulationPoints).flat());
+  }
+
+  get _triangulation() { 
+    return this._cachedTriangulation || this._triangulate();
+  }
+
+  _triangulate() {
     let triangulation;
+    let holeIndices = this.holeIndices;
+    let points = holeIndices.length > 0 ? this.points : this.filledPoints;
     if (points.length > 3) {
       let triangulated = triangulate(WanimObject._convertPointsTo2D(points).flat(), holeIndices);
       let triangulatedPoints = [];
@@ -188,10 +223,16 @@ export const WanimObject = class {
 
   _cachedTriangulationValid(points = this.points) {
     const cache = this._cache;
-    if (!cache.triangulation) return false;
-    if (points.length != cache.points.length) return false;
+    if (!cache.triangulation) {
+      return false;
+    }
+    if (points.length != cache.points.length) {
+      return false;
+    }
     for (let i in points) {
-      if (cache.points[i] != points[i]) return false;
+      if (!cache.points[i].every((x, j) => x == points[i][j])) {
+        return false;
+      }
     }
     return true;
   }
@@ -301,10 +342,10 @@ const ObjectConstructors = {
       [position[0], position[1]],
       [position[0] + length_x, position[1]],
       [position[0] + length_x, position[1] + length_y],
-      [position[0], position[1] + length_y]], [], color, opacity);
+      [position[0], position[1] + length_y]], [], color, opacity).copyCenteredAt(position);
   },
   Line(position, length, angle = 0, thickness = 2, color = Colors.WHITE, opacity = 1) {
-    return this.Rectangle(position, length, Math.max(2, thickness), color, opacity).rotatedCopy(angle, position);
+    return this.Rectangle(position, length, Math.max(2, thickness), color, opacity).rotatedCopy(angle, position).copyCenteredAt(position);
   },
   Circle(center, radius, color = Colors.WHITE, opacity = 1) {
     const points = [];
@@ -317,10 +358,10 @@ const ObjectConstructors = {
       angle += stepSize;
       points.push(circle(angle));
     }
-    return new WanimObject(points, [], color, opacity);
+    return new WanimObject(points, [], color, opacity).copyCenteredAt(position);
   },
   Text(string, position, fontSize = 72, color = Colors.WHITE, opacity = 1) {
     const pointsObject = textToPoints(string, position, fontSize);
-    return new WanimCollection(...pointsObject.points.map((x, i) => new WanimObject(x, pointsObject.holes[i], color, opacity, [0, 0, 0])));
+    return new WanimCollection(...pointsObject.points.map((x, i) => new WanimObject(x, pointsObject.holes[i], color, opacity, [0, 0, 0]))).copyCenteredAt(position);
   }
 }

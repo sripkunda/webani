@@ -190,7 +190,6 @@ export const WanimCanvas = class {
 
     _draw(object) {
         if (!object) return;
-        this._initShaders();
         let vertices = object.normalizedTriangulation(this.canvas.width, this.canvas.height);
         const vertexBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
