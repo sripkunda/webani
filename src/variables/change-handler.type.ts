@@ -1,0 +1,1 @@
+export type ChangeHandler<T> = (newValue: T) => void;

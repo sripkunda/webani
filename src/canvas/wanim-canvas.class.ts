@@ -1,160 +1,139 @@
-import { Colors } from './constants';
-import { fragmentShader, vertexShader } from './shaders'
-import { WanimObject, WanimCollection } from './objects';
-import { AnimationSet, RenderedCollection, WanimCollectionAnimation, WanimObjectAnimation } from './animations';
+import { AnimationSet } from "../animations/animation-set.class";
+import { RenderedCollection } from "../animations/rendered-collection.class";
+import { WanimAnimationBase } from "../animations/wanim-animation-base.class";
+import { WanimCollectionAnimation } from "../animations/wanim-collection-animation.class";
+import { WanimObjectAnimation } from "../animations/wanim-object-animation.class";
+import { Colors } from "../lib/colors";
+import { WanimCollection } from "../objects/wanim-collection.class";
+import { WanimObject } from "../objects/wanim-object.class";
+import { Vector } from "../util/vector.type";
+import { WanimScene } from "./wanim-scene.class";
+import { vertexShader, fragmentShader } from "../shaders/shaders"
 
-export var _defaultCanvas;
-export const setDefaultCanvas = (canvas) => {
-    _defaultCanvas = canvas;
-};
+export class WanimCanvas {
+    canvas: HTMLCanvasElement;
+    interactive: boolean;
+    gl: WebGL2RenderingContext;
+    backgroundColor: Vector;
+    animationQueue: WanimAnimationBase[];
+    scene: WanimScene;
+    _playing: boolean;
+    _onFinishAnimation: (() => void)[];
+    video: {
+        recordedChunks?: BlobPart[];
+        mediaRecorder?: MediaRecorder;
+    };
+    glProgram: WebGLProgram;
 
-export const loadCanvas = async function (...canvases) {
-    const c = canvases.map(canvas => new WanimCanvas(canvas));
-    if (c.length > 0) { 
-        setDefaultCanvas(await c[0]);
-    }
-    return c.length > 1 ? c : c[0];
-}
-
-export const FPSDisplay = class {
-    constructor(element) {
-        this.element = element;
-        this.init();
-    }
-
-    init() {
-        let prevTime = 0;
-        const render = (currentTime) => {
-            currentTime /= 1000;
-            const fps = 1 / (currentTime - prevTime);
-            prevTime = currentTime;
-            this.element.textContent = fps.toFixed(1);
-            requestAnimationFrame(render);
-        }
-        requestAnimationFrame(render);
-    }
-};
-
-export const WanimCanvas = class {
-    constructor(canvas, interactive = true, backgroundColor = Colors.BLACK) {
+    constructor(canvas: HTMLCanvasElement, interactive: boolean = true, backgroundColor: number[] = Colors.BLACK) {
         if (!canvas)
-            throw Error(
-                "A canvas object must be provided to create a Wanim canvas element."
-            );
+            throw Error("A canvas object must be provided to create a Wanim canvas element.");
+
         this.canvas = canvas;
         this.interactive = interactive;
-        this.gl = canvas.getContext("webgl2", {
-            antialias: true
-        });
+        this.gl = canvas.getContext("webgl2", { antialias: true })!;
         this.backgroundColor = backgroundColor;
         this.animationQueue = [];
-        // If there is no WebGL, say that there is no WebGL
+
         if (!this.gl)
             throw Error("WebGL could not be initialized for Wanim canvas.");
+
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+
         this.scene = new WanimScene();
         this._clear();
         this._initShaders();
         this._playing = false;
-        this._onFinishAnimation = []
-        this.video = {}
-        return new Promise(resolve => {
-            if (document.readyState === "loading") {
-                // If the document is still loading, wait for the 'DOMContentLoaded' event
-                document.addEventListener("DOMContentLoaded", () => resolve(this));
-            } else {
-                // Document is already ready, resolve immediately
-                resolve(this);
-            }
-        });
+        this._onFinishAnimation = [];
+        this.video = {};
     }
 
-    startRecording() {
+    startRecording(): void {
         this.video.recordedChunks = [];
         let stream = this.canvas.captureStream(30);
         this.video.mediaRecorder = new MediaRecorder(stream);
         this.video.mediaRecorder.ondataavailable = (event) => {
-            this.video.recordedChunks.push(event.data);
+            this.video.recordedChunks!.push(event.data);
         };
         this.video.mediaRecorder.start();
     }
-    
 
-    async stopRecording() {
+    async stopRecording(): Promise<void> {
         await this.finishPlaying();
-        this.video.mediaRecorder.stop();
-        this.video.mediaRecorder.onstop = () => {
+        this.video.mediaRecorder!.stop();
+        this.video.mediaRecorder!.onstop = () => {
             const blob = new Blob(this.video.recordedChunks, { type: 'video/webm' });
             const videoURL = URL.createObjectURL(blob);
             const downloadLink = document.createElement('a');
             downloadLink.href = videoURL;
-            downloadLink.download = 'wanim_output.webm'; 
+            downloadLink.download = 'wanim_output.webm';
             downloadLink.click();
         };
     }
 
-    finishPlaying() { 
-        return new Promise(resolve => { 
-            if (!this._playing) { 
+    finishPlaying(): Promise<void> {
+        return new Promise(resolve => {
+            if (!this._playing) {
                 resolve();
             }
             this.onFinishAnimation(resolve);
-        })
+        });
     }
 
-    redraw() {
+    redraw(): void {
         this._clear();
         for (let object of this.scene.objects) {
             this._draw(object);
         }
     }
 
-    clear() {
-        this.scene.objects = [];
+    clear(): void {
+        this.scene.clear();
         this._clear();
     }
 
-    onFinishAnimation(handler) { 
+    onFinishAnimation(handler: () => void): void {
         this._onFinishAnimation.push(handler);
     }
 
-    play(...animations) {
+    play(...animations: any[]): void {
         for (let animation of animations) {
             if (animation instanceof WanimObject || animation instanceof WanimCollection) {
                 this._addToScene(animation);
             } else if (animation instanceof WanimObjectAnimation || animation instanceof WanimCollectionAnimation || animation instanceof AnimationSet) {
                 this.addAnimation(animation);
-            } else if (animation instanceof RenderedCollection) { 
+            } else if (animation instanceof RenderedCollection) {
                 if (animation.animated) {
-                    this.addAnimation(animation.animations);
-                } else { 
+                    this.addAnimation(animation._animations);
+                } else {
                     this._addToScene(animation.collection);
                 }
             }
         }
     }
 
-    addAnimation(animation, ) {
+    addAnimation(animation: any): void {
         this.animationQueue.unshift(animation);
         if (!this._playing)
             this.playAnimationQueue();
     }
 
-    playAnimationQueue() {
+    playAnimationQueue(): void {
         let animation = this.animationQueue.pop();
         if (!animation) return;
         this._playing = true;
         this.animate(animation, true);
     }
 
-    animate(animation, playNext = true) {
+    animate(animation: any, playNext: boolean = true): void {
         let t = 0;
         let startTime = Date.now();
         let prevTime = startTime;
-        let objectIndex;
+        let objectIndex: number;
+
         const drawFrame = () => {
-            this.scene.members[objectIndex] = animation.frame(t);
+            this.scene._members[objectIndex] = animation.frame(t);
             this.redraw();
             if (!animation.done(t)) {
                 t += Date.now() - prevTime;
@@ -168,55 +147,55 @@ export const WanimCanvas = class {
                         objectIndex = this.scene.add(animation.frame(0));
                         requestAnimationFrame(drawFrame);
                         return;
-                    } else { 
+                    } else {
                         this._playing = false;
                         this._finishedAnimation();
                     }
                 }
             }
-        }
+        };
         objectIndex = this.scene.add(animation.frame(0));
         requestAnimationFrame(drawFrame);
     }
 
-    remove(object) {
+    remove(object: any): void {
         this.scene.remove(object);
     }
 
-    _clear() {
-        this.gl.clearColor(...this.backgroundColor, 1);
+    _clear(): void {
+        this.gl.clearColor(this.backgroundColor[0], this.backgroundColor[1], this.backgroundColor[2], 1);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
 
-    _draw(object) {
+    _draw(object: any): void {
         if (!object) return;
-        let vertices = object.normalizedTriangulation(this.canvas.width, this.canvas.height);
+        let vertices = object._dots(this.canvas.width, this.canvas.height);
         const vertexBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, vertices, this.gl.STATIC_DRAW);
 
-        const position = this.gl.getAttribLocation(this.gl.program, 'position');
-
+        const position = this.gl.getAttribLocation(this.glProgram, 'position');
         this.gl.vertexAttribPointer(position, 3, this.gl.FLOAT, false, 0, 0);
         this.gl.enableVertexAttribArray(position);
 
-        const colorLoc = this.gl.getUniformLocation(this.gl.program, "color");
+        const colorLoc = this.gl.getUniformLocation(this.glProgram, "color");
         this.gl.uniform4fv(colorLoc, [...object.color, object.opacity]);
 
         const n = vertices.length / 3;
-        this.gl.drawArrays(this.gl.TRIANGLES, 0, n);
+        this.gl.drawArrays(this.gl.POINTS, 0, n);
     }
 
-    _initShaders() {
-        const makeShader = (glsl, type) => {
+    _initShaders(): void {
+        const makeShader = (glsl: string, type: number): WebGLShader => {
             const shader = this.gl.createShader(type);
+            if (!shader) throw Error("An unknown error occurred while creating shader");
             this.gl.shaderSource(shader, glsl);
             this.gl.compileShader(shader);
             if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
                 throw Error(`Error compiling shader: ${this.gl.getShaderInfoLog(shader)}`);
             }
             return shader;
-        }
+        };
 
         const vertex = makeShader(vertexShader, this.gl.VERTEX_SHADER);
         const fragment = makeShader(fragmentShader, this.gl.FRAGMENT_SHADER);
@@ -230,43 +209,16 @@ export const WanimCanvas = class {
         }
 
         this.gl.useProgram(program);
-        this.gl.program = program;
+        this.glProgram = program;
     }
 
-    _addToScene(object) { 
+    _addToScene(object: any): void {
         this.scene.add(object);
         this.redraw();
         this._finishedAnimation();
     }
 
-    _finishedAnimation() { 
-        this._onFinishAnimation.map(x => x());
-    }
-};
-
-export const WanimScene = class {
-    constructor(...members) {
-        this.members = members;
-    }
-
-    get objects() {
-        return this.members.map(x => (x instanceof WanimCollection) ? x.objects : x).flat();
-    }
-
-    add(object) {
-        if (object instanceof WanimCollection || object instanceof WanimObject) {
-            return this.members.push(object) - 1;
-        }
-        return this;
-    }
-
-    remove(object) {
-        this.objects = this.objects.filter(x => x !== object);
-        return this;
-    }
-
-    removeIndex(index) {
-        this.members.splice(index, 1);
-        return this;
+    _finishedAnimation(): void {
+        this._onFinishAnimation.forEach(callback => callback());
     }
 }
