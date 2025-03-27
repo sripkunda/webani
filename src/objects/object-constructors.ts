@@ -29,7 +29,7 @@ export const ObjectConstructors = {
       [position[0], position[1] + length_y]], [], color, opacity).copyCenteredAt(position);
   },
   Line(position: Vector, length: number, angle = 0, thickness = 2, color = Colors.WHITE, opacity = 1) {
-    return ObjectConstructors.Rectangle(position, length, Math.max(2, thickness), color, opacity).rotatedCopy(angle, position);
+    return ObjectConstructors.Rectangle(position, length, Math.max(2, thickness), color, opacity).copyCenteredAt([position[0] + length / 2, position[1]]).rotatedCopy(angle, position);
   },
   Circle(center: Vector, radius: number, color = Colors.WHITE, opacity = 1) {
     const points: Vector[] = [];

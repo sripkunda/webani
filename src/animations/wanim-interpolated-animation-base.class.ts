@@ -60,6 +60,6 @@ export abstract class WanimInterpolatedAnimationBase extends WanimAnimationBase 
     }
 
     static easeInOut(before: number, after: number, t: number): number {
-        return WanimInterpolatedAnimationBase.lerp(before, after, 0.5 * (1 - Math.cos(Math.PI * t)));
+        return WanimInterpolatedAnimationBase.lerp(before, after, 0.5 * (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, t)))));
     }
 }

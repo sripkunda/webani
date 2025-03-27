@@ -6,8 +6,22 @@ import { WanimInterpolatedAnimationBase } from "./wanim-interpolated-animation-b
 export class WanimObjectAnimation extends WanimInterpolatedAnimationBase {
     
     cache: { time: number; object: WanimObject }[] = [];
+    cacheFrames: boolean = false;
     resolvedBefore: WanimObject;
     resolvedAfter: WanimObject;
+
+    constructor(
+        before: any, 
+        after: any, 
+        duration: number = 1000,
+        backwards: boolean = false, 
+        cacheFrames: boolean = false,
+        interpolationFunction?: (before: number, after: number, t: number) => number
+    ) {
+        super(before, after, duration, backwards, interpolationFunction);
+        this.cacheFrames = cacheFrames;
+        this._resolveCache();
+    }
 
     get before(): WanimObject {
         let trueBefore: WanimObject = !this.backwards ? this._before.copy : this._after.copy;
@@ -31,10 +45,12 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase {
         this._resolveAnimation();
     }
 
-    frame(t: number, useCached = true): WanimObject {
+    frame(t: number, useCached = this.cacheFrames): WanimObject {
         if (useCached) { 
             const cachedFrame = this._cachedFrame(t);
-            if (cachedFrame !== undefined) return cachedFrame;
+            if (cachedFrame !== undefined) {
+                return cachedFrame;
+            }
         }
         
         // Scale by the duration
@@ -42,12 +58,16 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase {
         if (t <= 0) return this.backwards ? this.after : this.before;
         if (t >= 1) return this.backwards ? this.before : this.after;
         if (!(this._before instanceof WanimObject) || !(this._after instanceof WanimObject)) return this.before;
-        return new WanimObject(this._getFilledPoints(t), this._getHolePoints(t), this._getColor(t), this._getOpacity(t), this._getRotation(t), this.resolvedBefore._cache, this._getRotationalCenter(t));
+        const frameObject = new WanimObject(this._getFilledPoints(t), this._getHolePoints(t), this._getColor(t), this._getOpacity(t), this._getRotation(t), this.resolvedBefore._cache, this._getRotationalCenter(t));
+        frameObject._triangulate(); // Triangulate in advance to account for cached frames
+        return frameObject;
     }
 
     _tracePoints(points: Vector[], numOfPoints: number): Vector[] { 
-        if (!points || points.length < 2) return [];
-    
+        if (!points || points.length < 2) return points;
+        points = [...points]; 
+        points.push(points[0]);
+        
         let distance = 0;
         const mappedPoints = points.map((point, index, arr) => {
             if (index > 0) {
@@ -80,7 +100,7 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase {
                         p1[1] + t * (p2[1] - p1[1]),
                         p1[2] + t * (p2[2] - p1[2])
                     ]);
-                } else { 
+                } else {
                     tracedPoints.push(points[j]);
                 }
             }
@@ -119,7 +139,7 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase {
     }
 
     get _cacheStep() {
-        return Math.ceil(this.duration / 120);
+        return Math.ceil(this.duration / 60);
     }
 
     _cacheUntilFrame(t: number) {
@@ -131,10 +151,18 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase {
 
     _cache(...times: number[]) {
         if (!this.cache) this.cache = [];
-        executeInParallel((t: number) => this.cache.push({
-            time: t,
-            object: this.frame(t, false)
-        }), times);
+        executeInParallel((t: number) => {
+            this.cache.push({
+                time: t,
+                object: this.frame(t, false)
+            });
+        }, times);
+    }
+
+    _resolveCache() { 
+        if (this.cacheFrames) { 
+            this._cacheUntilFrame(this.duration);
+        }
     }
 
     _resolveAnimation() {
@@ -146,6 +174,8 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase {
         for (let i in this.resolvedBefore.holes) {
             this._resolvePointArray(this.resolvedBefore.holes[i], this.resolvedAfter.holes[i]);
         }
+        this.resolvedBefore._triangulate();
+        this.resolvedAfter._triangulate();
     }
 
     _interpolatePoints(beforePoints: Vector[], afterPoints: Vector[], t: number) {

@@ -2,6 +2,7 @@ import { WanimCollection } from "../objects/wanim-collection.class";
 import { WanimObject } from "../objects/wanim-object.class";
 import { Vector } from "../util/vector.type";
 import { AnimationSet } from "./animation-set.class";
+import { CollectionSlice } from "./collection-slice.type";
 import { WanimCollectionAnimation } from "./wanim-collection-animation.class";
 import { WanimInterpolatedAnimationBase } from "./wanim-interpolated-animation-base.class";
 
@@ -35,54 +36,66 @@ export class RenderedCollection {
         this._animations = new AnimationSet();
     }
 
-    static Group(object: object, parentCollection?: RenderedCollection, subcollectionSlice?: (object: RenderedCollection) => { start: number; count: number }) {
-        if (object instanceof RenderedCollection) {
-            if (parentCollection && subcollectionSlice) {
-                const slice = subcollectionSlice(object);
-                if (slice.count < 1) return object;
-                object.onAnimationAdded((animation, asynchronous) => {
-                    const beforeObjects = parentCollection.collection.copy._objects;
-                    const afterObjects = parentCollection.collection.copy._objects;
-                    beforeObjects.splice(slice.start, slice.count, ...animation._before._objects);
-                    afterObjects.splice(slice.start, slice.count, ...animation._after._objects);
-                    const beforeCollection = new WanimCollection(beforeObjects, true);
-                    const afterCollection = new WanimCollection(afterObjects, true);
-                    parentCollection._addAnimation(new WanimCollectionAnimation(beforeCollection, afterCollection, animation.duration, animation.backwards, animation.interpolationFunction), asynchronous);
-                });
-            }
-            return object;
-        }
+    static Group(object: object, parentCollection?: RenderedCollection, subcollectionSlice?: ((object: RenderedCollection) => CollectionSlice)): RenderedCollection {
         if (!(object instanceof Object)) return;
-          
-        const renderedCollections = getAllRenderedCollections(object)
-        const collections = renderedCollections.map(x => x.collection);
-        const indices: number[] = [];
-        let sum = 0;
-        for (let collection of collections) { 
-            indices.push(sum);
-            sum += collection._objects.length;
-        }
-        const getSubcollectionSlice = (object: RenderedCollection) => {
-            let i = renderedCollections.indexOf(object);
-            if (i < 0) 
+        let renderedCollection: RenderedCollection; 
+        const subcollections = getAllRenderedCollections(object);
+        if (object instanceof RenderedCollection) {
+            renderedCollection = object;
+        } else {
+            const collections = subcollections.map(x => x.collection);
+            const indices: number[] = [];
+            let sum = 0;
+            for (let collection of collections) { 
+                indices.push(sum);
+                sum += collection._objects.length;
+            }
+            const getSubcollectionSlice = (object: RenderedCollection): CollectionSlice => {
+                let i = subcollections.indexOf(object);
+                if (i < 0) 
+                    return {
+                        start: -1,
+                        count: 0
+                    };
+                const start = indices[i];
+                const end =  i + 1 >= indices.length ? renderedCollection.collection._objects.length : indices[i + 1];
                 return {
-                    start: -1,
-                    count: 0
-                };
-            const start = indices[i];
-            const end =  i + 1 >= indices.length ? renderedCollection.collection._objects.length : indices[i + 1];
-            return {
-                start: start,
-                count: end - start
+                    start: start,
+                    count: end - start
+                }
+            }
+
+            const groupedCollection = new WanimCollection(collections);
+            renderedCollection = new RenderedCollection(groupedCollection, false);
+            for (let key in object) {
+                renderedCollection[key] = RenderedCollection.Group(object[key], renderedCollection, getSubcollectionSlice);
             }
         }
-        
-        const groupedCollection = new WanimCollection(collections);
-        const renderedCollection = new RenderedCollection(groupedCollection, false);
 
-        for (let key in object) {
-            renderedCollection[key] = RenderedCollection.Group(object[key], parentCollection || renderedCollection, subcollectionSlice || getSubcollectionSlice);
+        if (parentCollection && subcollectionSlice) { 
+            const slices: CollectionSlice[] = subcollections.length == 0 && object instanceof RenderedCollection ? [subcollectionSlice(object)] : [];
+            for (let collection of subcollections) { 
+                const slice = subcollectionSlice(collection);
+                if (slice.count < 1) continue;
+                slices.push(slice);
+            }
+    
+            renderedCollection.onAnimationAdded((animation, asynchronous) => {
+                const beforeObjects = parentCollection.collection.copy._objects;
+                const afterObjects = parentCollection.collection.copy._objects;
+                let i = 0;
+                for (let slice of slices) {
+                    for (let j = 0; j < slice.count; j++, i++)  {
+                        beforeObjects[slice.start + j] = animation._before._objects[i];
+                        afterObjects[slice.start + j] = animation._after._objects[i];
+                    }
+                }
+                const beforeCollection = new WanimCollection(beforeObjects, true);
+                const afterCollection = new WanimCollection(afterObjects, true);
+                parentCollection._addAnimation(new WanimCollectionAnimation(beforeCollection, afterCollection, animation.duration, animation.backwards, animation.cacheFrames, animation.interpolationFunction), asynchronous);
+            });
         }
+
         return renderedCollection;
     }
 
@@ -178,7 +191,7 @@ export class RenderedCollection {
     }
 
     TransformInto(after: RenderedCollection, duration: number = 800, asynchronous: boolean = false): RenderedCollection {
-        return this._addAnimation(new WanimCollectionAnimation(this.collection, after.collection, duration), asynchronous);
+        return this._addAnimation(new WanimCollectionAnimation(this.collection, after.collection, duration, false, true), asynchronous);
     }
 
     MoveCenterTo(position: number[], duration: number = 1000, asynchronous: boolean = false): RenderedCollection {
@@ -216,7 +229,7 @@ export class RenderedCollection {
         for (let i in after._objects) {
             after._objects[i].opacity = 1;
             const afterCollection = after.copy;
-            this._addAnimation(new WanimCollectionAnimation(before, afterCollection, objectDuration, false, WanimInterpolatedAnimationBase.lerp));
+            this._addAnimation(new WanimCollectionAnimation(before, afterCollection, objectDuration, false, false, WanimInterpolatedAnimationBase.lerp));
             before = afterCollection;
         }
         return this;

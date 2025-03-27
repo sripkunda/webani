@@ -35,6 +35,7 @@ export class AnimationSet extends WanimAnimationBase {
                     animation.frame(animation.duration),
                     animation.duration - this.last.duration,
                     animation.backwards,
+                    animation.cacheFrames,
                     animation.interpolationFunction
                 );
                 this.animations.push(remainingAnimation);

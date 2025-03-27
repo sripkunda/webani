@@ -5,13 +5,13 @@ import { WanimObjectCache } from "./wanim-object-cache.type"
 
 export class WanimObject {
 
-    filledPoints: Vector[];
-    holes: Vector[][];
-    color: Vector;
-    opacity: number;
-    rotation: Vector;
-    _rotationCenter: Vector | undefined;
-    _cache: WanimObjectCache = {};
+    filledPoints!: Vector[];
+    holes!: Vector[][];
+    color!: Vector;
+    opacity!: number;
+    rotation!: Vector;
+    _rotationCenter!: Vector | undefined;
+    _cache!: WanimObjectCache;
 
     constructor(filledPoints: Vector[], holes: Vector[][], color: Vector = Colors.WHITE, opacity: number = 1, rotation: Vector = [0, 0, 0], cache: WanimObjectCache | undefined = undefined, rotationCenter: Vector | undefined = undefined) {
         this.filledPoints = WanimObject._convertPointsTo3D(filledPoints);
@@ -156,13 +156,16 @@ export class WanimObject {
         } else {
             triangulation = new Float32Array(points.flat());
         }
-        this._cacheTriangulation(triangulation);
+        this._cacheTriangulation(triangulation, this.points);
         return triangulation;
     }
 
-    _cacheTriangulation(triangulation: Float32Array, points = this.points) {
-        this._cache.points = [...points];
-        this._cache.triangulation = triangulation ? triangulation : undefined;
+    _cacheTriangulation(triangulation: Float32Array, points?: Vector[]) {
+        triangulation = points ? triangulation : undefined;
+        this._cache = {
+            points: [...(points || this.points)],
+            triangulation: triangulation ? triangulation : undefined
+        };
     }
 
     _cachedTriangulationValid(points = this.points) {
@@ -170,7 +173,7 @@ export class WanimObject {
         if (!cache.triangulation) {
             return false;
         }
-        if (points.length != cache.points?.length) {
+        if (points.length != cache.points.length) {
             return false;
         }
         for (let i in points) {
@@ -187,9 +190,10 @@ export class WanimObject {
 
     static _normalizePoints(points: Float32Array, width: number, height: number) {
         for (let i = 0; i < points.length; i += 3) {
-            points[i] = points[i] / width - 1 / 2;
-            points[i + 1] = points[i + 1] / height - 1 / 2;
+            points[i] = points[i] / width;
+            points[i + 1] = points[i + 1] / height;
         }
+        console.log(points);
         return points;
     }
 

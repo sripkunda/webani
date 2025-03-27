@@ -4,6 +4,7 @@ import { WanimObjectAnimation } from "../animations/wanim-object-animation.class
 import { _defaultCanvas, setDefaultCanvas } from "../canvas/default-canvas";
 import { WanimCanvas } from "../canvas/wanim-canvas.class";
 import { CreateRenderedCollection, ObjectConstructors } from "../objects/object-constructors";
+import { WanimObject } from "../objects/wanim-object.class";
 import { Vector } from "../util/vector.type";
 import { Value } from "../variables/variable.type";
 import { WanimVariable } from "../variables/wanim-variable.class";
@@ -24,10 +25,9 @@ export const LoadCanvas = async function (...canvases: HTMLCanvasElement[]) {
     }
 }
 
-export const Wait = (duration: number): WanimAnimationBase => {
-    const animation = new WanimObjectAnimation(null, null, duration);
+export const Wait = (duration: number): void => {
+    const animation = new WanimObjectAnimation(new WanimObject([], []), new WanimObject([], []), duration);
     _defaultCanvas?.play(animation);
-    return animation;
 };
 
 export const Play = (...animations: any[]): void => {
@@ -38,8 +38,20 @@ export const Variable = (value: any): WanimVariable<any> => {
     return new WanimVariable(value);
 }
 
-export const ScreenCenter = (wanimCanvas: WanimCanvas = _defaultCanvas): [number, number] => {
-    return [wanimCanvas.canvas.width / 2, wanimCanvas.canvas.height / 2];
+export const BottomLeft = (wanimCanvas: WanimCanvas = _defaultCanvas): [number, number] => {
+    return [-wanimCanvas.canvas.width, -wanimCanvas.canvas.height];
+};
+
+export const BottomRight = (wanimCanvas: WanimCanvas = _defaultCanvas): [number, number] => {
+    return [wanimCanvas.canvas.width, -wanimCanvas.canvas.height];
+};
+
+export const TopLeft = (wanimCanvas: WanimCanvas = _defaultCanvas): [number, number] => {
+    return [-wanimCanvas.canvas.width, wanimCanvas.canvas.height];
+};
+
+export const TopRight = (wanimCanvas: WanimCanvas = _defaultCanvas): [number, number] => {
+    return [wanimCanvas.canvas.width, wanimCanvas.canvas.height];
 };
 
 export const Group = (object: any) => {

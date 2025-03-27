@@ -7,17 +7,20 @@ export class WanimCollectionAnimation extends WanimInterpolatedAnimationBase {
     _animations!: WanimObjectAnimation[];
     resolvedBefore!: WanimCollection;
     resolvedAfter!: WanimCollection;
+    cacheFrames: boolean = false;
 
     constructor(
         before: WanimCollection | WanimObject,
         after: WanimCollection | WanimObject,
         duration = 1000,
         backwards = false,
-        interpolationFunction?: (before: number, after: number, t: number) => number
+        cacheFrames: boolean = false,
+        interpolationFunction?: (before: number, after: number, t: number) => number,
     ) {
         const _before = before instanceof WanimObject ? new WanimCollection(before) : before;
         const _after = after instanceof WanimObject ? new WanimCollection(after) : after; 
         super(_before, _after, duration, backwards, interpolationFunction);
+        this.cacheFrames = cacheFrames;
     }
 
     get before(): WanimCollection {
@@ -70,6 +73,7 @@ export class WanimCollectionAnimation extends WanimInterpolatedAnimationBase {
                     this.resolvedAfter._objects[i],
                     this.duration,
                     this.backwards,
+                    this.cacheFrames,
                     this.interpolationFunction
                 )
         );

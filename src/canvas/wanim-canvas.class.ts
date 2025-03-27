@@ -169,7 +169,7 @@ export class WanimCanvas {
 
     _draw(object: any): void {
         if (!object) return;
-        let vertices = object._dots(this.canvas.width, this.canvas.height);
+        let vertices = object.normalizedTriangulation(this.canvas.width, this.canvas.height);
         const vertexBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, vertices, this.gl.STATIC_DRAW);
@@ -182,7 +182,7 @@ export class WanimCanvas {
         this.gl.uniform4fv(colorLoc, [...object.color, object.opacity]);
 
         const n = vertices.length / 3;
-        this.gl.drawArrays(this.gl.POINTS, 0, n);
+        this.gl.drawArrays(this.gl.TRIANGLES, 0, n);
     }
 
     _initShaders(): void {
