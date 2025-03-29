@@ -1,7 +1,7 @@
-import { Colors } from "../lib/colors";
-import { Vector } from "../util/vector.type";
+import { Colors } from "../colors";
+import { Vector } from "../../util/vector.type";
 import { Component } from "./component.class";
-import { WanimObject } from "../objects/wanim-object.class";
+import { WanimObject } from "../../objects/wanim-object.class";
 
 export class TriangleComponent extends Component {
     objectConstructor(points: Vector[], color = Colors.WHITE, opacity = 1): WanimObject {

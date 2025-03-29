@@ -1,6 +1,6 @@
-import { Colors } from "../lib/colors";
-import { ObjectLike } from "../objects/object-like.type";
-import { Vector } from "../util/vector.type";
+import { Colors } from "../colors";
+import { ObjectLike } from "../../objects/object-like.type";
+import { Vector } from "../../util/vector.type";
 import { Component } from "./component.class";
 import { Rectangle } from "./rectangle.component";
 

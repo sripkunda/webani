@@ -1,7 +1,7 @@
-import { Colors } from "../lib/colors";
-import { ObjectLike } from "../objects/object-like.type";
-import { WanimObject } from "../objects/wanim-object.class";
-import { Vector } from "../util/vector.type";
+import { Colors } from "../colors";
+import { ObjectLike } from "../../objects/object-like.type";
+import { WanimObject } from "../../objects/wanim-object.class";
+import { Vector } from "../../util/vector.type";
 import { Component } from "./component.class";
 
 export class RectangleComponent extends Component {

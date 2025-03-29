@@ -1,7 +1,7 @@
-import { RenderedCollection } from "../animations/rendered-collection.class";
-import { ObjectLike } from "../objects/object-like.type";
-import { WanimCollection } from "../objects/wanim-collection.class";
-import { ExecuteWhenSetFromParent, ExecuteWhenSetFromSelf, ResolveWanimVariables } from "../variables/resolvers";
+import { RenderedCollection } from "../../animations/rendered-collection.class";
+import { ObjectLike } from "../../objects/object-like.type";
+import { WanimCollection } from "../../objects/wanim-collection.class";
+import { ExecuteWhenSetFromParent, ExecuteWhenSetFromSelf, ResolveWanimVariables } from "../../variables/resolvers";
 
 export abstract class Component extends RenderedCollection {
     
