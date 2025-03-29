@@ -1,7 +1,6 @@
 import { Colors } from "../lib/colors";
 import { ObjectLike } from "../objects/object-like.type";
 import { WanimObject } from "../objects/wanim-object.class";
-import { GetGenerator } from "../util/utils";
 import { Vector } from "../util/vector.type";
 import { Component } from "./component.class";
 
@@ -21,4 +20,4 @@ export class RectangleComponent extends Component {
     }
 }
 
-export const Rectangle = GetGenerator(RectangleComponent);
+export const Rectangle = RectangleComponent.GetGenerator();

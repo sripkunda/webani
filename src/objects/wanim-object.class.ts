@@ -81,7 +81,7 @@ export class WanimObject {
         return WanimObject._normalizePoints(this._rotatedTriangulation, width, height);
     }
 
-    rotatedCopy(angle: number, center: Vector, axis = 2) {
+    rotatedCopy(angle: number, center?: Vector, axis = 2) {
         if (angle % 360 == 0) return this.copy;
         let copy = this.copy;
         if (!center) center = this.center;

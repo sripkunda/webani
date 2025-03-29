@@ -7,7 +7,18 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
+    "body-parser": "^2.2.0",
     "earcut": "^3.0.1",
+    "express": "^4.21.2",
+    "html-webpack-plugin": "^5.6.3",
     "mathjax": "^3.2.2"
-  }
+  },
+  "scripts": {
+    "start": "node ./src/server/server.js"
+  },
+  "name": "wanim",
+  "version": "1.0.0",
+  "description": "A library for creating programmatical animations with extensive support for mathematical animations.",
+  "author": "Sri Pranav Kunda",
+  "license": "Apache-2.0"
 }

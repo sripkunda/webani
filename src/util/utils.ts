@@ -433,9 +433,3 @@ export function pointsInPolygon(polygonPoints: Vector[], points: Vector[]) {
     }
     return true;
 }
-
-export function GetGenerator<T>(item: new (...args: any[]) => T) { 
-    return (...vars: Value<any>): T => {
-      return new item(...vars);
-    }
-}

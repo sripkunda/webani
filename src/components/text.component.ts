@@ -4,8 +4,6 @@ import { Vector } from "../util/vector.type";
 import { Component } from "./component.class";
 import { WanimCollection } from "../objects/wanim-collection.class";
 import { WanimObject } from "../objects/wanim-object.class";
-import { GetGenerator } from "../util/utils";
-
 export class TextComponent extends Component {
     objectConstructor(string: string, position: Vector, fontSize = 72, color = Colors.WHITE, opacity = 1): WanimCollection {
         const pointsObject = textToPoints(string, position, fontSize);
@@ -17,4 +15,4 @@ export class TextComponent extends Component {
     }
 }
 
-export const Text = GetGenerator(TextComponent);
+export const Text = TextComponent.GetGenerator();

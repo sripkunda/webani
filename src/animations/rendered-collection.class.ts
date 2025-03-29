@@ -118,7 +118,9 @@ export class RenderedCollection {
     }
 
     _addAnimation(animation: WanimCollectionAnimation, asynchronous: boolean = false) {
-        this._animations.addAnimation(animation, asynchronous);
+        if (animation.duration > 0) {
+            this._animations.addAnimation(animation, asynchronous);
+        }
         this._collection = animation.after;
         return this;
     }
@@ -127,7 +129,11 @@ export class RenderedCollection {
         this.FadeOut(0);
     }
 
-    PositionCenterAt(position: number[]) {
+    SetRotation(angle: number, center?: Vector) { 
+        return this.Rotate(angle, 0, center);
+    }
+
+    SetCenterPosition(position: number[]) {
         return this.MoveCenterTo(position, 0);
     }
 
@@ -208,10 +214,9 @@ export class RenderedCollection {
         return this.MoveCenterTo(newCenter, duration, asynchronous);
     }
 
-    Rotate(angle: number, duration: number = 1000, asynchronous: boolean = false) {
+    Rotate(angle: number, duration: number = 1000, center?: Vector, asynchronous: boolean = false) {
         const afterObjects = this.collection._objects.map(obj => {
-            const a = obj.copy;
-            a.rotation = [0, 0, angle];
+            const a = obj.rotatedCopy(angle, center, 2);
             return a;
         });
         const after = new WanimCollection(afterObjects, this._keepRotationCenters);

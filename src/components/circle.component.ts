@@ -2,7 +2,6 @@ import { Colors } from "../lib/colors";
 import { Vector } from "../util/vector.type";
 import { Component } from "./component.class";
 import { WanimObject } from "../objects/wanim-object.class";
-import { GetGenerator } from "../util/utils";
 
 export class CircleComponent extends Component {
     objectConstructor(center: Vector, radius: number, color = Colors.WHITE, opacity = 1): WanimObject {
@@ -20,4 +19,4 @@ export class CircleComponent extends Component {
     }
 }
 
-export const Circle = GetGenerator(CircleComponent);
+export const Circle = CircleComponent.GetGenerator();
