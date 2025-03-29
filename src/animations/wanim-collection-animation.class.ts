@@ -18,7 +18,7 @@ export class WanimCollectionAnimation extends WanimInterpolatedAnimationBase {
         interpolationFunction?: (before: number, after: number, t: number) => number,
     ) {
         const _before = before instanceof WanimObject ? new WanimCollection(before) : before;
-        const _after = after instanceof WanimObject ? new WanimCollection(after) : after; 
+        const _after = after instanceof WanimObject ? new WanimCollection(after) : after;
         super(_before, _after, duration, backwards, interpolationFunction);
         this.cacheFrames = cacheFrames;
     }
@@ -48,6 +48,7 @@ export class WanimCollectionAnimation extends WanimInterpolatedAnimationBase {
     }
 
     _resolveAnimation() {
+        this._animations = []
         if (!(this._before instanceof WanimCollection) || !(this._after instanceof WanimCollection)) return;
         this.resolvedBefore = this._before.copy;
         this.resolvedAfter = this._after.copy;

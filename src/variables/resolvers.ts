@@ -1,6 +1,7 @@
+import { Value } from "./value.type";
 import { WanimVariable } from "./wanim-variable.class";
 
-export const ResolveWanimVariables = (...vars: any[]) => {
+export const ResolveWanimVariables = (...vars: Value<any>[]) => {
     const resolvedVars: any[] = [];
     for (let arg of vars) {
         resolvedVars.push(arg instanceof WanimVariable ? arg.value : arg);
@@ -8,7 +9,7 @@ export const ResolveWanimVariables = (...vars: any[]) => {
     return resolvedVars;
 }
 
-export const ExecuteWhenSetFromSelf = (funct: Function, ...vars: any[]) => { 
+export const ExecuteWhenSetFromSelf = (funct: Function, ...vars: Value<any>[]) => { 
   for (let arg of vars) { 
     if (arg instanceof WanimVariable) {
       arg.onValueSetFromSelf(() => {
@@ -18,7 +19,7 @@ export const ExecuteWhenSetFromSelf = (funct: Function, ...vars: any[]) => {
   }
 }
 
-export const ExecuteWhenSetFromParent = (funct: Function, ...vars: any[]) => { 
+export const ExecuteWhenSetFromParent = (funct: Function, ...vars: Value<any>[]) => { 
     for (let arg of vars) { 
       if (arg instanceof WanimVariable) {
         arg.onValueSetFromParent(() => {

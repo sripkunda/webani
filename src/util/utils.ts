@@ -7,6 +7,7 @@ import { SVGCommandList } from "./svg-command-list.type";
 import { SVGOutput } from "./svg-output.type";
 import 'mathjax/es5/tex-svg';
 import { RenderedCollection } from "../animations/rendered-collection.class";
+import { Value } from "../variables/value.type";
 
 export const triangulate = (points: Vector, holes: number[]) => {
     return earcut(points, holes);
@@ -431,4 +432,10 @@ export function pointsInPolygon(polygonPoints: Vector[], points: Vector[]) {
             return;
     }
     return true;
+}
+
+export function GetGenerator<T>(item: new (...args: any[]) => T) { 
+    return (...vars: Value<any>): T => {
+      return new item(...vars);
+    }
 }

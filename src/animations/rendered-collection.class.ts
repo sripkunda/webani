@@ -1,3 +1,4 @@
+import { ObjectLike } from "../objects/object-like.type";
 import { WanimCollection } from "../objects/wanim-collection.class";
 import { WanimObject } from "../objects/wanim-object.class";
 import { Vector } from "../util/vector.type";
@@ -30,7 +31,8 @@ export class RenderedCollection {
 
     [key: string]: any;
 
-    constructor(collection: WanimCollection | WanimObject, keepRotationalCentersOverride?: boolean) {
+    constructor(collection: ObjectLike, keepRotationalCentersOverride?: boolean) {
+        if (collection instanceof RenderedCollection) return collection;
         this._collection = collection instanceof WanimObject ? new WanimCollection(collection) : collection;
         this._keepRotationalCentersOverride = keepRotationalCentersOverride;
         this._animations = new AnimationSet();
@@ -115,7 +117,7 @@ export class RenderedCollection {
         return this._keepRotationalCentersOverride !== undefined ? this._keepRotationalCentersOverride : this._collection._keepRotationCenters;
     }
 
-    _addAnimation(animation: WanimCollectionAnimation, asynchronous: boolean = false): RenderedCollection {
+    _addAnimation(animation: WanimCollectionAnimation, asynchronous: boolean = false) {
         this._animations.addAnimation(animation, asynchronous);
         this._collection = animation.after;
         return this;
@@ -125,11 +127,11 @@ export class RenderedCollection {
         this.FadeOut(0);
     }
 
-    PositionCenterAt(position: number[]): RenderedCollection {
+    PositionCenterAt(position: number[]) {
         return this.MoveCenterTo(position, 0);
     }
 
-    FadeIn(duration: number = 1000, keepInitialOpacity: boolean = false, asynchronous: boolean = false): RenderedCollection {
+    FadeIn(duration: number = 1000, keepInitialOpacity: boolean = false, asynchronous: boolean = false) {
         const beforeObjects = this.collection._objects.map((object) => {
             let b = object.copy;
             if (!keepInitialOpacity) {
@@ -147,7 +149,7 @@ export class RenderedCollection {
         return this._addAnimation(new WanimCollectionAnimation(before, after, duration), asynchronous);
     }
 
-    FadeOut(duration: number = 1000, asynchronous: boolean = false): RenderedCollection {
+    FadeOut(duration: number = 1000, asynchronous: boolean = false) {
         const afterObjects = this.collection._objects.map((object) => {
             let a = object.copy;
             a.opacity = 0;
@@ -157,7 +159,7 @@ export class RenderedCollection {
         return this._addAnimation(new WanimCollectionAnimation(this.collection, after, duration), asynchronous);
     }
 
-    Scale(factor: number[], duration: number = 1000, asynchronous: boolean = false, backwards: boolean = false): RenderedCollection {
+    Scale(factor: number[], duration: number = 1000, asynchronous: boolean = false, backwards: boolean = false) {
         factor = WanimObject._convertPointTo3D(factor);
         let center = this.collection.center;
         const afterObjects = this.collection._objects.map((object) => {
@@ -170,12 +172,12 @@ export class RenderedCollection {
         return this._addAnimation(new WanimCollectionAnimation(this.collection, after, duration, backwards));
     }
 
-    ZoomIn(duration: number = 1000, asynchronous: boolean = false): RenderedCollection {
+    ZoomIn(duration: number = 1000, asynchronous: boolean = false) {
         this.Scale([1 / 10, 1 / 10], duration, asynchronous, true);
         return this;
     }
 
-    ZoomOut(duration: number = 1000, asynchronous: boolean = false): RenderedCollection {
+    ZoomOut(duration: number = 1000, asynchronous: boolean = false) {
         this.Scale([1 / 10, 1 / 10], duration, asynchronous);
         return this.FadeOut(duration, asynchronous);
     }
@@ -190,22 +192,23 @@ export class RenderedCollection {
         return this._addAnimation(new WanimCollectionAnimation(this.collection, after, duration), asynchronous)
     }
 
-    TransformInto(after: RenderedCollection, duration: number = 800, asynchronous: boolean = false): RenderedCollection {
+    TransformInto(after: ObjectLike, duration: number = 800, asynchronous: boolean = false) {
+        after = new RenderedCollection(after);
         return this._addAnimation(new WanimCollectionAnimation(this.collection, after.collection, duration, false, true), asynchronous);
     }
 
-    MoveCenterTo(position: number[], duration: number = 1000, asynchronous: boolean = false): RenderedCollection {
+    MoveCenterTo(position: number[], duration: number = 1000, asynchronous: boolean = false) {
         position = WanimObject._convertPointTo3D(position);
         return this._addAnimation(new WanimCollectionAnimation(this.collection, this.collection.copyCenteredAt(position), duration), asynchronous);
     }
 
-    Move(offset: number[], duration: number = 1000, asynchronous: boolean = false): RenderedCollection {
+    Move(offset: number[], duration: number = 1000, asynchronous: boolean = false) {
         offset = WanimObject._convertPointTo3D(offset);
         const newCenter = WanimObject._add(this.collection.center, offset)
         return this.MoveCenterTo(newCenter, duration, asynchronous);
     }
 
-    Rotate(angle: number, duration: number = 1000, asynchronous: boolean = false): RenderedCollection {
+    Rotate(angle: number, duration: number = 1000, asynchronous: boolean = false) {
         const afterObjects = this.collection._objects.map(obj => {
             const a = obj.copy;
             a.rotation = [0, 0, angle];
@@ -215,7 +218,7 @@ export class RenderedCollection {
         return this._addAnimation(new WanimCollectionAnimation(this.collection, after, duration), asynchronous);
     }
 
-    FadeInDelayed(duration: number = 1000, keepInitialOpacity: boolean = false): RenderedCollection {
+    FadeInDelayed(duration: number = 1000, keepInitialOpacity: boolean = false) {
         const beforeObjects = this.collection._objects.map((object) => {
             let b = object.copy;
             if (!keepInitialOpacity) {
@@ -235,7 +238,7 @@ export class RenderedCollection {
         return this;
     }
 
-    Wait(duration: number): RenderedCollection {
+    Wait(duration: number) {
         return this._addAnimation(new WanimCollectionAnimation(this.collection, this.collection, duration));
     }
 }

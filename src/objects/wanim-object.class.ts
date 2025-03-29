@@ -193,7 +193,6 @@ export class WanimObject {
             points[i] = points[i] / width;
             points[i + 1] = points[i + 1] / height;
         }
-        console.log(points);
         return points;
     }
 
