@@ -1,15 +1,16 @@
+import { ObjectLike } from "../objects/object-like.type";
 import { WanimAnimationBase } from "./wanim-animation-base.class";
 
-export abstract class WanimInterpolatedAnimationBase extends WanimAnimationBase {
-    _before!: any;
-    _after!: any;
+export abstract class WanimInterpolatedAnimationBase<T extends ObjectLike> extends WanimAnimationBase {
+    _before!: T;
+    _after!: T;
     duration!: number;
     backwards!: boolean;
     interpolationFunction: (before: number, after: number, t: number) => number;
 
     constructor(
-        before: any, 
-        after: any, 
+        before: T, 
+        after: T, 
         duration: number = 1000,
         backwards: boolean = false, 
         interpolationFunction?: (before: number, after: number, t: number) => number
@@ -33,20 +34,20 @@ export abstract class WanimInterpolatedAnimationBase extends WanimAnimationBase 
         return this.progress(t) >= 1;
     }
 
-    get before(): any { 
+    get before(): T { 
         return this._before;
     }
 
-    get after(): any { 
+    get after(): T { 
         return this._after;
     }
 
-    set before(value: any) { 
+    set before(value: T) { 
         this._before = value;
         this._resolveAnimation();
     }
 
-    set after(value: any) { 
+    set after(value: T) { 
         this._after = value;
         this._resolveAnimation();
     }

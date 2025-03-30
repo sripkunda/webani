@@ -9,6 +9,8 @@ import { WanimObject } from "../objects/wanim-object.class";
 import { Vector } from "../util/vector.type";
 import { WanimScene } from "./wanim-scene.class";
 import { vertexShader, fragmentShader } from "../shaders/shaders"
+import { Playable } from "../animations/playable.type";
+import { ObjectLike } from "../objects/object-like.type";
 
 export class WanimCanvas {
     canvas: HTMLCanvasElement;
@@ -51,7 +53,7 @@ export class WanimCanvas {
 
     startRecording(): void {
         this.video.recordedChunks = [];
-        let stream = this.canvas.captureStream(30);
+        const stream = this.canvas.captureStream(30);
         this.video.mediaRecorder = new MediaRecorder(stream);
         this.video.mediaRecorder.ondataavailable = (event) => {
             this.video.recordedChunks!.push(event.data);
@@ -83,7 +85,7 @@ export class WanimCanvas {
 
     redraw(): void {
         this._clear();
-        for (let object of this.scene.objects) {
+        for (const object of this.scene.objects) {
             this._draw(object);
         }
     }
@@ -97,8 +99,8 @@ export class WanimCanvas {
         this._onFinishAnimation.push(handler);
     }
 
-    play(...animations: any[]): void {
-        for (let animation of animations) {
+    play(...animations: Playable[]): void {
+        for (const animation of animations) {
             if (animation instanceof WanimObject || animation instanceof WanimCollection) {
                 this._addToScene(animation);
             } else if (animation instanceof WanimObjectAnimation || animation instanceof WanimCollectionAnimation || animation instanceof AnimationSet) {
@@ -107,28 +109,28 @@ export class WanimCanvas {
                 if (animation.animated) {
                     this.addAnimation(animation._animations);
                 } else {
-                    this._addToScene(animation.collection);
+                    this._addToScene(animation);
                 }
             }
         }
     }
 
-    addAnimation(animation: any): void {
+    addAnimation(animation: WanimAnimationBase): void {
         this.animationQueue.unshift(animation);
         if (!this._playing)
             this.playAnimationQueue();
     }
 
     playAnimationQueue(): void {
-        let animation = this.animationQueue.pop();
+        const animation = this.animationQueue.pop();
         if (!animation) return;
         this._playing = true;
         this.animate(animation, true);
     }
 
-    animate(animation: any, playNext: boolean = true): void {
+    animate(animation: WanimAnimationBase, playNext: boolean = true): void {
         let t = 0;
-        let startTime = Date.now();
+        const startTime = Date.now();
         let prevTime = startTime;
         let objectIndex: number;
 
@@ -158,7 +160,7 @@ export class WanimCanvas {
         requestAnimationFrame(drawFrame);
     }
 
-    remove(object: any): void {
+    remove(object: ObjectLike): void {
         this.scene.remove(object);
     }
 
@@ -167,9 +169,9 @@ export class WanimCanvas {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
 
-    _draw(object: any): void {
+    _draw(object: WanimObject): void {
         if (!object) return;
-        let vertices = object.normalizedTriangulation(this.canvas.width, this.canvas.height);
+        const vertices = object.normalizedTriangulation(this.canvas.width, this.canvas.height);
         const vertexBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, vertices, this.gl.STATIC_DRAW);
@@ -212,7 +214,7 @@ export class WanimCanvas {
         this.glProgram = program;
     }
 
-    _addToScene(object: any): void {
+    _addToScene(object: ObjectLike): void {
         this.scene.add(object);
         this.redraw();
         this._finishedAnimation();

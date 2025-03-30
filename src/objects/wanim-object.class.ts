@@ -1,5 +1,5 @@
 import { Colors } from "../lib/colors";
-import { pointsInPolygon, triangulate } from "../util/utils";
+import { triangulate } from "../util/utils";
 import { Vector } from "../util/vector.type";
 import { WanimObjectCache } from "./wanim-object-cache.type" 
 
@@ -34,8 +34,8 @@ export class WanimObject {
 
     get holeIndices() {
         let sum = this.filledPoints.length;
-        let indices: number[] = [];
-        for (let hole of this.holes) {
+        const indices: number[] = [];
+        for (const hole of this.holes) {
             indices.push(sum);
             sum += hole.length;
         }
@@ -43,8 +43,8 @@ export class WanimObject {
     }
 
     get points() {
-        let p = [...this.filledPoints];
-        for (let holePoints of this.holes) {
+        const p = [...this.filledPoints];
+        for (const holePoints of this.holes) {
             p.push(...holePoints);
         }
         return p;
@@ -83,7 +83,7 @@ export class WanimObject {
 
     rotatedCopy(angle: number, center?: Vector, axis = 2) {
         if (angle % 360 == 0) return this.copy;
-        let copy = this.copy;
+        const copy = this.copy;
         if (!center) center = this.center;
         center = WanimObject._convertPointTo3D(center) || center;
         center.splice(axis, 1);
@@ -122,9 +122,9 @@ export class WanimObject {
     }
 
     get triangulationPoints() {
-        let triangulation = this._triangulation;
-        let triangulationPoints: Vector[] = [];
-        for (let i in triangulation) {
+        const triangulation = this._triangulation;
+        const triangulationPoints: Vector[] = [];
+        for (const i in triangulation) {
             if (Number(i) % 3 == 0) {
                 triangulationPoints.push([triangulation[i]]);
             } else {
@@ -144,11 +144,11 @@ export class WanimObject {
 
     _triangulate() {
         let triangulation: Float32Array;
-        let holeIndices = this.holeIndices;
-        let points = holeIndices.length > 0 ? this.points : this.filledPoints;
+        const holeIndices = this.holeIndices;
+        const points = holeIndices.length > 0 ? this.points : this.filledPoints;
         if (points.length > 3) {
-            let triangulated = triangulate(WanimObject._convertPointsTo2D(points).flat(), holeIndices);
-            let triangulatedPoints: Vector[] = [];
+            const triangulated = triangulate(WanimObject._convertPointsTo2D(points).flat(), holeIndices);
+            const triangulatedPoints: Vector[] = [];
             for (let i = 0; i < triangulated.length; i++) {
                 triangulatedPoints.push(points[triangulated[i]]);
             }
@@ -176,7 +176,7 @@ export class WanimObject {
         if (points.length != cache.points.length) {
             return false;
         }
-        for (let i in points) {
+        for (const i in points) {
             if (!cache.points[i].every((x, j) => x == points[i][j])) {
                 return false;
             }
@@ -211,7 +211,7 @@ export class WanimObject {
     }
 
     static _norm(a: Vector) {
-        return WanimObject._distance(a, a.map(x => 0));
+        return WanimObject._distance(a, a.map(() => 0));
     }
 
     static _subtract(a: Vector, b: Vector) {

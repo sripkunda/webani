@@ -7,11 +7,11 @@ import { CollectionSlice } from "./collection-slice.type";
 import { WanimCollectionAnimation } from "./wanim-collection-animation.class";
 import { WanimInterpolatedAnimationBase } from "./wanim-interpolated-animation-base.class";
 
-function getAllRenderedCollections(obj: Record<string, any>): RenderedCollection[] {
-    let values: any[] = [];
+function getAllRenderedCollections(obj: object): RenderedCollection[] {
+    let values: RenderedCollection[] = [];
   
-    for (let key in obj) {
-      if (obj.hasOwnProperty(key)) {
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
         if (obj[key] instanceof RenderedCollection){
             values.push(obj[key]);   
         }
@@ -29,7 +29,7 @@ export class RenderedCollection {
     _keepRotationalCentersOverride?: boolean;
     _animations: AnimationSet;
 
-    [key: string]: any;
+    [key: string]: unknown;
 
     constructor(collection: ObjectLike, keepRotationalCentersOverride?: boolean) {
         if (collection instanceof RenderedCollection) return collection;
@@ -48,12 +48,12 @@ export class RenderedCollection {
             const collections = subcollections.map(x => x.collection);
             const indices: number[] = [];
             let sum = 0;
-            for (let collection of collections) { 
+            for (const collection of collections) { 
                 indices.push(sum);
                 sum += collection._objects.length;
             }
             const getSubcollectionSlice = (object: RenderedCollection): CollectionSlice => {
-                let i = subcollections.indexOf(object);
+                const i = subcollections.indexOf(object);
                 if (i < 0) 
                     return {
                         start: -1,
@@ -69,14 +69,14 @@ export class RenderedCollection {
 
             const groupedCollection = new WanimCollection(collections);
             renderedCollection = new RenderedCollection(groupedCollection, false);
-            for (let key in object) {
+            for (const key in object) {
                 renderedCollection[key] = RenderedCollection.Group(object[key], renderedCollection, getSubcollectionSlice);
             }
         }
 
         if (parentCollection && subcollectionSlice) { 
             const slices: CollectionSlice[] = subcollections.length == 0 && object instanceof RenderedCollection ? [subcollectionSlice(object)] : [];
-            for (let collection of subcollections) { 
+            for (const collection of subcollections) { 
                 const slice = subcollectionSlice(collection);
                 if (slice.count < 1) continue;
                 slices.push(slice);
@@ -86,7 +86,7 @@ export class RenderedCollection {
                 const beforeObjects = parentCollection.collection.copy._objects;
                 const afterObjects = parentCollection.collection.copy._objects;
                 let i = 0;
-                for (let slice of slices) {
+                for (const slice of slices) {
                     for (let j = 0; j < slice.count; j++, i++)  {
                         beforeObjects[slice.start + j] = animation._before._objects[i];
                         afterObjects[slice.start + j] = animation._after._objects[i];
@@ -139,14 +139,14 @@ export class RenderedCollection {
 
     FadeIn(duration: number = 1000, keepInitialOpacity: boolean = false, asynchronous: boolean = false) {
         const beforeObjects = this.collection._objects.map((object) => {
-            let b = object.copy;
+            const b = object.copy;
             if (!keepInitialOpacity) {
                 b.opacity = 0;
             }
             return b;
         });
         const afterObjects = this.collection._objects.map((object) => {
-            let b = object.copy;
+            const b = object.copy;
             b.opacity = 1;
             return b;
         });
@@ -157,7 +157,7 @@ export class RenderedCollection {
 
     FadeOut(duration: number = 1000, asynchronous: boolean = false) {
         const afterObjects = this.collection._objects.map((object) => {
-            let a = object.copy;
+            const a = object.copy;
             a.opacity = 0;
             return a;
         });
@@ -167,15 +167,15 @@ export class RenderedCollection {
 
     Scale(factor: number[], duration: number = 1000, asynchronous: boolean = false, backwards: boolean = false) {
         factor = WanimObject._convertPointTo3D(factor);
-        let center = this.collection.center;
+        const center = this.collection.center;
         const afterObjects = this.collection._objects.map((object) => {
-            let after = object.copy;
+            const after = object.copy;
             after.filledPoints = after.filledPoints.map((x) => x.map((y, i) => (y - center[i]) * factor[i] + center[i]));
             after.holes = after.holes.map(points => points.map((x) => x.map((y, i) => (y - center[i]) * factor[i] + center[i])));
             return after;
         });
         const after = new WanimCollection(afterObjects, this._keepRotationCenters);
-        return this._addAnimation(new WanimCollectionAnimation(this.collection, after, duration, backwards));
+        return this._addAnimation(new WanimCollectionAnimation(this.collection, after, duration, backwards), asynchronous);
     }
 
     ZoomIn(duration: number = 1000, asynchronous: boolean = false) {
@@ -190,7 +190,7 @@ export class RenderedCollection {
 
     ChangeColor(newColor: Vector, duration: number = 1000, asynchronous: boolean = false) { 
         const afterObjects = this.collection._objects.map(obj => {
-            let copy = obj.copy;
+            const copy = obj.copy;
             copy.color = newColor;
             return copy;
         });
@@ -225,7 +225,7 @@ export class RenderedCollection {
 
     FadeInDelayed(duration: number = 1000, keepInitialOpacity: boolean = false) {
         const beforeObjects = this.collection._objects.map((object) => {
-            let b = object.copy;
+            const b = object.copy;
             if (!keepInitialOpacity) {
                 b.opacity = 0;
             }
@@ -234,7 +234,7 @@ export class RenderedCollection {
         let before = new WanimCollection(beforeObjects, this._keepRotationCenters);
         const objectDuration = duration / this.collection._objects.length;
         const after = before.copy;
-        for (let i in after._objects) {
+        for (const i in after._objects) {
             after._objects[i].opacity = 1;
             const afterCollection = after.copy;
             this._addAnimation(new WanimCollectionAnimation(before, afterCollection, objectDuration, false, false, WanimInterpolatedAnimationBase.lerp));

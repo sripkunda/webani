@@ -2,13 +2,12 @@ import { ChangeHandler } from "./change-handler.type";
 
 export class WanimVariable<T> {
 
+    [key: string]: unknown;
     _onValueSetFromSelf: ChangeHandler<T>[] = [];
     _onValueSetFromParent: ChangeHandler<T>[] = [];
-
-    [key: string]: any;
-
     _value: T | undefined = undefined;
     _allowChangeValue: boolean = true;
+    
 
     constructor(value: T) {
         if (value instanceof WanimVariable) {
@@ -35,7 +34,7 @@ export class WanimVariable<T> {
         }
     }
 
-    static readLogs: WanimVariable<any>[] = [];
+    static readLogs: WanimVariable<unknown>[] = [];
     static logReads: boolean = false;
 
     static startLogging() {
@@ -47,7 +46,7 @@ export class WanimVariable<T> {
         WanimVariable.readLogs = [];
     }
 
-    static valueRequested(variable: WanimVariable<any> | undefined) {
+    static valueRequested(variable: WanimVariable<unknown> | undefined) {
         if (variable && WanimVariable.logReads) {
             WanimVariable.readLogs.push(variable);
         }
@@ -74,9 +73,9 @@ export class WanimVariable<T> {
     set _rawValue(val: T) {
         this._value = val;
         if (val instanceof Object) {
-            for (let key in val) {
+            for (const key in val) {
                 if (key in this) {
-                    this[key]._valueFromParent = val[key];
+                    (this[key] as WanimVariable<unknown>)._valueFromParent = val[key];
                 } else {
                     this[key as string] = new WanimVariable(val[key]);
                 }

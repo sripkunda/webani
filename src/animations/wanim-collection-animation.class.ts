@@ -3,7 +3,7 @@ import { WanimObject } from "../objects/wanim-object.class";
 import { WanimInterpolatedAnimationBase } from "./wanim-interpolated-animation-base.class";
 import { WanimObjectAnimation } from "./wanim-object-animation.class";
 
-export class WanimCollectionAnimation extends WanimInterpolatedAnimationBase {
+export class WanimCollectionAnimation extends WanimInterpolatedAnimationBase<WanimCollection> {
     _animations!: WanimObjectAnimation[];
     resolvedBefore!: WanimCollection;
     resolvedAfter!: WanimCollection;

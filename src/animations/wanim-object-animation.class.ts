@@ -3,7 +3,7 @@ import { executeInParallel, windingOrderClockwise } from "../util/utils";
 import { Vector } from "../util/vector.type";
 import { WanimInterpolatedAnimationBase } from "./wanim-interpolated-animation-base.class";
 
-export class WanimObjectAnimation extends WanimInterpolatedAnimationBase {
+export class WanimObjectAnimation extends WanimInterpolatedAnimationBase<WanimObject> {
     
     cache: { time: number; object: WanimObject }[] = [];
     cacheFrames: boolean = false;
@@ -11,8 +11,8 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase {
     resolvedAfter: WanimObject;
 
     constructor(
-        before: any, 
-        after: any, 
+        before: WanimObject | null, 
+        after: WanimObject | null, 
         duration: number = 1000,
         backwards: boolean = false, 
         cacheFrames: boolean = false,
@@ -24,13 +24,13 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase {
     }
 
     get before(): WanimObject {
-        let trueBefore: WanimObject = !this.backwards ? this._before.copy : this._after.copy;
+        const trueBefore: WanimObject = !this.backwards ? this._before.copy : this._after.copy;
         trueBefore.rotation = trueBefore.rotation.map(x => x %= 360); 
         return trueBefore;
     }
 
     get after(): WanimObject {
-        let trueAfter: WanimObject = !this.backwards ? this._after.copy : this._before.copy;
+        const trueAfter: WanimObject = !this.backwards ? this._after.copy : this._before.copy;
         trueAfter.rotation = trueAfter.rotation.map(x => x % 360);
         return trueAfter;
     }
@@ -79,7 +79,7 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase {
     
         const totalDistance = mappedPoints[mappedPoints.length - 1].distance;
         const step = totalDistance / (numOfPoints - 1); // Step size for interpolation
-        let tracedPoints: Vector[] = [];
+        const tracedPoints: Vector[] = [];
         let currentDistance = 0;
     
         for (let i = 0, j = 0; i < numOfPoints; i++) {
@@ -125,7 +125,7 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase {
             const bigger = smallToBig ? afterHoles : beforeHoles;
             const smaller = smallToBig ? beforeHoles : afterHoles;
             const reference = smallToBig ? beforeReference : afterReference;
-            smaller.push(new Array(bigger[i].length).fill(0).map((x, j) => reference));
+            smaller.push(new Array(bigger[i].length).fill(0).map(() => reference));
             i++;
         }
     }
@@ -171,7 +171,7 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase {
         this.resolvedAfter = this._after.copy;
         this._resolvePointArray(this.resolvedBefore.filledPoints, this.resolvedAfter.filledPoints);
         this._equateHoleCount(this.resolvedBefore.holes, this.resolvedAfter.holes, this.resolvedBefore.filledPoints[0], this.resolvedAfter.filledPoints[0]);
-        for (let i in this.resolvedBefore.holes) {
+        for (const i in this.resolvedBefore.holes) {
             this._resolvePointArray(this.resolvedBefore.holes[i], this.resolvedAfter.holes[i]);
         }
         this.resolvedBefore._triangulate();
@@ -180,7 +180,7 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase {
 
     _interpolatePoints(beforePoints: Vector[], afterPoints: Vector[], t: number) {
         return beforePoints.map((before, i) => {
-            let after = afterPoints[i];
+            const after = afterPoints[i];
             return before.map((x, j) => this.interpolationFunction(x, after[j], this.backwards ? 1 - t : t));
         });
     }
@@ -190,7 +190,6 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase {
     }
 
     _getHolePoints(t: number) {
-        const switched = this.progress(t) >= 0.5;
         return this.resolvedBefore.holes.map((beforeHolePoints, i) => {
             return this._interpolatePoints(beforeHolePoints, this.resolvedAfter.holes[i], t);
         });
@@ -198,21 +197,21 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase {
 
     _getColor(t: number) {
         return this.resolvedBefore.color.map((before, i) => {
-            let after = this.resolvedAfter.color[i];
+            const after = this.resolvedAfter.color[i];
             return this.interpolationFunction(before, after, this.backwards ? 1 - t : t);
         });
     }
 
     _getRotation(t: number) {
         return this.resolvedBefore.rotation.map((before, i) => {
-            let after = this.resolvedAfter.rotation[i];
+            const after = this.resolvedAfter.rotation[i];
             return this.interpolationFunction(before, after, this.backwards ? 1 - t : t);
         });
     }
 
     _getRotationalCenter(t: number) {
         return this.resolvedBefore.rotationCenter.map((before, i) => {
-            let after = this.resolvedAfter.rotationCenter[i];
+            const after = this.resolvedAfter.rotationCenter[i];
             return this.interpolationFunction(before, after, this.backwards ? 1 - t : t);
         });
     }

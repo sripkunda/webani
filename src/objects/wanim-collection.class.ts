@@ -1,3 +1,5 @@
+import { RenderedCollection } from "../animations/rendered-collection.class";
+import { ObjectLike } from "./object-like.type";
 import { WanimObject } from "./wanim-object.class";
 
 export class WanimCollection {
@@ -43,12 +45,14 @@ export class WanimCollection {
         return WanimObject._center(this._objects.map((obj) => obj.center));
     }
 
-    add(...newObjects: any[]): number {
+    add(...newObjects: ObjectLike[]): number {
         for (const object of newObjects) {
             if (object instanceof WanimObject) {
                 this._objects.push(object.copy);
             } else if (object instanceof WanimCollection) {
                 this._objects.push(...object.copy._objects);
+            } else if (object instanceof RenderedCollection) {
+                this._objects.push(...object.collection._objects);
             }
         }
 

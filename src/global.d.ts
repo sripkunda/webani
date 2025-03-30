@@ -1,1 +1,1 @@
-declare var MathJax: any;
+declare let MathJax: object;

@@ -6,8 +6,6 @@ import { SVGPath } from "./svg-path.type";
 import { SVGCommandList } from "./svg-command-list.type";
 import { SVGOutput } from "./svg-output.type";
 import 'mathjax/es5/tex-svg';
-import { RenderedCollection } from "../animations/rendered-collection.class";
-import { Value } from "../variables/value.type";
 
 export const triangulate = (points: Vector, holes: number[]) => {
     return earcut(points, holes);
@@ -16,7 +14,7 @@ export const triangulate = (points: Vector, holes: number[]) => {
 export const windingOrderClockwise = (points: Vector[]) => {
     let sum = 0;
     for (let i = 0; i < points.length; i++) {
-        let j = (i + 1) % points.length;
+        const j = (i + 1) % points.length;
         sum += (points[j][0] - points[i][0]) * (points[j][1] + points[i][1]);
     }
     return sum < 0 ? true : false;
@@ -43,7 +41,7 @@ export const cubicBezier = (startingX: number, startingY: number, startControlX:
 };
 
 export function svgPathToPoints (position: Vector, pathCommands: TransformedSVGCommandList[], reflect = false, holesCW = false): SVGOutput {
-    let paths: SVGPath[] = [];
+    const paths: SVGPath[] = [];
     let currentPoints: Vector[] = [];
     let startingX: number = 0;
     let startingY: number = 0;
@@ -54,7 +52,7 @@ export function svgPathToPoints (position: Vector, pathCommands: TransformedSVGC
     let maxX: number = -Infinity;
     let maxY: number = -Infinity;
 
-    const performInterpolation = (interpolationFunction: Function, ...args: any) => {
+    const performInterpolation = (interpolationFunction: (...args: unknown[]) => Vector, ...args: unknown[]) => {
         let t = 0;
         while (t < 1) {
             const p = interpolationFunction(...args, t);
@@ -65,9 +63,9 @@ export function svgPathToPoints (position: Vector, pathCommands: TransformedSVGC
         }
     };
 
-    for (let commandList of pathCommands) {
-        for (let i in commandList.commands) {
-            let command = commandList.commands[i];
+    for (const commandList of pathCommands) {
+        for (const i in commandList.commands) {
+            const command = commandList.commands[i];
 
             const handleEndPath = () => {
                 const hasClockwiseWindingOrder = windingOrderClockwise(currentPoints);
@@ -153,6 +151,7 @@ export function svgPathToPoints (position: Vector, pathCommands: TransformedSVGC
                     controlPoint = getReflectedControl();
                     performInterpolation(quadraticBezier, startingX, startingY, ...controlPoint, startingX + command.x, startingY + command.y);
                     [prevControlPointX, prevControlPointY] = controlPoint;
+                    break;
                 case 'Z':
                 case 'z':
                     handleEndPath();
@@ -302,9 +301,9 @@ export const parsePathData = (pathData: string): SVGCommandList => {
                     dx: params[0],
                     dy: params[1],
                 });
+                break;
             case 'Z':
             case 'z':
-                // Close Path (Z or z)
                 commands.push({
                     type: command
                 });
@@ -332,27 +331,29 @@ export const parseLatexString = (string: string) => {
 
 export const textToPoints = (string: string, position: Vector, fontSize: number) => {
     string = String(string);
-    let pathCommands: TransformedSVGCommandList[] = [];
+    const pathCommands: TransformedSVGCommandList[] = [];
     string = parseLatexString(string);
     const parser = new DOMParser();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const svg = parser.parseFromString((<any>MathJax).startup.adaptor.innerHTML((<any>MathJax).tex2svg(string, {
         display: true,
     })), "image/svg+xml");
     const pathDefinitions = Array.from(svg.querySelectorAll("path"));
     const useElements = Array.from(svg.querySelectorAll(`use`));
-    for (let definition of pathDefinitions) {
-        let commands = parsePathData(definition.getAttribute("d") || "");
-        let id = definition.getAttribute("id");
+    for (const definition of pathDefinitions) {
+        const commands = parsePathData(definition.getAttribute("d") || "");
+        const id = definition.getAttribute("id");
         const pathInstances = useElements.filter(el => el.getAttribute("xlink:href") === `#${id}`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         pathCommands.push(...pathInstances.map((instance: any) => {
-            let transformation = {
+            const transformation = {
                 scale: [1, 1],
                 translation: [0, 0]
             };
             while (instance.parentElement) {
                 const transformList = instance.transform?.baseVal;
                 if (transformList) {
-                    for (let transform of transformList) {
+                    for (const transform of transformList) {
                         if (transform.type == SVGTransform.SVG_TRANSFORM_TRANSLATE) {
                             transformation.translation[0] += transform.matrix.e;
                             transformation.translation[1] += transform.matrix.f;
@@ -374,10 +375,10 @@ export const textToPoints = (string: string, position: Vector, fontSize: number)
     const output = svgPathToPoints(position, pathCommands, false, true);
     const paths = output.paths;
 
-    let points: Vector[][] = [];
-    let holes: Vector[][][] = [];
-    for (let p of paths) {
-        let scaledPoints = p.points.map(point => point.map((coord, i) => position[i] + (coord - position[i]) * fontSize / output.height));
+    const points: Vector[][] = [];
+    const holes: Vector[][][] = [];
+    for (const p of paths) {
+        const scaledPoints = p.points.map(point => point.map((coord, i) => position[i] + (coord - position[i]) * fontSize / output.height));
         if (!p.hole) {
             holes.push([]);
             points.push(scaledPoints);
@@ -391,8 +392,8 @@ export const textToPoints = (string: string, position: Vector, fontSize: number)
     };
 }
 
-export async function executeInParallel(funct: Function, args: any[], threadCount = Math.min(navigator.hardwareConcurrency, 2)) {
-    const result: any[] = [];
+export async function executeInParallel(funct: (...args: unknown[]) => unknown, args: unknown[], threadCount = Math.min(navigator.hardwareConcurrency, 2)) {
+    const result: unknown[] = [];
     while (args.length) {
       const res = await Promise.all(args.splice(0, threadCount).map(x => funct(x)));
       result.push(res);
@@ -406,12 +407,12 @@ export function isLeft(p1: Vector, p2: Vector, p3: Vector) {
 }
 
 export function pointInPolygon(polygonPoints: Vector[], point: Vector) {
-    let [px, py] = point;
+    const [px, py] = point;
     let windingNumber = 0;
-    let n = polygonPoints.length;
+    const n = polygonPoints.length;
     for (let i = 0; i < n; i++) {
-        let [x1, y1] = polygonPoints[i];
-        let [x2, y2] = polygonPoints[(i + 1) % n]; // Wrap around to the first point
+        const [x1, y1] = polygonPoints[i];
+        const [x2, y2] = polygonPoints[(i + 1) % n]; // Wrap around to the first point
 
         if (y1 <= py) {
             if (y2 > py && isLeft([x1, y1], [x2, y2], [px, py]) > 0) {
@@ -427,7 +428,7 @@ export function pointInPolygon(polygonPoints: Vector[], point: Vector) {
 }
 
 export function pointsInPolygon(polygonPoints: Vector[], points: Vector[]) {
-    for (let point of points) { 
+    for (const point of points) { 
         if (!pointInPolygon(polygonPoints, point))
             return;
     }

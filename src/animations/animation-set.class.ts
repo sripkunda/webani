@@ -1,6 +1,5 @@
 import { WanimAnimationBase } from "./wanim-animation-base.class";
 import { WanimCollectionAnimation } from "./wanim-collection-animation.class";
-import { WanimInterpolatedAnimationBase } from "./wanim-interpolated-animation-base.class";
 
 export class AnimationSet extends WanimAnimationBase {
     animations: WanimCollectionAnimation[];
@@ -51,7 +50,7 @@ export class AnimationSet extends WanimAnimationBase {
         return t / this.duration >= 1;
     }
 
-    frame(t: number): any {
+    frame(t: number) {
         let durations = 0;
         for (const animation of this.animations) {
             if (t < animation.duration + durations) {

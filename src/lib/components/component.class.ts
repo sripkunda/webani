@@ -5,27 +5,27 @@ import { ExecuteWhenSetFromParent, ExecuteWhenSetFromSelf, ResolveWanimVariables
 
 export abstract class Component extends RenderedCollection {
     
-    constructor(...vars: any[]) {
+    constructor(...vars: unknown[]) {
         super(new WanimCollection([]), false);
         Object.assign(this, this.generate(...vars));
     }
 
-    private generate(...vars: any[]) { 
+    private generate(...vars: unknown[]) { 
           const renderedCollection = new RenderedCollection(this.objectConstructor(...ResolveWanimVariables(...vars)));
-          ExecuteWhenSetFromSelf((...vars: any[]) => {
+          ExecuteWhenSetFromSelf((...vars: unknown[]) => {
             renderedCollection.TransformInto(this.objectConstructor(...vars));
           }, ...vars);
-          ExecuteWhenSetFromParent((...vars: any[]) => {
+          ExecuteWhenSetFromParent((...vars: unknown[]) => {
             renderedCollection.TransformInto(this.objectConstructor(...vars), 500, true);
           }, ...vars);
           return renderedCollection;
     }
 
-    static GetGenerator<T extends Component>(this: new (...args: any[]) => T) { 
+    static GetGenerator<T extends Component>(this: new (...args: unknown[]) => T) { 
       return (...vars: Parameters<T["objectConstructor"]>) => {
         return new this(...vars);
       }
     }
 
-    abstract objectConstructor(...vars: any[]): ObjectLike;
+    abstract objectConstructor(...vars: unknown[]): ObjectLike;
 }

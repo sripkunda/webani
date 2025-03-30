@@ -2,7 +2,7 @@ import { Colors } from "../colors";
 import { ObjectLike } from "../../objects/object-like.type";
 import { Vector } from "../../util/vector.type";
 import { Component } from "./component.class";
-import { Line, LineComponent } from "./line.component";
+import { Line } from "./line.component";
 
 export class ConnectingLineComponent extends Component {
     objectConstructor(start: Vector, end: Vector, thickness = 5, color = Colors.WHITE, opacity = 1): ObjectLike {
