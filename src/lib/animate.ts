@@ -1,9 +1,9 @@
 import { Playable } from "../animations/playable.type";
 import { RenderedCollection } from "../animations/rendered-collection.class";
-import { WanimObjectAnimation } from "../animations/wanim-object-animation.class";
+import { WanimPolygonAnimation } from "../animations/wanim-polygon-animation.class";
 import { _defaultCanvas, setDefaultCanvas } from "../canvas/default-canvas";
 import { WanimCanvas } from "../canvas/wanim-canvas.class";
-import { WanimObject } from "../objects/wanim-object.class";
+import { WanimPolygonObject } from "../polygon/wanim-polygon.class";
 import { WanimVariable } from "../variables/wanim-variable.class";
 
 export const LoadCanvas = async function (...canvases: HTMLCanvasElement[]) {
@@ -22,7 +22,7 @@ export const LoadCanvas = async function (...canvases: HTMLCanvasElement[]) {
 }
 
 export const Wait = (duration: number): void => {
-    const animation = new WanimObjectAnimation(new WanimObject([], []), new WanimObject([], []), duration);
+    const animation = new WanimPolygonAnimation(new WanimPolygonObject([], []), new WanimPolygonObject([], []), duration);
     _defaultCanvas?.play(animation);
 };
 

@@ -1,11 +1,11 @@
 import { Colors } from "../colors";
 import { ObjectLike } from "../../objects/object-like.type";
-import { Vector } from "../../util/vector.type";
 import { Component } from "./component.class";
 import { Line } from "./line.component";
+import { Vector2 } from "../../util/vectors/vector2.type";
 
 export class ConnectingLineComponent extends Component {
-    objectConstructor(start: Vector, end: Vector, thickness = 5, color = Colors.WHITE, opacity = 1): ObjectLike {
+    objectConstructor(start: Vector2, end: Vector2, thickness = 5, color = Colors.WHITE, opacity = 1): ObjectLike {
         const angle = Math.atan2(end[1] - start[1], end[0] - start[0]);
         const length = Math.sqrt(Math.pow(end[0] - start[0], 2) + Math.pow(end[1] - start[1], 2));
         return Line(start, length, angle, thickness, color, opacity);

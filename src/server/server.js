@@ -4,6 +4,7 @@ const fs = require('fs');
 const bodyParser = require('body-parser');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const chokidar = require('chokidar');
 
 const args = process.argv.slice(2); // Skip the first two arguments (node and script path)
 
@@ -23,6 +24,10 @@ const config = {
     },
     module: {
       rules: [
+        {
+            resourceQuery: /raw/,
+            type: "asset/source"
+        },
         {
           test: /\.ts?$/,
           use: 'ts-loader',
@@ -56,23 +61,22 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'dist')));
 
 function build() { 
+    console.log("\x1b[36m", "[Log: Building Animations]", "\x1b[0m");
     webpack(config, (err, stats) => {
         if (err || stats.hasErrors()) {
-            console.log("\x1b[31m", 'A webpack error occurred:', err, "\x1b[0m");
+            console.log("\x1b[31m", 'A webpack error occurred:', err || stats.toJson().errors, "\x1b[0m");
             return;
         }
         console.log("\x1b[32m", '[Log: Updated Animations]', "\x1b[0m");
     });
 }
 
-fs.watch(filePath, (eventType, filename) => {
-    if (filename && eventType === 'change') {
-        build();
-    }
-});
+chokidar.watch('.').on('change', (event, path) => {
+    build();
+});  
 
 build();
 
 app.listen(3000, () => {
-    console.log("\x1b[36m", 'Server is running on http://localhost:3000', "\x1b[0m");
+    console.log("\x1b[36m", '[Log: Server Started at http://localhost:3000]', "\x1b[0m");
 });

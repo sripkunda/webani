@@ -1,13 +1,14 @@
 import { Colors } from "../colors";
-import { Vector } from "../../util/vector.type";
+import { Vector3 } from "../../util/vectors/vector3.type";
 import { Component } from "./component.class";
-import { WanimObject } from "../../objects/wanim-object.class";
+import { WanimPolygonObject } from "../../polygon/wanim-polygon.class";
+import { Vector2 } from "../../util/vectors/vector2.type";
 
 export class CircleComponent extends Component {
-    objectConstructor(center: Vector, radius: number, color = Colors.WHITE, opacity = 1): WanimObject {
-        const points: Vector[] = [];
-        const circle = (theta: number): Vector => {
-            return [center[0] + radius * Math.cos(theta), center[1] + radius * Math.sin(theta)];
+    objectConstructor(center: Vector2, radius: number, color = Colors.WHITE, opacity = 1): WanimPolygonObject {
+        const points: Vector3[] = [];
+        const circle = (theta: number): Vector3 => {
+            return [center[0] + radius * Math.cos(theta), center[1] + radius * Math.sin(theta), 0];
         };
         let angle = 0;
         const stepSize = (2 * Math.PI) / 1000;
@@ -15,7 +16,7 @@ export class CircleComponent extends Component {
             angle += stepSize;
             points.push(circle(angle));
         }
-        return new WanimObject(points, [], color, opacity).copyCenteredAt(center);
+        return new WanimPolygonObject(points, [], color, opacity).copyCenteredAt([center[0], center[1], 0]);
     }
 }
 

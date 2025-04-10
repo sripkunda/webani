@@ -1,18 +1,17 @@
-import { WanimObject } from "../objects/wanim-object.class";
-import { executeInParallel, windingOrderClockwise } from "../util/utils";
-import { Vector } from "../util/vector.type";
-import { WanimInterpolatedAnimationBase } from "./wanim-interpolated-animation-base.class";
+import { WanimPolygonObject } from "../polygon/wanim-polygon.class";
+import { executeInParallel, windingOrderClockwise } from "../util/geometry/polygon.utils";
+import { VectorUtils } from "../util/vectors/vector.utils";
+import { Vector3 } from "../util/vectors/vector3.type";
+import { WanimInterpolatedAnimation } from "./wanim-interpolated-animation.class";
 
-export class WanimObjectAnimation extends WanimInterpolatedAnimationBase<WanimObject> {
+export class WanimPolygonAnimation extends WanimInterpolatedAnimation<WanimPolygonObject> {
     
-    cache: { time: number; object: WanimObject }[] = [];
+    cache: { time: number; object: WanimPolygonObject }[] = [];
     cacheFrames: boolean = false;
-    resolvedBefore: WanimObject;
-    resolvedAfter: WanimObject;
 
     constructor(
-        before: WanimObject | null, 
-        after: WanimObject | null, 
+        before: WanimPolygonObject | null, 
+        after: WanimPolygonObject | null, 
         duration: number = 1000,
         backwards: boolean = false, 
         cacheFrames: boolean = false,
@@ -23,29 +22,29 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase<WanimOb
         this._resolveCache();
     }
 
-    get before(): WanimObject {
-        const trueBefore: WanimObject = !this.backwards ? this._before.copy : this._after.copy;
-        trueBefore.rotation = trueBefore.rotation.map(x => x %= 360); 
+    get before(): WanimPolygonObject {
+        const trueBefore: WanimPolygonObject = !this.backwards ? this._before.copy : this._after.copy;
+        trueBefore.rotation = trueBefore.rotation.map(x => x % 360) as Vector3; 
         return trueBefore;
     }
 
-    get after(): WanimObject {
-        const trueAfter: WanimObject = !this.backwards ? this._after.copy : this._before.copy;
-        trueAfter.rotation = trueAfter.rotation.map(x => x % 360);
+    get after(): WanimPolygonObject {
+        const trueAfter: WanimPolygonObject = !this.backwards ? this._after.copy : this._before.copy;
+        trueAfter.rotation = trueAfter.rotation.map(x => x % 360) as Vector3;
         return trueAfter;
     }
 
-    set before(value: WanimObject) { 
+    set before(value: WanimPolygonObject) { 
         this._before = value;
         this._resolveAnimation();
     }
 
-    set after(value: WanimObject) { 
+    set after(value: WanimPolygonObject) { 
         this._after = value;
         this._resolveAnimation();
     }
 
-    frame(t: number, useCached = this.cacheFrames): WanimObject {
+    frame(t: number, useCached = this.cacheFrames): WanimPolygonObject {
         if (useCached) { 
             const cachedFrame = this._cachedFrame(t);
             if (cachedFrame !== undefined) {
@@ -57,13 +56,12 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase<WanimOb
         t = t / this.duration;
         if (t <= 0) return this.backwards ? this.after : this.before;
         if (t >= 1) return this.backwards ? this.before : this.after;
-        if (!(this._before instanceof WanimObject) || !(this._after instanceof WanimObject)) return this.before;
-        const frameObject = new WanimObject(this._getFilledPoints(t), this._getHolePoints(t), this._getColor(t), this._getOpacity(t), this._getRotation(t), this.resolvedBefore._cache, this._getRotationalCenter(t));
-        frameObject._triangulate(); // Triangulate in advance to account for cached frames
+        if (!(this._before instanceof WanimPolygonObject) || !(this._after instanceof WanimPolygonObject)) return this.before;
+        const frameObject = new WanimPolygonObject(this._getFilledPoints(t), this._getHolePoints(t), this._getColor(t), this._getOpacity(t), this._getRotation(t), this.resolvedBefore._cache, this._getRotationalCenter(t));
         return frameObject;
     }
 
-    _tracePoints(points: Vector[], numOfPoints: number): Vector[] { 
+    _tracePoints(points: Vector3[], numOfPoints: number): Vector3[] { 
         if (!points || points.length < 2) return points;
         points = [...points]; 
         points.push(points[0]);
@@ -72,14 +70,14 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase<WanimOb
         const mappedPoints = points.map((point, index, arr) => {
             if (index > 0) {
                 const prev = arr[index - 1];
-                distance += WanimObject._distance(prev, point);
+                distance += VectorUtils.distance(prev, point);
             }
             return { point, distance };
         });
     
         const totalDistance = mappedPoints[mappedPoints.length - 1].distance;
         const step = totalDistance / (numOfPoints - 1); // Step size for interpolation
-        const tracedPoints: Vector[] = [];
+        const tracedPoints: Vector3[] = [];
         let currentDistance = 0;
     
         for (let i = 0, j = 0; i < numOfPoints; i++) {
@@ -109,16 +107,16 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase<WanimOb
         return tracedPoints;
     }
 
-    _resolvePointArray(beforePointArray: Vector[], afterPointArray: Vector[]) {
+    _resolvePointArray(beforePointArray: Vector3[], afterPointArray: Vector3[]) {
         const numOfPoints = Math.max(Math.max(beforePointArray.length, afterPointArray.length) / 3, 100);
         beforePointArray.splice(0, beforePointArray.length, ...this._tracePoints(beforePointArray, numOfPoints));
         afterPointArray.splice(0, afterPointArray.length, ...this._tracePoints(afterPointArray, numOfPoints));
-        if (!(windingOrderClockwise(afterPointArray) == windingOrderClockwise(beforePointArray))) { 
+        if (!(windingOrderClockwise(VectorUtils.convertPointsTo2D(afterPointArray)) == windingOrderClockwise(VectorUtils.convertPointsTo2D(beforePointArray)))) { 
             afterPointArray.reverse();
         }
     }
 
-    _equateHoleCount(beforeHoles: Vector[][], afterHoles: Vector[][], beforeReference: Vector, afterReference: Vector) {
+    _equateHoleCount(beforeHoles: Vector3[][], afterHoles: Vector3[][], beforeReference: Vector3, afterReference: Vector3) {
         const smallToBig = beforeHoles.length < afterHoles.length;
         let i = 0;
         while (beforeHoles.length != afterHoles.length) {
@@ -166,7 +164,7 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase<WanimOb
     }
 
     _resolveAnimation() {
-        if (!(this._before instanceof WanimObject) || !(this._after instanceof WanimObject)) return;
+        if (!(this._before instanceof WanimPolygonObject) || !(this._after instanceof WanimPolygonObject)) return;
         this.resolvedBefore = this._before.copy;
         this.resolvedAfter = this._after.copy;
         this._resolvePointArray(this.resolvedBefore.filledPoints, this.resolvedAfter.filledPoints);
@@ -174,15 +172,13 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase<WanimOb
         for (const i in this.resolvedBefore.holes) {
             this._resolvePointArray(this.resolvedBefore.holes[i], this.resolvedAfter.holes[i]);
         }
-        this.resolvedBefore._triangulate();
-        this.resolvedAfter._triangulate();
     }
 
-    _interpolatePoints(beforePoints: Vector[], afterPoints: Vector[], t: number) {
+    _interpolatePoints(beforePoints: Vector3[], afterPoints: Vector3[], t: number) {
         return beforePoints.map((before, i) => {
             const after = afterPoints[i];
             return before.map((x, j) => this.interpolationFunction(x, after[j], this.backwards ? 1 - t : t));
-        });
+        }) as Vector3[];
     }
 
     _getFilledPoints(t: number) {
@@ -196,24 +192,24 @@ export class WanimObjectAnimation extends WanimInterpolatedAnimationBase<WanimOb
     }
 
     _getColor(t: number) {
-        return this.resolvedBefore.color.map((before, i) => {
-            const after = this.resolvedAfter.color[i];
+        return this.resolvedBefore.material.color.map((before, i) => {
+            const after = this.resolvedAfter.material.color[i];
             return this.interpolationFunction(before, after, this.backwards ? 1 - t : t);
-        });
+        }) as Vector3;
     }
 
     _getRotation(t: number) {
         return this.resolvedBefore.rotation.map((before, i) => {
             const after = this.resolvedAfter.rotation[i];
             return this.interpolationFunction(before, after, this.backwards ? 1 - t : t);
-        });
+        }) as Vector3;
     }
 
     _getRotationalCenter(t: number) {
         return this.resolvedBefore.rotationCenter.map((before, i) => {
             const after = this.resolvedAfter.rotationCenter[i];
             return this.interpolationFunction(before, after, this.backwards ? 1 - t : t);
-        });
+        }) as Vector3;
     }
 
     _getOpacity(t: number) {

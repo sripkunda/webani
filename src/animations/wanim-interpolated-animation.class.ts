@@ -1,11 +1,13 @@
-import { ObjectLike } from "../objects/object-like.type";
-import { WanimAnimationBase } from "./wanim-animation-base.class";
+import { WanimAnimatable } from "./wanim-animatable.type";
+import { WanimAnimation } from "./wanim-animation.class";
 
-export abstract class WanimInterpolatedAnimationBase<T extends ObjectLike> extends WanimAnimationBase {
+export abstract class WanimInterpolatedAnimation<T extends WanimAnimatable> extends WanimAnimation {
     _before!: T;
     _after!: T;
     duration!: number;
     backwards!: boolean;
+    protected resolvedBefore!: T;
+    protected resolvedAfter!: T;
     interpolationFunction: (before: number, after: number, t: number) => number;
 
     constructor(
@@ -20,9 +22,12 @@ export abstract class WanimInterpolatedAnimationBase<T extends ObjectLike> exten
         this._after = after;
         this.duration = duration;
         this.backwards = backwards;
-        this.interpolationFunction = interpolationFunction || WanimInterpolatedAnimationBase.easeInOut;
+        this.interpolationFunction = interpolationFunction || WanimInterpolatedAnimation.easeInOut;
         this._resolveAnimation();
     }
+
+    abstract frame(t: number): T;
+
     abstract _resolveAnimation(): void;
 
     progress(t: number): number { 
@@ -57,10 +62,10 @@ export abstract class WanimInterpolatedAnimationBase<T extends ObjectLike> exten
     }
 
     static cubic(before: number, after: number, t: number): number {
-        return WanimInterpolatedAnimationBase.lerp(before, after, Math.pow(t, 3));
+        return WanimInterpolatedAnimation.lerp(before, after, Math.pow(t, 3));
     }
 
     static easeInOut(before: number, after: number, t: number): number {
-        return WanimInterpolatedAnimationBase.lerp(before, after, 0.5 * (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, t)))));
+        return WanimInterpolatedAnimation.lerp(before, after, 0.5 * (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, t)))));
     }
 }

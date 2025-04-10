@@ -1,36 +1,22 @@
-import earcut from "earcut";
-import { WanimInterpolatedAnimationBase } from "../animations/wanim-interpolated-animation-base.class";
-import { Vector } from "./vector.type";
-import { TransformedSVGCommandList } from "./transformed-svg-command-list.type";
-import { SVGPath } from "./svg-path.type";
+import { WanimInterpolatedAnimation } from "../../animations/wanim-interpolated-animation.class";
 import { SVGCommandList } from "./svg-command-list.type";
 import { SVGOutput } from "./svg-output.type";
-import 'mathjax/es5/tex-svg';
-
-export const triangulate = (points: Vector, holes: number[]) => {
-    return earcut(points, holes);
-};
-
-export const windingOrderClockwise = (points: Vector[]) => {
-    let sum = 0;
-    for (let i = 0; i < points.length; i++) {
-        const j = (i + 1) % points.length;
-        sum += (points[j][0] - points[i][0]) * (points[j][1] + points[i][1]);
-    }
-    return sum < 0 ? true : false;
-};
+import { SVGPath } from "./svg-path.type";
+import { TransformedSVGCommandList } from "./transformed-svg-command-list.type";
+import { windingOrderClockwise } from "../geometry/polygon.utils";
+import { Vector2 } from "../vectors/vector2.type";
 
 export const lineFrom = (startingX: number, startingY: number, endX: number, endY: number, t: number) => {
-    const x = WanimInterpolatedAnimationBase.lerp(startingX, endX, t);
-    const y = WanimInterpolatedAnimationBase.lerp(startingY, endY, t);
-    return [x, y];
+    const x = WanimInterpolatedAnimation.lerp(startingX, endX, t);
+    const y = WanimInterpolatedAnimation.lerp(startingY, endY, t);
+    return [x, y] as Vector2;
 };
 
 export const quadraticBezier = (startingX: number, startingY: number, controlX: number, controlY: number, endX: number, endY: number, t: number) => {
-    const startPointX = WanimInterpolatedAnimationBase.lerp(startingX, controlX, t);
-    const endPointX = WanimInterpolatedAnimationBase.lerp(controlX, endX, t);
-    const startPointY = WanimInterpolatedAnimationBase.lerp(startingY, controlY, t);
-    const endPointY = WanimInterpolatedAnimationBase.lerp(controlY, endY, t);
+    const startPointX = WanimInterpolatedAnimation.lerp(startingX, controlX, t);
+    const endPointX = WanimInterpolatedAnimation.lerp(controlX, endX, t);
+    const startPointY = WanimInterpolatedAnimation.lerp(startingY, controlY, t);
+    const endPointY = WanimInterpolatedAnimation.lerp(controlY, endY, t);
     return lineFrom(startPointX, startPointY, endPointX, endPointY, t);
 };
 
@@ -40,9 +26,9 @@ export const cubicBezier = (startingX: number, startingY: number, startControlX:
     return lineFrom(first[0], first[1], second[0], second[1], t);
 };
 
-export function svgPathToPoints (position: Vector, pathCommands: TransformedSVGCommandList[], reflect = false, holesCW = false): SVGOutput {
+export function svgPathToPoints (position: Vector2, pathCommands: TransformedSVGCommandList[], reflect = false, holesCW = false): SVGOutput {
     const paths: SVGPath[] = [];
-    let currentPoints: Vector[] = [];
+    let currentPoints: Vector2[] = [];
     let startingX: number = 0;
     let startingY: number = 0;
     let prevControlPointX: number;
@@ -52,7 +38,7 @@ export function svgPathToPoints (position: Vector, pathCommands: TransformedSVGC
     let maxX: number = -Infinity;
     let maxY: number = -Infinity;
 
-    const performInterpolation = (interpolationFunction: (...args: unknown[]) => Vector, ...args: unknown[]) => {
+    const performInterpolation = (interpolationFunction: (...args: unknown[]) => Vector2, ...args: unknown[]) => {
         let t = 0;
         while (t < 1) {
             const p = interpolationFunction(...args, t);
@@ -74,7 +60,7 @@ export function svgPathToPoints (position: Vector, pathCommands: TransformedSVGC
                 const translationX = commandList.transformation.translation[0];
                 const translationY = commandList.transformation.translation[1];
                 paths.push({
-                    points: currentPoints.map(x => [scaleX * (x[0]) + position[0] + translationX, scaleY * ((reflect ? -1 : 1) * x[1]) + position[1] + translationY]),
+                    points: currentPoints.map(x => [scaleX * (x[0]) + position[0] + translationX, scaleY * ((reflect ? -1 : 1) * x[1]) + position[1] + translationY]) as Vector2[],
                     hole: !hasClockwiseWindingOrder !== holesCW
                 });
                 currentPoints = [];
@@ -90,10 +76,10 @@ export function svgPathToPoints (position: Vector, pathCommands: TransformedSVGC
                         controlY = 2 * startingY - prevControlPointY;
                     }
                 }
-                return [controlX, controlY];
+                return [controlX, controlY] as Vector2;
             };
 
-            let controlPoint: Vector;
+            let controlPoint: Vector2;
 
             switch (command.type) {
                 case 'M':
@@ -329,7 +315,7 @@ export const parseLatexString = (string: string) => {
     }).join("");
 };
 
-export const textToPoints = (string: string, position: Vector, fontSize: number) => {
+export const textToPoints = (string: string, position: Vector2, fontSize: number) => {
     string = String(string);
     const pathCommands: TransformedSVGCommandList[] = [];
     string = parseLatexString(string);
@@ -347,8 +333,8 @@ export const textToPoints = (string: string, position: Vector, fontSize: number)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         pathCommands.push(...pathInstances.map((instance: any) => {
             const transformation = {
-                scale: [1, 1],
-                translation: [0, 0]
+                scale: [1, 1] as Vector2,
+                translation: [0, 0] as Vector2
             };
             while (instance.parentElement) {
                 const transformList = instance.transform?.baseVal;
@@ -375,10 +361,10 @@ export const textToPoints = (string: string, position: Vector, fontSize: number)
     const output = svgPathToPoints(position, pathCommands, false, true);
     const paths = output.paths;
 
-    const points: Vector[][] = [];
-    const holes: Vector[][][] = [];
+    const points: Vector2[][] = [];
+    const holes: Vector2[][][] = [];
     for (const p of paths) {
-        const scaledPoints = p.points.map(point => point.map((coord, i) => position[i] + (coord - position[i]) * fontSize / output.height));
+        const scaledPoints = p.points.map(point => point.map((coord, i) => position[i] + (coord - position[i]) * fontSize / output.height)) as Vector2[];
         if (!p.hole) {
             holes.push([]);
             points.push(scaledPoints);
@@ -390,47 +376,4 @@ export const textToPoints = (string: string, position: Vector, fontSize: number)
         points,
         holes
     };
-}
-
-export async function executeInParallel(funct: (...args: unknown[]) => unknown, args: unknown[], threadCount = Math.min(navigator.hardwareConcurrency, 2)) {
-    const result: unknown[] = [];
-    while (args.length) {
-      const res = await Promise.all(args.splice(0, threadCount).map(x => funct(x)));
-      result.push(res);
-    }
-    return result.flat();
-}
-
-export function isLeft(p1: Vector, p2: Vector, p3: Vector) {
-    // Cross product to determine if p3 is left of the directed line (p1 -> p2)
-    return (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p3[0] - p1[0]) * (p2[1] - p1[1]);
-}
-
-export function pointInPolygon(polygonPoints: Vector[], point: Vector) {
-    const [px, py] = point;
-    let windingNumber = 0;
-    const n = polygonPoints.length;
-    for (let i = 0; i < n; i++) {
-        const [x1, y1] = polygonPoints[i];
-        const [x2, y2] = polygonPoints[(i + 1) % n]; // Wrap around to the first point
-
-        if (y1 <= py) {
-            if (y2 > py && isLeft([x1, y1], [x2, y2], [px, py]) > 0) {
-                windingNumber++;
-            }
-        } else {
-            if (y2 <= py && isLeft([x1, y1], [x2, y2], [px, py]) < 0) {
-                windingNumber--;
-            }
-        }
-    }
-    return windingNumber !== 0; // Nonzero means inside
-}
-
-export function pointsInPolygon(polygonPoints: Vector[], points: Vector[]) {
-    for (const point of points) { 
-        if (!pointInPolygon(polygonPoints, point))
-            return;
-    }
-    return true;
 }

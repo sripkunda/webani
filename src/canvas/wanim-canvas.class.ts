@@ -1,23 +1,25 @@
 import { AnimationSet } from "../animations/animation-set.class";
 import { RenderedCollection } from "../animations/rendered-collection.class";
-import { WanimAnimationBase } from "../animations/wanim-animation-base.class";
+import { WanimAnimation } from "../animations/wanim-animation.class";
 import { WanimCollectionAnimation } from "../animations/wanim-collection-animation.class";
-import { WanimObjectAnimation } from "../animations/wanim-object-animation.class";
+import { WanimPolygonAnimation } from "../animations/wanim-polygon-animation.class";
 import { Colors } from "../lib/colors";
 import { WanimCollection } from "../objects/wanim-collection.class";
-import { WanimObject } from "../objects/wanim-object.class";
-import { Vector } from "../util/vector.type";
+import { Vector3 } from "../util/vectors/vector3.type";
 import { WanimScene } from "./wanim-scene.class";
 import { vertexShader, fragmentShader } from "../shaders/shaders"
 import { Playable } from "../animations/playable.type";
 import { ObjectLike } from "../objects/object-like.type";
+import { WanimCamera } from "../camera/wanim-camera.class";
+import { WanimLight } from "../lighting/wanim-light.class";
+import { WanimPrimitiveObject } from "../objects/wanim-primitive-object.class";
 
 export class WanimCanvas {
     canvas: HTMLCanvasElement;
     interactive: boolean;
     gl: WebGL2RenderingContext;
-    backgroundColor: Vector;
-    animationQueue: WanimAnimationBase[];
+    backgroundColor: Vector3;
+    animationQueue: WanimAnimation[];
     scene: WanimScene;
     _playing: boolean;
     _onFinishAnimation: (() => void)[];
@@ -26,8 +28,10 @@ export class WanimCanvas {
         mediaRecorder?: MediaRecorder;
     };
     glProgram: WebGLProgram;
+    camera!: WanimCamera;
+    light: WanimLight
 
-    constructor(canvas: HTMLCanvasElement, interactive: boolean = true, backgroundColor: number[] = Colors.BLACK) {
+    constructor(canvas: HTMLCanvasElement, interactive: boolean = true, backgroundColor: Vector3 = Colors.BLACK) {
         if (!canvas)
             throw Error("A canvas object must be provided to create a Wanim canvas element.");
 
@@ -49,6 +53,8 @@ export class WanimCanvas {
         this._playing = false;
         this._onFinishAnimation = [];
         this.video = {};
+        this.camera = new WanimCamera();
+        this.light = new WanimLight()
     }
 
     startRecording(): void {
@@ -101,13 +107,13 @@ export class WanimCanvas {
 
     play(...animations: Playable[]): void {
         for (const animation of animations) {
-            if (animation instanceof WanimObject || animation instanceof WanimCollection) {
+            if (animation instanceof WanimPrimitiveObject || animation instanceof WanimCollection) {
                 this._addToScene(animation);
-            } else if (animation instanceof WanimObjectAnimation || animation instanceof WanimCollectionAnimation || animation instanceof AnimationSet) {
+            } else if (animation instanceof WanimPolygonAnimation || animation instanceof WanimCollectionAnimation || animation instanceof AnimationSet) {
                 this.addAnimation(animation);
             } else if (animation instanceof RenderedCollection) {
                 if (animation.animated) {
-                    this.addAnimation(animation._animations);
+                    this.addAnimation(animation.animations);
                 } else {
                     this._addToScene(animation);
                 }
@@ -115,7 +121,7 @@ export class WanimCanvas {
         }
     }
 
-    addAnimation(animation: WanimAnimationBase): void {
+    addAnimation(animation: WanimAnimation): void {
         this.animationQueue.unshift(animation);
         if (!this._playing)
             this.playAnimationQueue();
@@ -125,17 +131,25 @@ export class WanimCanvas {
         const animation = this.animationQueue.pop();
         if (!animation) return;
         this._playing = true;
-        this.animate(animation, true);
+        this.animate(animation);
     }
 
-    animate(animation: WanimAnimationBase, playNext: boolean = true): void {
+    animate(animation: WanimAnimation, playNext: boolean = true): void {
         let t = 0;
         const startTime = Date.now();
         let prevTime = startTime;
         let objectIndex: number;
 
         const drawFrame = () => {
-            this.scene._members[objectIndex] = animation.frame(t);
+            const frame = animation.frame(t);
+            if (frame instanceof WanimCamera) { 
+                this.camera = frame;
+            } else {
+                if (!objectIndex) { 
+                    objectIndex = this.scene.add(frame as ObjectLike);
+                }
+                this.scene._members[objectIndex] = frame as ObjectLike;
+            }
             this.redraw();
             if (!animation.done(t)) {
                 t += Date.now() - prevTime;
@@ -144,19 +158,11 @@ export class WanimCanvas {
             } else {
                 t = 0;
                 if (playNext) {
-                    animation = this.animationQueue.pop();
-                    if (animation) {
-                        objectIndex = this.scene.add(animation.frame(0));
-                        requestAnimationFrame(drawFrame);
-                        return;
-                    } else {
-                        this._playing = false;
-                        this._finishedAnimation();
-                    }
+                    this.playAnimationQueue();
                 }
+                this._finishedAnimation();
             }
         };
-        objectIndex = this.scene.add(animation.frame(0));
         requestAnimationFrame(drawFrame);
     }
 
@@ -169,20 +175,53 @@ export class WanimCanvas {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
 
-    _draw(object: WanimObject): void {
-        if (!object) return;
-        const vertices = object.normalizedTriangulation(this.canvas.width, this.canvas.height);
+    _draw(object: WanimPrimitiveObject): void {
+        const vertices = object.triangles;
+        const transformedVertices = this.camera.transformPointArray(vertices, this.canvas.width, this.canvas.height);
+        console.log(vertices);
+    
+        // Step 3: Create and bind the vertex buffer
         const vertexBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, vertices, this.gl.STATIC_DRAW);
-
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.STATIC_DRAW);
+    
+        // Step 4: Set up the position attribute (location of vertex positions in the shader)
         const position = this.gl.getAttribLocation(this.glProgram, 'position');
         this.gl.vertexAttribPointer(position, 3, this.gl.FLOAT, false, 0, 0);
         this.gl.enableVertexAttribArray(position);
-
+    
+        // Step 5: Set up the material properties as uniforms
         const colorLoc = this.gl.getUniformLocation(this.glProgram, "color");
-        this.gl.uniform4fv(colorLoc, [...object.color, object.opacity]);
-
+        this.gl.uniform4fv(colorLoc, [...object.material.ambient]);  // Ambient material color
+    
+        const lightPositionLoc = this.gl.getUniformLocation(this.glProgram, "uLightPosition");
+        const lightColorLoc = this.gl.getUniformLocation(this.glProgram, "uLightColor");
+        const lightIntensityLoc = this.gl.getUniformLocation(this.glProgram, "uLightIntensity");
+    
+        this.gl.uniform3fv(lightPositionLoc, this.light.position);
+        this.gl.uniform3fv(lightColorLoc, this.light.color);    
+        this.gl.uniform1f(lightIntensityLoc, this.light.intensity);              
+    
+        const viewPositionLoc = this.gl.getUniformLocation(this.glProgram, "uViewPosition");
+        this.gl.uniform3fv(viewPositionLoc, [0.0, 0.0, 5.0]);  
+    
+        const materialDiffuseLoc = this.gl.getUniformLocation(this.glProgram, "uMaterialDiffuse");
+        this.gl.uniform3fv(materialDiffuseLoc, object.material.diffuse);
+    
+        const materialSpecularLoc = this.gl.getUniformLocation(this.glProgram, "uMaterialSpecular");
+        this.gl.uniform3fv(materialSpecularLoc, object.material.specular);
+    
+        const materialShininessLoc = this.gl.getUniformLocation(this.glProgram, "uMaterialShininess");
+        this.gl.uniform1f(materialShininessLoc, object.material.shininess);
+    
+        const normalBuffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, normalBuffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(object.normals), this.gl.STATIC_DRAW);
+    
+        const normalLocation = this.gl.getAttribLocation(this.glProgram, 'normal');
+        this.gl.vertexAttribPointer(normalLocation, 3, this.gl.FLOAT, false, 0, 0);
+        this.gl.enableVertexAttribArray(normalLocation);
+    
         const n = vertices.length / 3;
         this.gl.drawArrays(this.gl.TRIANGLES, 0, n);
     }

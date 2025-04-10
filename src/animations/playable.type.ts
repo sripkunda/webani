@@ -1,4 +1,5 @@
+import { ObjectLike } from "../objects/object-like.type";
 import { RenderedCollection } from "./rendered-collection.class";
-import { WanimAnimationBase } from "./wanim-animation-base.class";
+import { WanimAnimation } from "./wanim-animation.class";
 
-export type Playable = WanimAnimationBase | RenderedCollection;
+export type Playable = ObjectLike | WanimAnimation | RenderedCollection;

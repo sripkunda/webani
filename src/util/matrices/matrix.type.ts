@@ -1,0 +1,1 @@
+export type Matrix4 = Float32Array & { length: 16 };

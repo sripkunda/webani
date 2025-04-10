@@ -1,7 +1,7 @@
 import { RenderedCollection } from "../animations/rendered-collection.class";
 import { ObjectLike } from "../objects/object-like.type";
 import { WanimCollection } from "../objects/wanim-collection.class";
-import { WanimObject } from "../objects/wanim-object.class";
+import { WanimPolygonObject } from "../polygon/wanim-polygon.class";
 
 export class WanimScene {
 
@@ -11,7 +11,7 @@ export class WanimScene {
         this._members = members;
     }
 
-    get objects(): WanimObject[] {
+    get objects(): WanimPolygonObject[] {
         return this._members.map(x  => {
             if (x instanceof RenderedCollection) {
                 x = x.collection;
@@ -24,9 +24,7 @@ export class WanimScene {
     }
 
     add(object: ObjectLike): number {
-        if (object instanceof WanimCollection || object instanceof WanimObject) {
-            this._members.push(object);
-        }
+        this._members.push(object);
         return this._members.length - 1;
     }
 

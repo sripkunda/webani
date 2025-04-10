@@ -1,7 +1,8 @@
-import { WanimAnimationBase } from "./wanim-animation-base.class";
+import { ObjectLike } from "../objects/object-like.type";
+import { WanimAnimation } from "./wanim-animation.class";
 import { WanimCollectionAnimation } from "./wanim-collection-animation.class";
 
-export class AnimationSet extends WanimAnimationBase {
+export class AnimationSet extends WanimAnimation {
     animations: WanimCollectionAnimation[];
     nextIsAsynchronous: boolean;
     _onAnimationAdded: ((animation: WanimCollectionAnimation, asynchronous: boolean) => void)[];
