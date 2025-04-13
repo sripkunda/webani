@@ -25,7 +25,7 @@ const config = {
     module: {
       rules: [
         {
-            resourceQuery: /raw/,
+            test: /\.(vert|frag|glsl)$/,
             type: "asset/source"
         },
         {

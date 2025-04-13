@@ -1,6 +1,6 @@
-import { WanimCanvas } from "./wanim-canvas.class";
+import { LorentzCanvas } from "./lorentz-canvas.class";
 
-export let _defaultCanvas: WanimCanvas;
-export const setDefaultCanvas = (canvas: WanimCanvas) => {
+export let _defaultCanvas: LorentzCanvas;
+export const setDefaultCanvas = (canvas: LorentzCanvas) => {
     _defaultCanvas = canvas;
 };

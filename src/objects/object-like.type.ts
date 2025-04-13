@@ -1,5 +1,5 @@
 import { RenderedCollection } from "../animations/rendered-collection.class";
-import { WanimCollection } from "./wanim-collection.class";
-import { WanimPrimitiveObject } from "./wanim-primitive-object.class";
+import { LorentzCollection } from "./lorentz-collection.class";
+import { LorentzPrimitiveObject } from "./lorentz-primitive-object.class";
 
-export type ObjectLike = WanimPrimitiveObject | WanimCollection | RenderedCollection
+export type ObjectLike = LorentzPrimitiveObject | LorentzCollection | RenderedCollection

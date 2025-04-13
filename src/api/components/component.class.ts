@@ -1,17 +1,17 @@
 import { RenderedCollection } from "../../animations/rendered-collection.class";
 import { ObjectLike } from "../../objects/object-like.type";
-import { WanimCollection } from "../../objects/wanim-collection.class";
-import { ExecuteWhenSetFromParent, ExecuteWhenSetFromSelf, ResolveWanimVariables } from "../../variables/resolvers";
+import { LorentzCollection } from "../../objects/lorentz-collection.class";
+import { ExecuteWhenSetFromParent, ExecuteWhenSetFromSelf, ResolveLorentzVariables } from "../../variables/resolvers";
 
 export abstract class Component extends RenderedCollection {
     
     constructor(...vars: unknown[]) {
-        super(new WanimCollection([]), false);
+        super(new LorentzCollection([]), false);
         Object.assign(this, this.generate(...vars));
     }
 
     private generate(...vars: unknown[]) { 
-          const renderedCollection = new RenderedCollection(this.objectConstructor(...ResolveWanimVariables(...vars)));
+          const renderedCollection = new RenderedCollection(this.objectConstructor(...ResolveLorentzVariables(...vars)));
           ExecuteWhenSetFromSelf((...vars: unknown[]) => {
             renderedCollection.TransformInto(this.objectConstructor(...vars));
           }, ...vars);

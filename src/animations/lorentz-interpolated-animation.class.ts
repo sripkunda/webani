@@ -1,7 +1,7 @@
-import { WanimAnimatable } from "./wanim-animatable.type";
-import { WanimAnimation } from "./wanim-animation.class";
+import { LorentzAnimatable } from "./lorentz-animatable.type";
+import { LorentzAnimation } from "./lorentz-animation.class";
 
-export abstract class WanimInterpolatedAnimation<T extends WanimAnimatable> extends WanimAnimation {
+export abstract class LorentzInterpolatedAnimation<T extends LorentzAnimatable> extends LorentzAnimation {
     _before!: T;
     _after!: T;
     duration!: number;
@@ -22,7 +22,7 @@ export abstract class WanimInterpolatedAnimation<T extends WanimAnimatable> exte
         this._after = after;
         this.duration = duration;
         this.backwards = backwards;
-        this.interpolationFunction = interpolationFunction || WanimInterpolatedAnimation.easeInOut;
+        this.interpolationFunction = interpolationFunction || LorentzInterpolatedAnimation.easeInOut;
         this._resolveAnimation();
     }
 
@@ -62,10 +62,10 @@ export abstract class WanimInterpolatedAnimation<T extends WanimAnimatable> exte
     }
 
     static cubic(before: number, after: number, t: number): number {
-        return WanimInterpolatedAnimation.lerp(before, after, Math.pow(t, 3));
+        return LorentzInterpolatedAnimation.lerp(before, after, Math.pow(t, 3));
     }
 
     static easeInOut(before: number, after: number, t: number): number {
-        return WanimInterpolatedAnimation.lerp(before, after, 0.5 * (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, t)))));
+        return LorentzInterpolatedAnimation.lerp(before, after, 0.5 * (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, t)))));
     }
 }

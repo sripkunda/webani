@@ -37,10 +37,10 @@ export const VectorUtils = {
         );
     },
 
-    convertPointsToDimension(points: number[][], dimension: number): number[][] {
+    convertPointsToDimension(points: number[][], dimension: number, fillValue: number = 0): number[][] {
         return points.map(point => {
             if (point.length < dimension) {
-                return [...point, ...new Array(dimension - point.length).fill(0)];
+                return [...point, ...new Array(dimension - point.length).fill(fillValue)];
             } else {
                 return point.slice(0, dimension);
             }
@@ -48,15 +48,15 @@ export const VectorUtils = {
     },
 
     convertPointsTo2D(points: number[][]): Vector2[] {
-        return this.convertPointsToDimension(points, 2) as Vector2[];
+        return VectorUtils.convertPointsToDimension(points, 2) as Vector2[];
     },
 
     convertPointsTo3D(points: number[][]): Vector3[] {
-        return this.convertPointsToDimension(points, 3) as Vector3[];
+        return VectorUtils.convertPointsToDimension(points, 3) as Vector3[];
     },
 
-    convertPointsTo4D(points: number[][]): Vector4[] {
-        return this.convertPointsToDimension(points, 4) as Vector4[];
+    convertPointsToHomogenous(points: number[][]): Vector4[] {
+        return VectorUtils.convertPointsToDimension(points, 4, 1) as Vector4[];
     },
 
     convertPointTo3D: (point: number[]): Vector3 => {

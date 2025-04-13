@@ -1,4 +1,4 @@
-import { WanimInterpolatedAnimation } from "../../animations/wanim-interpolated-animation.class";
+import { LorentzInterpolatedAnimation } from "../../animations/lorentz-interpolated-animation.class";
 import { SVGCommandList } from "./svg-command-list.type";
 import { SVGOutput } from "./svg-output.type";
 import { SVGPath } from "./svg-path.type";
@@ -7,16 +7,16 @@ import { windingOrderClockwise } from "../geometry/polygon.utils";
 import { Vector2 } from "../vectors/vector2.type";
 
 export const lineFrom = (startingX: number, startingY: number, endX: number, endY: number, t: number) => {
-    const x = WanimInterpolatedAnimation.lerp(startingX, endX, t);
-    const y = WanimInterpolatedAnimation.lerp(startingY, endY, t);
+    const x = LorentzInterpolatedAnimation.lerp(startingX, endX, t);
+    const y = LorentzInterpolatedAnimation.lerp(startingY, endY, t);
     return [x, y] as Vector2;
 };
 
 export const quadraticBezier = (startingX: number, startingY: number, controlX: number, controlY: number, endX: number, endY: number, t: number) => {
-    const startPointX = WanimInterpolatedAnimation.lerp(startingX, controlX, t);
-    const endPointX = WanimInterpolatedAnimation.lerp(controlX, endX, t);
-    const startPointY = WanimInterpolatedAnimation.lerp(startingY, controlY, t);
-    const endPointY = WanimInterpolatedAnimation.lerp(controlY, endY, t);
+    const startPointX = LorentzInterpolatedAnimation.lerp(startingX, controlX, t);
+    const endPointX = LorentzInterpolatedAnimation.lerp(controlX, endX, t);
+    const startPointY = LorentzInterpolatedAnimation.lerp(startingY, controlY, t);
+    const endPointY = LorentzInterpolatedAnimation.lerp(controlY, endY, t);
     return lineFrom(startPointX, startPointY, endPointX, endPointY, t);
 };
 
@@ -26,7 +26,7 @@ export const cubicBezier = (startingX: number, startingY: number, startControlX:
     return lineFrom(first[0], first[1], second[0], second[1], t);
 };
 
-export function svgPathToPoints (position: Vector2, pathCommands: TransformedSVGCommandList[], reflect = false, holesCW = false): SVGOutput {
+export function svgPathToPoints (pathCommands: TransformedSVGCommandList[], reflect = false, holesCW = false): SVGOutput {
     const paths: SVGPath[] = [];
     let currentPoints: Vector2[] = [];
     let startingX: number = 0;
@@ -60,7 +60,7 @@ export function svgPathToPoints (position: Vector2, pathCommands: TransformedSVG
                 const translationX = commandList.transformation.translation[0];
                 const translationY = commandList.transformation.translation[1];
                 paths.push({
-                    points: currentPoints.map(x => [scaleX * (x[0]) + position[0] + translationX, scaleY * ((reflect ? -1 : 1) * x[1]) + position[1] + translationY]) as Vector2[],
+                    points: currentPoints.map(x => [scaleX * (x[0]) + translationX, scaleY * ((reflect ? -1 : 1) * x[1]) + translationY]) as Vector2[],
                     hole: !hasClockwiseWindingOrder !== holesCW
                 });
                 currentPoints = [];
@@ -315,7 +315,7 @@ export const parseLatexString = (string: string) => {
     }).join("");
 };
 
-export const textToPoints = (string: string, position: Vector2, fontSize: number) => {
+export const textToPoints = (string: string, fontSize: number) => {
     string = String(string);
     const pathCommands: TransformedSVGCommandList[] = [];
     string = parseLatexString(string);
@@ -358,13 +358,13 @@ export const textToPoints = (string: string, position: Vector2, fontSize: number
         }));
     }
 
-    const output = svgPathToPoints(position, pathCommands, false, true);
+    const output = svgPathToPoints(pathCommands, false, true);
     const paths = output.paths;
 
     const points: Vector2[][] = [];
     const holes: Vector2[][][] = [];
     for (const p of paths) {
-        const scaledPoints = p.points.map(point => point.map((coord, i) => position[i] + (coord - position[i]) * fontSize / output.height)) as Vector2[];
+        const scaledPoints = p.points.map(point => point.map((coord, i) => coord * fontSize / output.height)) as Vector2[];
         if (!p.hole) {
             holes.push([]);
             points.push(scaledPoints);

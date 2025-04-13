@@ -1,3 +1,3 @@
-import { WanimVariable } from "./wanim-variable.class";
+import { LorentzVariable } from "./lorentz-variable.class";
 
-export type Value<T> = T | WanimVariable<T>;
+export type Value<T> = T | LorentzVariable<T>;

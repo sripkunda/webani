@@ -1,17 +1,18 @@
-import { WanimPolygonObject } from "../polygon/wanim-polygon.class";
+import { LorentzMaterial } from "../lighting/lorentz-material.class";
+import { LorentzPolygon } from "../polygon/lorentz-polygon.class";
 import { executeInParallel, windingOrderClockwise } from "../util/geometry/polygon.utils";
 import { VectorUtils } from "../util/vectors/vector.utils";
 import { Vector3 } from "../util/vectors/vector3.type";
-import { WanimInterpolatedAnimation } from "./wanim-interpolated-animation.class";
+import { LorentzInterpolatedAnimation } from "./lorentz-interpolated-animation.class";
 
-export class WanimPolygonAnimation extends WanimInterpolatedAnimation<WanimPolygonObject> {
+export class LorentzPolygonAnimation extends LorentzInterpolatedAnimation<LorentzPolygon> {
     
-    cache: { time: number; object: WanimPolygonObject }[] = [];
+    cache: { time: number; object: LorentzPolygon }[] = [];
     cacheFrames: boolean = false;
 
     constructor(
-        before: WanimPolygonObject | null, 
-        after: WanimPolygonObject | null, 
+        before: LorentzPolygon | null, 
+        after: LorentzPolygon | null, 
         duration: number = 1000,
         backwards: boolean = false, 
         cacheFrames: boolean = false,
@@ -22,29 +23,29 @@ export class WanimPolygonAnimation extends WanimInterpolatedAnimation<WanimPolyg
         this._resolveCache();
     }
 
-    get before(): WanimPolygonObject {
-        const trueBefore: WanimPolygonObject = !this.backwards ? this._before.copy : this._after.copy;
+    get before(): LorentzPolygon {
+        const trueBefore: LorentzPolygon = !this.backwards ? this._before.copy : this._after.copy;
         trueBefore.rotation = trueBefore.rotation.map(x => x % 360) as Vector3; 
         return trueBefore;
     }
 
-    get after(): WanimPolygonObject {
-        const trueAfter: WanimPolygonObject = !this.backwards ? this._after.copy : this._before.copy;
+    get after(): LorentzPolygon {
+        const trueAfter: LorentzPolygon = !this.backwards ? this._after.copy : this._before.copy;
         trueAfter.rotation = trueAfter.rotation.map(x => x % 360) as Vector3;
         return trueAfter;
     }
 
-    set before(value: WanimPolygonObject) { 
+    set before(value: LorentzPolygon) { 
         this._before = value;
         this._resolveAnimation();
     }
 
-    set after(value: WanimPolygonObject) { 
+    set after(value: LorentzPolygon) { 
         this._after = value;
         this._resolveAnimation();
     }
 
-    frame(t: number, useCached = this.cacheFrames): WanimPolygonObject {
+    frame(t: number, useCached = this.cacheFrames): LorentzPolygon {
         if (useCached) { 
             const cachedFrame = this._cachedFrame(t);
             if (cachedFrame !== undefined) {
@@ -52,12 +53,11 @@ export class WanimPolygonAnimation extends WanimInterpolatedAnimation<WanimPolyg
             }
         }
         
-        // Scale by the duration
         t = t / this.duration;
         if (t <= 0) return this.backwards ? this.after : this.before;
         if (t >= 1) return this.backwards ? this.before : this.after;
-        if (!(this._before instanceof WanimPolygonObject) || !(this._after instanceof WanimPolygonObject)) return this.before;
-        const frameObject = new WanimPolygonObject(this._getFilledPoints(t), this._getHolePoints(t), this._getColor(t), this._getOpacity(t), this._getRotation(t), this.resolvedBefore._cache, this._getRotationalCenter(t));
+        if (!(this._before instanceof LorentzPolygon) || !(this._after instanceof LorentzPolygon)) return this.before;
+        const frameObject = new LorentzPolygon(this._getPosition(t), this._getFilledPoints(t), this._getHolePoints(t), this._getRotation(t), this._getScale(t), this.resolvedBefore._cache, this._getRotationalCenter(t), this._getMaterial(t));
         return frameObject;
     }
 
@@ -164,7 +164,7 @@ export class WanimPolygonAnimation extends WanimInterpolatedAnimation<WanimPolyg
     }
 
     _resolveAnimation() {
-        if (!(this._before instanceof WanimPolygonObject) || !(this._after instanceof WanimPolygonObject)) return;
+        if (!(this._before instanceof LorentzPolygon) || !(this._after instanceof LorentzPolygon)) return;
         this.resolvedBefore = this._before.copy;
         this.resolvedAfter = this._after.copy;
         this._resolvePointArray(this.resolvedBefore.filledPoints, this.resolvedAfter.filledPoints);
@@ -177,8 +177,20 @@ export class WanimPolygonAnimation extends WanimInterpolatedAnimation<WanimPolyg
     _interpolatePoints(beforePoints: Vector3[], afterPoints: Vector3[], t: number) {
         return beforePoints.map((before, i) => {
             const after = afterPoints[i];
-            return before.map((x, j) => this.interpolationFunction(x, after[j], this.backwards ? 1 - t : t));
+            return this._interpolatePoint(before, after, t);
         }) as Vector3[];
+    }
+
+    _interpolatePoint(before: Vector3, after: Vector3, t: number) { 
+        return before.map((x, j) => this.interpolationFunction(x, after[j], this.backwards ? 1 - t : t)) as Vector3;
+    }
+
+    _getPosition(t: number) {
+        return this._interpolatePoint(this.resolvedBefore.position, this.resolvedAfter.position, t);
+    }
+
+    _getScale(t: number) {
+        return this._interpolatePoint(this.resolvedBefore.scale, this.resolvedAfter.scale, t);
     }
 
     _getFilledPoints(t: number) {
@@ -191,28 +203,24 @@ export class WanimPolygonAnimation extends WanimInterpolatedAnimation<WanimPolyg
         });
     }
 
-    _getColor(t: number) {
-        return this.resolvedBefore.material.color.map((before, i) => {
-            const after = this.resolvedAfter.material.color[i];
-            return this.interpolationFunction(before, after, this.backwards ? 1 - t : t);
-        }) as Vector3;
-    }
-
     _getRotation(t: number) {
-        return this.resolvedBefore.rotation.map((before, i) => {
-            const after = this.resolvedAfter.rotation[i];
-            return this.interpolationFunction(before, after, this.backwards ? 1 - t : t);
-        }) as Vector3;
+        return this._interpolatePoint(this.resolvedBefore.rotation, this.resolvedAfter.rotation, t);
     }
 
     _getRotationalCenter(t: number) {
-        return this.resolvedBefore.rotationCenter.map((before, i) => {
-            const after = this.resolvedAfter.rotationCenter[i];
-            return this.interpolationFunction(before, after, this.backwards ? 1 - t : t);
-        }) as Vector3;
+        if (!this.resolvedBefore._rotationCenterOverride || this.resolvedAfter._rotationCenterOverride) {
+            return this.resolvedBefore._rotationCenterOverride || this.resolvedAfter._rotationCenterOverride;
+        }
+        return this._interpolatePoint(this.resolvedBefore.rotationCenter, this.resolvedAfter.rotationCenter, t);
     }
 
-    _getOpacity(t: number) {
-        return this.interpolationFunction(this.resolvedBefore.opacity, this.resolvedAfter.opacity, this.backwards ? 1 - t : t);
+    _getMaterial(t: number) { 
+        const ambient = this._interpolatePoint(this.resolvedBefore.material.ambient, this.resolvedAfter.material.ambient, t);
+        const diffuse = this._interpolatePoint(this.resolvedBefore.material.diffuse, this.resolvedAfter.material.diffuse, t);
+        const specular = this._interpolatePoint(this.resolvedBefore.material.specular, this.resolvedAfter.material.specular, t);
+        const color = this._interpolatePoint(this.resolvedBefore.material.color, this.resolvedAfter.material.color, t);
+        const opacity = this.interpolationFunction(this.resolvedBefore.material.opacity, this.resolvedAfter.material.opacity, this.backwards ? 1 - t : t);
+        const shininess = this.interpolationFunction(this.resolvedBefore.material.shininess, this.resolvedAfter.material.shininess, this.backwards ? 1 - t : t);
+        return new LorentzMaterial(color, ambient, diffuse, specular, shininess, opacity)
     }
 }

@@ -1,6 +1,6 @@
 import { ChangeHandler } from "./change-handler.type";
 
-export class WanimVariable<T> {
+export class LorentzVariable<T> {
 
     [key: string]: unknown;
     _onValueSetFromSelf: ChangeHandler<T>[] = [];
@@ -10,45 +10,45 @@ export class WanimVariable<T> {
     
 
     constructor(value: T) {
-        if (value instanceof WanimVariable) {
+        if (value instanceof LorentzVariable) {
             return value;
         }
         this._onValueSetFromSelf = [];
         this._onValueSetFromParent = [];
         if (value instanceof Function) {
             this._allowChangeValue = false;
-            WanimVariable.startLogging();
+            LorentzVariable.startLogging();
             const handler = () => {
                 this._valueFromParent = value();
             }
             handler();
-            WanimVariable.readLogs.forEach(x => {
+            LorentzVariable.readLogs.forEach(x => {
                 x.onValueSetFromParent(handler);
             });
-            WanimVariable.readLogs.forEach(x => {
+            LorentzVariable.readLogs.forEach(x => {
                 x.onValueSetFromSelf(handler)
             });
-            WanimVariable.stopLogging();
+            LorentzVariable.stopLogging();
         } else {
             this.value = value;
         }
     }
 
-    static readLogs: WanimVariable<unknown>[] = [];
+    static readLogs: LorentzVariable<unknown>[] = [];
     static logReads: boolean = false;
 
     static startLogging() {
-        WanimVariable.logReads = true;
+        LorentzVariable.logReads = true;
     }
 
     static stopLogging() {
-        WanimVariable.logReads = false;
-        WanimVariable.readLogs = [];
+        LorentzVariable.logReads = false;
+        LorentzVariable.readLogs = [];
     }
 
-    static valueRequested(variable: WanimVariable<unknown> | undefined) {
-        if (variable && WanimVariable.logReads) {
-            WanimVariable.readLogs.push(variable);
+    static valueRequested(variable: LorentzVariable<unknown> | undefined) {
+        if (variable && LorentzVariable.logReads) {
+            LorentzVariable.readLogs.push(variable);
         }
     }
 
@@ -75,9 +75,9 @@ export class WanimVariable<T> {
         if (val instanceof Object) {
             for (const key in val) {
                 if (key in this) {
-                    (this[key] as WanimVariable<unknown>)._valueFromParent = val[key];
+                    (this[key] as LorentzVariable<unknown>)._valueFromParent = val[key];
                 } else {
-                    this[key as string] = new WanimVariable(val[key]);
+                    this[key as string] = new LorentzVariable(val[key]);
                 }
             }
         }
@@ -89,7 +89,7 @@ export class WanimVariable<T> {
     }
 
     get value(): T | undefined {
-        WanimVariable.valueRequested(this);
+        LorentzVariable.valueRequested(this);
         return this._value;
     }
 }

@@ -1,1 +1,0 @@
-export type CollectionSlice = { start: number; count: number };

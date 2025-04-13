@@ -1,5 +1,5 @@
 import { FPSDisplay } from "../canvas/fps-display.class";
-import { LoadCanvas } from "../lib/animate";
+import { LoadCanvas } from "../api/animate";
 
 new FPSDisplay(document.querySelector("#fps"));
 const canvas = document.querySelector("canvas");

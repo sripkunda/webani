@@ -1,34 +1,92 @@
-import { Vector4 } from "../vectors/vector4.type";
+import { VectorUtils } from "../vectors/vector.utils";
+import { Vector3 } from "../vectors/vector3.type";
 import { Matrix4 } from "./matrix.type";
 
 export const MatrixUtils = {
     multiply(a: Matrix4, b: Matrix4): Matrix4 {
-        const result = new Float32Array([
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0
-        ]) as Matrix4;
-
+        const result = new Float32Array(16) as Matrix4;
         for (let row = 0; row < 4; row++) {
             for (let col = 0; col < 4; col++) {
-                result[row * 4 + col] = 
+                result[row * 4 + col] =
                     a[row * 4 + 0] * b[0 * 4 + col] +
                     a[row * 4 + 1] * b[1 * 4 + col] +
                     a[row * 4 + 2] * b[2 * 4 + col] +
                     a[row * 4 + 3] * b[3 * 4 + col];
             }
         }
-
         return result;
     },
-    multiplyVector(a: Matrix4, b: Vector4): Vector4 { 
-        const result: Vector4 = [
-            a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3],
-            a[4] * b[0] + a[5] * b[1] + a[6] * b[2] + a[7] * b[3],
-            a[8] * b[0] + a[9] * b[1] + a[10] * b[2] + a[11] * b[3],
-            a[12] * b[0] + a[13] * b[1] + a[14] * b[2] + a[15] * b[3]
-        ];
-        return result;
-    }
+
+    translationMatrix(t: Vector3): Matrix4 {
+        return new Float32Array([
+            1, 0, 0, t[0],
+            0, 1, 0, t[1],
+            0, 0, 1, t[2],
+            0, 0, 0, 1
+        ]) as Matrix4;
+    },
+
+    scaleMatrix(s: Vector3): Matrix4 {
+        return new Float32Array([
+            s[0], 0, 0, 0,
+            0, s[1], 0, 0,
+            0, 0, s[2], 0,
+            0, 0, 0, 1
+        ]) as Matrix4;
+    },
+
+    rotationMatrix(r: Vector3): Matrix4 {
+        const [x, y, z] = VectorUtils.multiply(r, Math.PI / 180);
+        const cx = Math.cos(x), sx = Math.sin(x);
+        const cy = Math.cos(y), sy = Math.sin(y);
+        const cz = Math.cos(z), sz = Math.sin(z);
+
+        const rx = new Float32Array([
+            1, 0, 0, 0,
+            0, cx, -sx, 0,
+            0, sx, cx, 0,
+            0, 0, 0, 1
+        ]) as Matrix4;
+
+        const ry = new Float32Array([
+            cy, 0, sy, 0,
+            0, 1, 0, 0,
+            -sy, 0, cy, 0,
+            0, 0, 0, 1
+        ]) as Matrix4;
+
+        const rz = new Float32Array([
+            cz, -sz, 0, 0,
+            sz, cz, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        ]) as Matrix4;
+
+        return MatrixUtils.multiply(
+            MatrixUtils.multiply(rz, ry),
+            rx
+        );
+    },
+
+    rotationMatrixAboutPoint(rotation: Vector3, point: Vector3): Matrix4 {
+        const translateToOrigin = MatrixUtils.translationMatrix(VectorUtils.multiply(point, -1));
+        const rotate = MatrixUtils.rotationMatrix(rotation);
+        const translateBack = MatrixUtils.translationMatrix(point);
+    
+        return MatrixUtils.multiply(
+            MatrixUtils.multiply(translateBack, rotate),
+            translateToOrigin
+        );
+    },
+
+    fromTRS(translation: Vector3, rotation: Vector3, scale: Vector3, rotationCenter?: Vector3): Matrix4 {
+        const T = MatrixUtils.translationMatrix(translation);
+        const R = rotationCenter ? MatrixUtils.rotationMatrix(rotation) : MatrixUtils.rotationMatrixAboutPoint(rotation, rotationCenter);
+        const S = MatrixUtils.scaleMatrix(scale);
+
+        return MatrixUtils.multiply(
+            MatrixUtils.multiply(T, R),
+            S
+        );
+    },
 };

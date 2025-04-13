@@ -1,53 +1,53 @@
-import { WanimCollection } from "../objects/wanim-collection.class";
-import { WanimPolygonObject } from "../polygon/wanim-polygon.class";
-import { WanimInterpolatedAnimation } from "./wanim-interpolated-animation.class";
-import { WanimPolygonAnimation } from "./wanim-polygon-animation.class";
+import { LorentzCollection } from "../objects/lorentz-collection.class";
+import { ObjectLike } from "../objects/object-like.type";
+import { LorentzPolygon } from "../polygon/lorentz-polygon.class";
+import { LorentzInterpolatedAnimation } from "./lorentz-interpolated-animation.class";
 
-export class WanimCollectionAnimation extends WanimInterpolatedAnimation<WanimCollection> {
-    animations!: WanimPolygonAnimation[];
+export class LorentzCollectionAnimation extends LorentzInterpolatedAnimation<LorentzCollection> {
+    animations!: LorentzInterpolatedAnimation<ObjectLike>[];
     cacheFrames: boolean = false;
 
     constructor(
-        before: WanimCollection | WanimPolygonObject,
-        after: WanimCollection | WanimPolygonObject,
+        before: LorentzCollection | LorentzPolygon,
+        after: LorentzCollection | LorentzPolygon,
         duration = 1000,
         backwards = false,
         cacheFrames: boolean = false,
         interpolationFunction?: (before: number, after: number, t: number) => number,
     ) {
-        const _before = before instanceof WanimPolygonObject ? new WanimCollection(before) : before;
-        const _after = after instanceof WanimPolygonObject ? new WanimCollection(after) : after;
+        const _before = before instanceof LorentzPolygon ? new LorentzCollection(before) : before;
+        const _after = after instanceof LorentzPolygon ? new LorentzCollection(after) : after;
         super(_before, _after, duration, backwards, interpolationFunction);
         this.cacheFrames = cacheFrames;
     }
 
-    get before(): WanimCollection {
-        return new WanimCollection(
+    get before(): LorentzCollection {
+        return new LorentzCollection(
             this.animations.map((x) => x.before),
             this._before._keepRotationCenters
         );
     }
 
-    get after(): WanimCollection {
-        return new WanimCollection(
+    get after(): LorentzCollection {
+        return new LorentzCollection(
             this.animations.map((x) => x.after),
             this._after._keepRotationCenters
         );
     }
 
-    set before(value: WanimCollection) { 
+    set before(value: LorentzCollection) { 
         this._before = value;
         this._resolveAnimation();
     }
 
-    set after(value: WanimCollection) { 
+    set after(value: LorentzCollection) { 
         this._after = value;
         this._resolveAnimation();
     }
 
     _resolveAnimation() {
         this.animations = []
-        if (!(this._before instanceof WanimCollection) || !(this._after instanceof WanimCollection)) return;
+        if (!(this._before instanceof LorentzCollection) || !(this._after instanceof LorentzCollection)) return;
         this.resolvedBefore = this._before.copy;
         this.resolvedAfter = this._after.copy;
         
@@ -66,23 +66,27 @@ export class WanimCollectionAnimation extends WanimInterpolatedAnimation<WanimCo
         }
 
         this.animations = this.resolvedBefore._objects.map(
-            (before, i) =>
-                new WanimPolygonAnimation(
-                    before,
-                    this.resolvedAfter._objects[i],
-                    this.duration,
-                    this.backwards,
-                    this.cacheFrames,
-                    this.interpolationFunction
-                )
+            (before, i) => {
+                if (before.animationClass) { 
+                    return new before.animationClass(
+                        before,
+                        this.resolvedAfter._objects[i],
+                        this.duration,
+                        this.backwards,
+                        this.cacheFrames,
+                        this.interpolationFunction
+                    )
+                }
+                throw Error(`Cannot generate an animation for object ${before} because there is no compatible animation class.`);
+            }
         );
     }
 
-    frame(t: number): WanimCollection {
+    frame(t: number): LorentzCollection {
         if (t <= 0) return this.backwards ? this.after : this.before;
         if (t >= this.duration) return this.backwards ? this.before : this.after;
 
-        return new WanimCollection(
+        return new LorentzCollection(
             this.animations.map((animation) => animation.frame(t)),
             this.before._keepRotationCenters
         );

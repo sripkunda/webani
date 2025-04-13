@@ -1,9 +1,9 @@
 import { RenderedCollection } from "../animations/rendered-collection.class";
 import { ObjectLike } from "../objects/object-like.type";
-import { WanimCollection } from "../objects/wanim-collection.class";
-import { WanimPolygonObject } from "../polygon/wanim-polygon.class";
+import { LorentzCollection } from "../objects/lorentz-collection.class";
+import { LorentzPrimitiveObject } from "../objects/lorentz-primitive-object.class";
 
-export class WanimScene {
+export class LorentzScene {
 
     _members: ObjectLike[] = [];
 
@@ -11,12 +11,12 @@ export class WanimScene {
         this._members = members;
     }
 
-    get objects(): WanimPolygonObject[] {
+    get objects(): LorentzPrimitiveObject[] {
         return this._members.map(x  => {
             if (x instanceof RenderedCollection) {
                 x = x.collection;
             }
-            if (x instanceof WanimCollection) {
+            if (x instanceof LorentzCollection) {
                 return x._objects;
             }
             return x;
@@ -28,12 +28,12 @@ export class WanimScene {
         return this._members.length - 1;
     }
 
-    remove(object: ObjectLike): WanimScene {
+    remove(object: ObjectLike): LorentzScene {
         this._members = this.objects.filter(x => x !== object);
         return this;
     }
 
-    clear(): WanimScene { 
+    clear(): LorentzScene { 
         this._members = [];
         return this;
     }

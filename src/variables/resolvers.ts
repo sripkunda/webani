@@ -1,19 +1,19 @@
 import { Value } from "./value.type";
-import { WanimVariable } from "./wanim-variable.class";
+import { LorentzVariable } from "./lorentz-variable.class";
 
-export const ResolveWanimVariables = (...vars: Value<unknown>[]) => {
+export const ResolveLorentzVariables = (...vars: Value<unknown>[]) => {
     const resolvedVars: unknown[] = [];
     for (const arg of vars) {
-        resolvedVars.push(arg instanceof WanimVariable ? arg.value : arg);
+        resolvedVars.push(arg instanceof LorentzVariable ? arg.value : arg);
     }
     return resolvedVars;
 }
 
 export const ExecuteWhenSetFromSelf = (funct: (...args: unknown[]) => unknown, ...vars: Value<unknown>[]) => { 
   for (const arg of vars) { 
-    if (arg instanceof WanimVariable) {
+    if (arg instanceof LorentzVariable) {
       arg.onValueSetFromSelf(() => {
-        funct(...ResolveWanimVariables(...vars));
+        funct(...ResolveLorentzVariables(...vars));
       });
     }
   }
@@ -21,9 +21,9 @@ export const ExecuteWhenSetFromSelf = (funct: (...args: unknown[]) => unknown, .
 
 export const ExecuteWhenSetFromParent = (funct: (...args: unknown[]) => unknown, ...vars: Value<unknown>[]) => { 
     for (const arg of vars) { 
-      if (arg instanceof WanimVariable) {
+      if (arg instanceof LorentzVariable) {
         arg.onValueSetFromParent(() => {
-          funct(...ResolveWanimVariables(...vars));
+          funct(...ResolveLorentzVariables(...vars));
         });
       }
     }

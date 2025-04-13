@@ -1,126 +1,48 @@
 import { ObjectLike } from "../objects/object-like.type";
-import { WanimCollection } from "../objects/wanim-collection.class";
-import { WanimPolygonObject } from "../polygon/wanim-polygon.class";
+import { LorentzCollection } from "../objects/lorentz-collection.class";
 import { VectorUtils } from "../util/vectors/vector.utils";
 import { Vector3 } from "../util/vectors/vector3.type";
 import { AnimationSet } from "./animation-set.class";
-import { CollectionSlice } from "./collection-slice.type";
-import { WanimCollectionAnimation } from "./wanim-collection-animation.class";
-import { WanimInterpolatedAnimation } from "./wanim-interpolated-animation.class";
+import { LorentzCollectionAnimation } from "./lorentz-collection-animation.class";
+import { LorentzInterpolatedAnimation } from "./lorentz-interpolated-animation.class";
+import { LorentzPrimitiveObject } from "../objects/lorentz-primitive-object.class";
+import { LorentzAnimation } from "./lorentz-animation.class";
 
-function getAllRenderedCollections(obj: object): RenderedCollection[] {
-    let values: RenderedCollection[] = [];
-  
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        if (obj[key] instanceof RenderedCollection){
-            values.push(obj[key]);   
-        }
-        else if (obj[key] instanceof Object) {
-          values = values.concat(getAllRenderedCollections(obj[key])); 
-        }
-      }
-    }
-  
-    return values;
-}
-
-export class RenderedCollection {
-    private _collection: WanimCollection;
+export class RenderedCollection extends LorentzAnimation {
+    private _collection: LorentzCollection;
     private keepRotationalCentersOverride?: boolean;
-    animations: AnimationSet;
-
-    [key: string]: unknown;
+    animationSet: AnimationSet;
 
     constructor(collection: ObjectLike, keepRotationalCentersOverride?: boolean) {
+        super();
         if (collection instanceof RenderedCollection) return collection;
-        this._collection = collection instanceof WanimPolygonObject ? new WanimCollection(collection) : collection;
+        this._collection = collection instanceof LorentzPrimitiveObject ? new LorentzCollection(collection) : collection;
         this.keepRotationalCentersOverride = keepRotationalCentersOverride;
-        this.animations = new AnimationSet();
+        this.animationSet = new AnimationSet();
     }
 
-    static Group(object: object, parentCollection?: RenderedCollection, subcollectionSlice?: ((object: RenderedCollection) => CollectionSlice)): RenderedCollection {
-        if (!(object instanceof Object)) return;
-        let renderedCollection: RenderedCollection; 
-        const subcollections = getAllRenderedCollections(object);
-        if (object instanceof RenderedCollection) {
-            renderedCollection = object;
-        } else {
-            const collections = subcollections.map(x => x.collection);
-            const indices: number[] = [];
-            let sum = 0;
-            for (const collection of collections) { 
-                indices.push(sum);
-                sum += collection._objects.length;
-            }
-            const getSubcollectionSlice = (object: RenderedCollection): CollectionSlice => {
-                const i = subcollections.indexOf(object);
-                if (i < 0) 
-                    return {
-                        start: -1,
-                        count: 0
-                    };
-                const start = indices[i];
-                const end =  i + 1 >= indices.length ? renderedCollection.collection._objects.length : indices[i + 1];
-                return {
-                    start: start,
-                    count: end - start
-                }
-            }
+    done(t: number) { return this.animationSet.done(t) };
+    frame(t: number) { return this.animationSet.frame(t) };
 
-            const groupedCollection = new WanimCollection(collections);
-            renderedCollection = new RenderedCollection(groupedCollection, false);
-            for (const key in object) {
-                renderedCollection[key] = RenderedCollection.Group(object[key], renderedCollection, getSubcollectionSlice);
-            }
-        }
-
-        if (parentCollection && subcollectionSlice) { 
-            const slices: CollectionSlice[] = subcollections.length == 0 && object instanceof RenderedCollection ? [subcollectionSlice(object)] : [];
-            for (const collection of subcollections) { 
-                const slice = subcollectionSlice(collection);
-                if (slice.count < 1) continue;
-                slices.push(slice);
-            }
-    
-            renderedCollection.onAnimationAdded((animation, asynchronous) => {
-                const beforeObjects = parentCollection.collection.copy._objects;
-                const afterObjects = parentCollection.collection.copy._objects;
-                let i = 0;
-                for (const slice of slices) {
-                    for (let j = 0; j < slice.count; j++, i++)  {
-                        beforeObjects[slice.start + j] = animation._before._objects[i];
-                        afterObjects[slice.start + j] = animation._after._objects[i];
-                    }
-                }
-                const beforeCollection = new WanimCollection(beforeObjects, true);
-                const afterCollection = new WanimCollection(afterObjects, true);
-                parentCollection._addAnimation(new WanimCollectionAnimation(beforeCollection, afterCollection, animation.duration, animation.backwards, animation.cacheFrames, animation.interpolationFunction), asynchronous);
-            });
-        }
-
-        return renderedCollection;
+    get collection(): LorentzCollection {
+        return new LorentzCollection(this._collection, this._keepRotationCenters);
     }
 
-    get collection(): WanimCollection {
-        return new WanimCollection(this._collection, this._keepRotationCenters);
-    }
-
-    onAnimationAdded(handler: (animation: WanimCollectionAnimation, asynchronous: boolean) => void): void {
-        this.animations.onAnimationAdded(handler);
+    onAnimationAdded(handler: (animation: LorentzCollectionAnimation, asynchronous: boolean) => void): void {
+        this.animationSet.onAnimationAdded(handler);
     }
 
     get animated(): boolean {
-        return this.animations.length > 0;
+        return this.animationSet.length > 0;
     }
 
     get _keepRotationCenters(): boolean {
         return this.keepRotationalCentersOverride !== undefined ? this.keepRotationalCentersOverride : this._collection._keepRotationCenters;
     }
 
-    _addAnimation(animation: WanimCollectionAnimation, asynchronous: boolean = false) {
+    _addAnimation(animation: LorentzCollectionAnimation, asynchronous: boolean = false) {
         if (animation.duration > 0) {
-            this.animations.addAnimation(animation, asynchronous);
+            this.animationSet.addAnimation(animation, asynchronous);
         }
         this._collection = animation.after;
         return this;
@@ -130,7 +52,7 @@ export class RenderedCollection {
         this.FadeOut(0);
     }
 
-    SetRotation(angle: number, center?: Vector3) { 
+    SetRotation(angle: Vector3, center?: Vector3) { 
         return this.Rotate(angle, 0, center);
     }
 
@@ -142,40 +64,38 @@ export class RenderedCollection {
         const beforeObjects = this.collection._objects.map((object) => {
             const b = object.copy;
             if (!keepInitialOpacity) {
-                b.opacity = 0;
+                b.material.opacity = 0;
             }
             return b;
         });
         const afterObjects = this.collection._objects.map((object) => {
             const b = object.copy;
-            b.opacity = 1;
+            b.material.opacity = 1;
             return b;
         });
-        const before = new WanimCollection(beforeObjects, this._keepRotationCenters);
-        const after = new WanimCollection(afterObjects, this._keepRotationCenters);
-        return this._addAnimation(new WanimCollectionAnimation(before, after, duration), asynchronous);
+        const before = new LorentzCollection(beforeObjects, this._keepRotationCenters);
+        const after = new LorentzCollection(afterObjects, this._keepRotationCenters);
+        return this._addAnimation(new LorentzCollectionAnimation(before, after, duration), asynchronous);
     }
 
     FadeOut(duration: number = 1000, asynchronous: boolean = false) {
         const afterObjects = this.collection._objects.map((object) => {
             const a = object.copy;
-            a.opacity = 0;
+            a.material.opacity = 0;
             return a;
         });
-        const after = new WanimCollection(afterObjects, this._keepRotationCenters);
-        return this._addAnimation(new WanimCollectionAnimation(this.collection, after, duration), asynchronous);
+        const after = new LorentzCollection(afterObjects, this._keepRotationCenters);
+        return this._addAnimation(new LorentzCollectionAnimation(this.collection, after, duration), asynchronous);
     }
 
     Scale(factor: Vector3, duration: number = 1000, asynchronous: boolean = false, backwards: boolean = false) {
-        const center = this.collection.center;
         const afterObjects = this.collection._objects.map((object) => {
             const after = object.copy;
-            after.filledPoints = after.filledPoints.map((x) => x.map((y, i) => (y - center[i]) * factor[i] + center[i])) as Vector3[];
-            after.holes = after.holes.map(points => points.map((x) => x.map((y, i) => (y - center[i]) * factor[i] + center[i]))) as Vector3[][];
+            after.scaleBy(factor);
             return after;
         });
-        const after = new WanimCollection(afterObjects, this._keepRotationCenters);
-        return this._addAnimation(new WanimCollectionAnimation(this.collection, after, duration, backwards), asynchronous);
+        const after = new LorentzCollection(afterObjects, this._keepRotationCenters);
+        return this._addAnimation(new LorentzCollectionAnimation(this.collection, after, duration, backwards), asynchronous);
     }
 
     ZoomIn(duration: number = 1000, asynchronous: boolean = false) {
@@ -194,55 +114,55 @@ export class RenderedCollection {
             copy.material.color = newColor;
             return copy;
         });
-        const after = new WanimCollection(afterObjects);
-        return this._addAnimation(new WanimCollectionAnimation(this.collection, after, duration), asynchronous)
+        const after = new LorentzCollection(afterObjects);
+        return this._addAnimation(new LorentzCollectionAnimation(this.collection, after, duration), asynchronous)
     }
 
     TransformInto(after: ObjectLike, duration: number = 800, asynchronous: boolean = false) {
         after = new RenderedCollection(after);
-        return this._addAnimation(new WanimCollectionAnimation(this.collection, after.collection, duration, false, true), asynchronous);
+        return this._addAnimation(new LorentzCollectionAnimation(this.collection, after.collection, duration, false, true), asynchronous);
     }
 
     MoveCenterTo(position: Vector3, duration: number = 1000, asynchronous: boolean = false) {
-        return this._addAnimation(new WanimCollectionAnimation(this.collection, this.collection.copyCenteredAt(position), duration), asynchronous);
+        return this._addAnimation(new LorentzCollectionAnimation(this.collection, this.collection.setAnchor(position), duration), asynchronous);
     }
 
     Move(offset: Vector3, duration: number = 1000, asynchronous: boolean = false) {
-        offset = VectorUtils.convertPointTo3D(offset);
         const newCenter = VectorUtils.add(this.collection.center, offset)
         return this.MoveCenterTo(newCenter, duration, asynchronous);
     }
 
-    Rotate(angle: number, duration: number = 1000, center?: Vector3, asynchronous: boolean = false) {
+    Rotate(rotation: Vector3, duration: number = 1000, center?: Vector3, asynchronous: boolean = false) {
         const afterObjects = this.collection._objects.map(obj => {
-            const a = obj.rotatedCopy(angle, center, 2);
+            const a = obj.copy;
+            a.rotate(rotation);
             return a;
         });
-        const after = new WanimCollection(afterObjects, this._keepRotationCenters);
-        return this._addAnimation(new WanimCollectionAnimation(this.collection, after, duration), asynchronous);
+        const after = new LorentzCollection(afterObjects, this._keepRotationCenters);
+        return this._addAnimation(new LorentzCollectionAnimation(this.collection, after, duration), asynchronous);
     }
 
     FadeInDelayed(duration: number = 1000, keepInitialOpacity: boolean = false) {
         const beforeObjects = this.collection._objects.map((object) => {
             const b = object.copy;
             if (!keepInitialOpacity) {
-                b.opacity = 0;
+                b.material.opacity = 0;
             }
             return b;
         });
-        let before = new WanimCollection(beforeObjects, this._keepRotationCenters);
+        let before = new LorentzCollection(beforeObjects, this._keepRotationCenters);
         const objectDuration = duration / this.collection._objects.length;
         const after = before.copy;
         for (const i in after._objects) {
-            after._objects[i].opacity = 1;
+            after._objects[i].material.opacity = 1;
             const afterCollection = after.copy;
-            this._addAnimation(new WanimCollectionAnimation(before, afterCollection, objectDuration, false, false, WanimInterpolatedAnimation.lerp));
+            this._addAnimation(new LorentzCollectionAnimation(before, afterCollection, objectDuration, false, false, LorentzInterpolatedAnimation.lerp));
             before = afterCollection;
         }
         return this;
     }
 
     Wait(duration: number) {
-        return this._addAnimation(new WanimCollectionAnimation(this.collection, this.collection, duration));
+        return this._addAnimation(new LorentzCollectionAnimation(this.collection, this.collection, duration));
     }
 }

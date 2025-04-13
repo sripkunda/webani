@@ -1,5 +1,5 @@
 import { ObjectLike } from "../objects/object-like.type";
 import { RenderedCollection } from "./rendered-collection.class";
-import { WanimAnimation } from "./wanim-animation.class";
+import { LorentzAnimation } from "./lorentz-animation.class";
 
-export type Playable = ObjectLike | WanimAnimation | RenderedCollection;
+export type Playable = ObjectLike | LorentzAnimation | RenderedCollection;
