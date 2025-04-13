@@ -1,7 +1,7 @@
-import { LorentzAnimatable } from "./lorentz-animatable.type";
-import { LorentzAnimation } from "./lorentz-animation.class";
+import { WebaniAnimatable } from "../types/webani-animatable.type";
+import { WebaniAnimation } from "./webani-animation.class";
 
-export abstract class LorentzInterpolatedAnimation<T extends LorentzAnimatable> extends LorentzAnimation {
+export abstract class WebaniInterpolatedAnimation<T extends WebaniAnimatable> extends WebaniAnimation {
     _before!: T;
     _after!: T;
     duration!: number;
@@ -22,7 +22,7 @@ export abstract class LorentzInterpolatedAnimation<T extends LorentzAnimatable> 
         this._after = after;
         this.duration = duration;
         this.backwards = backwards;
-        this.interpolationFunction = interpolationFunction || LorentzInterpolatedAnimation.easeInOut;
+        this.interpolationFunction = interpolationFunction || WebaniInterpolatedAnimation.easeInOut;
         this._resolveAnimation();
     }
 
@@ -62,10 +62,10 @@ export abstract class LorentzInterpolatedAnimation<T extends LorentzAnimatable> 
     }
 
     static cubic(before: number, after: number, t: number): number {
-        return LorentzInterpolatedAnimation.lerp(before, after, Math.pow(t, 3));
+        return WebaniInterpolatedAnimation.lerp(before, after, Math.pow(t, 3));
     }
 
     static easeInOut(before: number, after: number, t: number): number {
-        return LorentzInterpolatedAnimation.lerp(before, after, 0.5 * (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, t)))));
+        return WebaniInterpolatedAnimation.lerp(before, after, 0.5 * (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, t)))));
     }
 }

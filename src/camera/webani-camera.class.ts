@@ -1,9 +1,9 @@
-import { Matrix4 } from "../util/matrices/matrix.type";
-import { MatrixUtils } from "../util/matrices/matrix.utils";
-import { VectorUtils } from "../util/vectors/vector.utils";
-import { Vector3 } from "../util/vectors/vector3.type";
+import { Matrix4 } from "../types/matrix4.type";
+import { MatrixUtils } from "../util/matrix.utils";
+import { VectorUtils } from "../util/vector.utils";
+import { Vector3 } from "../types/vector3.type";
 
-export class LorentzCamera {
+export class WebaniCamera {
     position: Vector3;
     rotation: Vector3; 
     fov: number;
@@ -62,6 +62,6 @@ export class LorentzCamera {
     }
 
     get copy() {
-        return new LorentzCamera(this.position, this.rotation, this.fov, this.near, this.far);
+        return new WebaniCamera(this.position, this.rotation, this.fov, this.near, this.far);
     }
 }

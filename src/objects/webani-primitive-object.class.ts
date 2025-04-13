@@ -1,25 +1,25 @@
-import { LorentzInterpolatedAnimation } from "../animations/lorentz-interpolated-animation.class";
+import { WebaniInterpolatedAnimation } from "../animations/webani-interpolated-animation.class";
 import { Colors } from "../api/colors";
-import { LorentzMaterial } from "../lighting/lorentz-material.class";
-import { Matrix4 } from "../util/matrices/matrix.type";
-import { MatrixUtils } from "../util/matrices/matrix.utils";
-import { VectorUtils } from "../util/vectors/vector.utils";
-import { Vector3 } from "../util/vectors/vector3.type";
+import { WebaniMaterial } from "../lighting/webani-material.class";
+import { Matrix4 } from "../types/matrix4.type";
+import { MatrixUtils } from "../util/matrix.utils";
+import { VectorUtils } from "../util/vector.utils";
+import { Vector3 } from "../types/vector3.type";
 
-export abstract class LorentzPrimitiveObject { 
+export abstract class WebaniPrimitiveObject { 
     
     position: Vector3;
     rotation: Vector3;
     scale: Vector3;
     _rotationCenterOverride?: Vector3;
-    material: LorentzMaterial;
+    material: WebaniMaterial;
 
-    constructor(position: Vector3 = [0, 0, 0], rotation: Vector3 = [0, 0, 0], scale: Vector3 = [1, 1, 1], rotationalCenter?: Vector3, material?: LorentzMaterial, cachedNormals?: Vector3[]) { 
+    constructor(position: Vector3 = [0, 0, 0], rotation: Vector3 = [0, 0, 0], scale: Vector3 = [1, 1, 1], rotationalCenter?: Vector3, material?: WebaniMaterial, cachedNormals?: Vector3[]) { 
         this.position = position;
         this.rotation = rotation;
         this.scale = scale;
         this._rotationCenterOverride = rotationalCenter;
-        this.material = material || new LorentzMaterial(Colors.WHITE);
+        this.material = material || new WebaniMaterial(Colors.WHITE);
     }
 
     get rotationCenter() {
@@ -30,10 +30,10 @@ export abstract class LorentzPrimitiveObject {
         this._rotationCenterOverride = value
     }
 
-    abstract animationClass?: new (...args: unknown[]) => LorentzInterpolatedAnimation<LorentzPrimitiveObject>;
+    abstract animationClass?: new (...args: unknown[]) => WebaniInterpolatedAnimation<WebaniPrimitiveObject>;
     abstract get _triangulation(): Vector3[];
     abstract get _normals(): Vector3[];
-    abstract get copy(): LorentzPrimitiveObject;
+    abstract get copy(): WebaniPrimitiveObject;
     abstract get center(): Vector3;
 
     get modelMatrix(): Matrix4 {

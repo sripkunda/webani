@@ -1,9 +1,9 @@
 import { RenderedCollection } from "../animations/rendered-collection.class";
-import { ObjectLike } from "../objects/object-like.type";
-import { LorentzCollection } from "../objects/lorentz-collection.class";
-import { LorentzPrimitiveObject } from "../objects/lorentz-primitive-object.class";
+import { ObjectLike } from "../types/object-like.type";
+import { WebaniCollection } from "../objects/webani-collection.class";
+import { WebaniPrimitiveObject } from "../objects/webani-primitive-object.class";
 
-export class LorentzScene {
+export class WebaniScene {
 
     _members: ObjectLike[] = [];
 
@@ -11,12 +11,12 @@ export class LorentzScene {
         this._members = members;
     }
 
-    get objects(): LorentzPrimitiveObject[] {
+    get objects(): WebaniPrimitiveObject[] {
         return this._members.map(x  => {
             if (x instanceof RenderedCollection) {
                 x = x.collection;
             }
-            if (x instanceof LorentzCollection) {
+            if (x instanceof WebaniCollection) {
                 return x._objects;
             }
             return x;
@@ -28,12 +28,12 @@ export class LorentzScene {
         return this._members.length - 1;
     }
 
-    remove(object: ObjectLike): LorentzScene {
+    remove(object: ObjectLike): WebaniScene {
         this._members = this.objects.filter(x => x !== object);
         return this;
     }
 
-    clear(): LorentzScene { 
+    clear(): WebaniScene { 
         this._members = [];
         return this;
     }

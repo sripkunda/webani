@@ -1,7 +1,7 @@
 import earcut from "earcut";
-import { Vector3 } from "../vectors/vector3.type";
+import { Vector3 } from "../types/vector3.type";
 import 'mathjax/es5/tex-svg';
-import { Vector2 } from "../vectors/vector2.type";
+import { Vector2 } from "../types/vector2.type";
 
 export const triangulate = (points: number[], holes: number[]) => {
     return earcut(points, holes);

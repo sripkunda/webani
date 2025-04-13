@@ -1,16 +1,17 @@
 import { RenderedCollection } from "../animations/rendered-collection.class";
-import { VectorUtils } from "../util/vectors/vector.utils";
-import { Vector3 } from "../util/vectors/vector3.type";
-import { ObjectLike } from "./object-like.type";
-import { LorentzPolygon } from "../polygon/lorentz-polygon.class";
-import { LorentzPrimitiveObject } from "./lorentz-primitive-object.class";
+import { VectorUtils } from "../util/vector.utils";
+import { Vector3 } from "../types/vector3.type";
+import { ObjectLike } from "../types/object-like.type";
+import { WebaniPolygon } from "../polygon/webani-polygon.class";
+import { WebaniPrimitiveObject } from "./webani-primitive-object.class";
+import { WebaniCollectionAnimation } from "../animations/webani-collection-animation.class";
 
-export class LorentzCollection {
-    _objects: LorentzPrimitiveObject[];
+export class WebaniCollection {
+    _objects: WebaniPrimitiveObject[];
     _keepRotationCenters: boolean;
 
     constructor(objects: ObjectLike | ObjectLike[], keepRotationCenters = false) {
-        if (objects instanceof LorentzCollection) { 
+        if (objects instanceof WebaniCollection) { 
             return objects;
         }
         this._objects = [];
@@ -22,15 +23,17 @@ export class LorentzCollection {
         }
     }
 
-    setAnchor(newCenter: Vector3): LorentzCollection {
+    animationClass = WebaniCollectionAnimation
+
+    setAnchor(newCenter: Vector3): WebaniCollection {
         const copy = this.copy;
         const center = this.center;
         copy._objects = copy._objects.map((obj) => obj.copyCenteredAt(VectorUtils.add(obj.center, VectorUtils.subtract(newCenter, center))));
         return copy;
     }
 
-    get copy(): LorentzCollection {
-        return new LorentzCollection(this._objects.map((obj) => obj.copy), this._keepRotationCenters);
+    get copy(): WebaniCollection {
+        return new WebaniCollection(this._objects.map((obj) => obj.copy), this._keepRotationCenters);
     }
 
     get center(): Vector3 {
@@ -39,9 +42,9 @@ export class LorentzCollection {
 
     add(...newObjects: ObjectLike[]): number {
         for (const object of newObjects) {
-            if (object instanceof LorentzPolygon) {
+            if (object instanceof WebaniPolygon) {
                 this._objects.push(object.copy);
-            } else if (object instanceof LorentzCollection) {
+            } else if (object instanceof WebaniCollection) {
                 this._objects.push(...object.copy._objects);
             } else if (object instanceof RenderedCollection) {
                 this._objects.push(...object.collection._objects);
@@ -55,7 +58,7 @@ export class LorentzCollection {
         return this._objects.length - 1;
     }
 
-    remove(object: LorentzPolygon): this {
+    remove(object: WebaniPolygon): this {
         this._objects = this._objects.filter((x) => x !== object);
         return this;
     }

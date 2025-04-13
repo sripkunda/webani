@@ -1,13 +1,13 @@
 import { Colors } from "../colors";
-import { Vector3 } from "../../util/vectors/vector3.type";
+import { Vector3 } from "../../types/vector3.type";
 import { Component } from "./component.class";
-import { LorentzPolygon } from "../../polygon/lorentz-polygon.class";
-import { LorentzMaterial } from "../../lighting/lorentz-material.class";
+import { WebaniPolygon } from "../../polygon/webani-polygon.class";
+import { WebaniMaterial } from "../../lighting/webani-material.class";
 
 export class PolygonComponent extends Component {
-    objectConstructor(points: Vector3[], color = Colors.WHITE, opacity = 1): LorentzPolygon {
-        const object = new LorentzPolygon([0, 0, 0], points, []);
-        object.material = LorentzMaterial.fromColorAndOpacity(color, opacity);
+    objectConstructor(points: Vector3[], color = Colors.WHITE, opacity = 1): WebaniPolygon {
+        const object = new WebaniPolygon([0, 0, 0], points, []);
+        object.material = WebaniMaterial.fromColorAndOpacity(color, opacity);
         return object;
     }
 }

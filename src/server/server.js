@@ -1,82 +1,79 @@
-const express = require('express');
-const path = require('path');
 const fs = require('fs');
-const bodyParser = require('body-parser');
+const path = require('path');
 const webpack = require('webpack');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const chokidar = require('chokidar');
+const http = require('http');
+const WebSocket = require('ws');
+const config = require('./webpack.config');
 
-const args = process.argv.slice(2); // Skip the first two arguments (node and script path)
+const args = process.argv.slice(2);
 
-if (args.length === 0) {
-    throw Error('Please specify a file for your animation scripts.');
-} 
-
-const filePath = args[0];
-
-const config = {
-    entry: {
-        start: path.join(__dirname, 'start.ts'), 
-        main: {
-            dependOn: 'start',
-            import: filePath
-        }
-    },
-    module: {
-      rules: [
-        {
-            test: /\.(vert|frag|glsl)$/,
-            type: "asset/source"
-        },
-        {
-          test: /\.ts?$/,
-          use: 'ts-loader',
-          exclude: /node_modules/,
-        },
-      ],
-    },
-    output: {
-      filename: '[name].js',
-      path: path.resolve(__dirname, 'dist'),
-    },
-    resolve: {
-      extensions: ['.ts', '.js'],
-    },
-    mode: "development",
-    plugins: [
-        new HtmlWebpackPlugin({
-            template: path.join(__dirname, 'index.html'),
-            filename: 'index.html',
-        }),
-    ],
-};
-
-// Initialize express
-const app = express();
-
-// Middleware to parse JSON bodies
-app.use(bodyParser.json());
-
-// Serve static files from the "dist" directory
-app.use(express.static(path.join(__dirname, 'dist')));
-
-function build() { 
-    console.log("\x1b[36m", "[Log: Building Animations]", "\x1b[0m");
-    webpack(config, (err, stats) => {
-        if (err || stats.hasErrors()) {
-            console.log("\x1b[31m", 'A webpack error occurred:', err || stats.toJson().errors, "\x1b[0m");
-            return;
-        }
-        console.log("\x1b[32m", '[Log: Updated Animations]', "\x1b[0m");
-    });
+if (args.length > 0) {
+    config.entry.main.import = args[0];
 }
 
-chokidar.watch('.').on('change', (event, path) => {
-    build();
-});  
+const publicDir = path.join(__dirname, 'dist');
 
-build();
+const mimeTypes = {
+  '.html': 'text/html',
+  '.js': 'application/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.wasm': 'application/wasm',
+  '.glsl': 'text/plain',
+};
 
-app.listen(3000, () => {
-    console.log("\x1b[36m", '[Log: Server Started at http://localhost:3000]', "\x1b[0m");
+const server = http.createServer((req, res) => {
+  let filePath = path.join(publicDir, req.url === '/' ? 'index.html' : req.url);
+
+  // Prevent directory traversal attacks
+  if (!filePath.startsWith(publicDir)) {
+    res.writeHead(403);
+    return res.end('Access denied');
+  }
+
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      res.writeHead(404);
+      return res.end('404 Not Found');
+    }
+
+    const ext = path.extname(filePath);
+    const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+    res.writeHead(200, { 'Content-Type': contentType });
+    res.end(data);
+  });
+});
+
+const wss = new WebSocket.Server({ server });
+
+const compiler = webpack(config);
+let sockets = [];
+
+// WebSocket handling
+wss.on('connection', (socket) => {
+    sockets.push(socket);
+    socket.on('close', () => {
+        sockets = sockets.filter(s => s !== socket);
+    });
+});
+
+// Start server
+server.listen(3000, () => {
+    console.log('\x1b[36m', '[Log: Server Started at http://localhost:3000]', '\x1b[0m');
+    compiler.watch({}, (err, stats) => {
+        if (err || stats.hasErrors()) {
+            console.error('\x1b[31m', 'A webpack error occurred:', err || stats.toJson().errors, '\x1b[0m');
+            return;
+        }
+    
+        sockets.forEach((socket) => {
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send('reload');
+            }
+        });
+    });
 });

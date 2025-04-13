@@ -1,6 +1,6 @@
 import { ChangeHandler } from "./change-handler.type";
 
-export class LorentzVariable<T> {
+export class WebaniVariable<T> {
 
     [key: string]: unknown;
     _onValueSetFromSelf: ChangeHandler<T>[] = [];
@@ -10,45 +10,45 @@ export class LorentzVariable<T> {
     
 
     constructor(value: T) {
-        if (value instanceof LorentzVariable) {
+        if (value instanceof WebaniVariable) {
             return value;
         }
         this._onValueSetFromSelf = [];
         this._onValueSetFromParent = [];
         if (value instanceof Function) {
             this._allowChangeValue = false;
-            LorentzVariable.startLogging();
+            WebaniVariable.startLogging();
             const handler = () => {
                 this._valueFromParent = value();
             }
             handler();
-            LorentzVariable.readLogs.forEach(x => {
+            WebaniVariable.readLogs.forEach(x => {
                 x.onValueSetFromParent(handler);
             });
-            LorentzVariable.readLogs.forEach(x => {
+            WebaniVariable.readLogs.forEach(x => {
                 x.onValueSetFromSelf(handler)
             });
-            LorentzVariable.stopLogging();
+            WebaniVariable.stopLogging();
         } else {
             this.value = value;
         }
     }
 
-    static readLogs: LorentzVariable<unknown>[] = [];
+    static readLogs: WebaniVariable<unknown>[] = [];
     static logReads: boolean = false;
 
     static startLogging() {
-        LorentzVariable.logReads = true;
+        WebaniVariable.logReads = true;
     }
 
     static stopLogging() {
-        LorentzVariable.logReads = false;
-        LorentzVariable.readLogs = [];
+        WebaniVariable.logReads = false;
+        WebaniVariable.readLogs = [];
     }
 
-    static valueRequested(variable: LorentzVariable<unknown> | undefined) {
-        if (variable && LorentzVariable.logReads) {
-            LorentzVariable.readLogs.push(variable);
+    static valueRequested(variable: WebaniVariable<unknown> | undefined) {
+        if (variable && WebaniVariable.logReads) {
+            WebaniVariable.readLogs.push(variable);
         }
     }
 
@@ -75,9 +75,9 @@ export class LorentzVariable<T> {
         if (val instanceof Object) {
             for (const key in val) {
                 if (key in this) {
-                    (this[key] as LorentzVariable<unknown>)._valueFromParent = val[key];
+                    (this[key] as WebaniVariable<unknown>)._valueFromParent = val[key];
                 } else {
-                    this[key as string] = new LorentzVariable(val[key]);
+                    this[key as string] = new WebaniVariable(val[key]);
                 }
             }
         }
@@ -89,7 +89,7 @@ export class LorentzVariable<T> {
     }
 
     get value(): T | undefined {
-        LorentzVariable.valueRequested(this);
+        WebaniVariable.valueRequested(this);
         return this._value;
     }
 }

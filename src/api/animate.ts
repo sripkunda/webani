@@ -1,27 +1,27 @@
-import { Playable } from "../animations/playable.type";
-import { LorentzPolygonAnimation } from "../animations/lorentz-polygon-animation.class";
+import { Playable } from "../types/playable.type";
+import { WebaniPolygonAnimation } from "../animations/webani-polygon-animation.class";
 import { _defaultCanvas, setDefaultCanvas } from "../canvas/default-canvas";
-import { LorentzCanvas } from "../canvas/lorentz-canvas.class";
-import { LorentzPolygon } from "../polygon/lorentz-polygon.class";
-import { LorentzVariable } from "../variables/lorentz-variable.class";
+import { WebaniCanvas } from "../canvas/webani-canvas.class";
+import { WebaniPolygon } from "../polygon/webani-polygon.class";
+import { WebaniVariable } from "../variables/webani-variable.class";
 
 export const LoadCanvas = async function (...canvases: HTMLCanvasElement[]) {
-    const lorentzCanvases = await new Promise<LorentzCanvas[]>(resolve => {
-        const loadedLorentzCanvases = canvases.map(canvas => new LorentzCanvas(canvas));
+    const webaniCanvases = await new Promise<WebaniCanvas[]>(resolve => {
+        const loadedWebaniCanvases = canvases.map(canvas => new WebaniCanvas(canvas));
         if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", () => resolve(loadedLorentzCanvases));
+            document.addEventListener("DOMContentLoaded", () => resolve(loadedWebaniCanvases));
         } else {
-            resolve(loadedLorentzCanvases);
+            resolve(loadedWebaniCanvases);
         }
     });
-    if (lorentzCanvases.length > 0) {
-        setDefaultCanvas(lorentzCanvases[0]);
-        return lorentzCanvases[0];
+    if (webaniCanvases.length > 0) {
+        setDefaultCanvas(webaniCanvases[0]);
+        return webaniCanvases[0];
     }
 }
 
 export const Wait = (duration: number): void => {
-    const animation = new LorentzPolygonAnimation(new LorentzPolygon([], []), new LorentzPolygon([], []), duration);
+    const animation = new WebaniPolygonAnimation(new WebaniPolygon([], []), new WebaniPolygon([], []), duration);
     _defaultCanvas?.play(animation);
 };
 
@@ -29,24 +29,24 @@ export const Play = (...animations: Playable[]): void => {
     _defaultCanvas?.play(...animations);
 };
 
-export const Variable = (value: unknown): LorentzVariable<unknown> => {
-    return new LorentzVariable(value);
+export const Variable = (value: unknown): WebaniVariable<unknown> => {
+    return new WebaniVariable(value);
 }
 
-export const BottomLeft = (lorentzCanvas: LorentzCanvas = _defaultCanvas): [number, number] => {
-    return [-lorentzCanvas.canvas.width, -lorentzCanvas.canvas.height];
+export const BottomLeft = (webaniCanvas: WebaniCanvas = _defaultCanvas): [number, number] => {
+    return [-webaniCanvas.canvas.width, -webaniCanvas.canvas.height];
 };
 
-export const BottomRight = (lorentzCanvas: LorentzCanvas = _defaultCanvas): [number, number] => {
-    return [lorentzCanvas.canvas.width, -lorentzCanvas.canvas.height];
+export const BottomRight = (webaniCanvas: WebaniCanvas = _defaultCanvas): [number, number] => {
+    return [webaniCanvas.canvas.width, -webaniCanvas.canvas.height];
 };
 
-export const TopLeft = (lorentzCanvas: LorentzCanvas = _defaultCanvas): [number, number] => {
-    return [-lorentzCanvas.canvas.width, lorentzCanvas.canvas.height];
+export const TopLeft = (webaniCanvas: WebaniCanvas = _defaultCanvas): [number, number] => {
+    return [-webaniCanvas.canvas.width, webaniCanvas.canvas.height];
 };
 
-export const TopRight = (lorentzCanvas: LorentzCanvas = _defaultCanvas): [number, number] => {
-    return [lorentzCanvas.canvas.width, lorentzCanvas.canvas.height];
+export const TopRight = (webaniCanvas: WebaniCanvas = _defaultCanvas): [number, number] => {
+    return [webaniCanvas.canvas.width, webaniCanvas.canvas.height];
 };
 
 export const Group = (object: object) => {

@@ -1,6 +1,6 @@
-import { Vector2 } from "./vector2.type";
-import { Vector3 } from "./vector3.type";
-import { Vector4 } from "./vector4.type";
+import { Vector2 } from "../types/vector2.type";
+import { Vector3 } from "../types/vector3.type";
+import { Vector4 } from "../types/vector4.type";
 
 export const VectorUtils = {
     center: (points: Vector3[]): Vector3 => {

@@ -1,19 +1,19 @@
 import { Value } from "./value.type";
-import { LorentzVariable } from "./lorentz-variable.class";
+import { WebaniVariable } from "./webani-variable.class";
 
-export const ResolveLorentzVariables = (...vars: Value<unknown>[]) => {
+export const ResolveWebaniVariables = (...vars: Value<unknown>[]) => {
     const resolvedVars: unknown[] = [];
     for (const arg of vars) {
-        resolvedVars.push(arg instanceof LorentzVariable ? arg.value : arg);
+        resolvedVars.push(arg instanceof WebaniVariable ? arg.value : arg);
     }
     return resolvedVars;
 }
 
 export const ExecuteWhenSetFromSelf = (funct: (...args: unknown[]) => unknown, ...vars: Value<unknown>[]) => { 
   for (const arg of vars) { 
-    if (arg instanceof LorentzVariable) {
+    if (arg instanceof WebaniVariable) {
       arg.onValueSetFromSelf(() => {
-        funct(...ResolveLorentzVariables(...vars));
+        funct(...ResolveWebaniVariables(...vars));
       });
     }
   }
@@ -21,9 +21,9 @@ export const ExecuteWhenSetFromSelf = (funct: (...args: unknown[]) => unknown, .
 
 export const ExecuteWhenSetFromParent = (funct: (...args: unknown[]) => unknown, ...vars: Value<unknown>[]) => { 
     for (const arg of vars) { 
-      if (arg instanceof LorentzVariable) {
+      if (arg instanceof WebaniVariable) {
         arg.onValueSetFromParent(() => {
-          funct(...ResolveLorentzVariables(...vars));
+          funct(...ResolveWebaniVariables(...vars));
         });
       }
     }

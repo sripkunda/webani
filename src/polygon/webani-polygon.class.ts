@@ -1,23 +1,23 @@
-import { LorentzPolygonAnimation } from "../animations/lorentz-polygon-animation.class";
-import { LorentzMaterial } from "../lighting/lorentz-material.class";
-import { LorentzPrimitiveObject } from "../objects/lorentz-primitive-object.class";
-import { triangulate } from "../util/geometry/polygon.utils";
-import { MatrixUtils } from "../util/matrices/matrix.utils";
-import { VectorUtils } from "../util/vectors/vector.utils";
-import { Vector3 } from "../util/vectors/vector3.type";
-import { Lorentz2DObjectCache as LorentzPolygonCache } from "./lorentz-polygon-cache.type" 
+import { WebaniPolygonAnimation } from "../animations/webani-polygon-animation.class";
+import { WebaniMaterial } from "../lighting/webani-material.class";
+import { WebaniPrimitiveObject } from "../objects/webani-primitive-object.class";
+import { triangulate } from "../util/polygon.utils";
+import { MatrixUtils } from "../util/matrix.utils";
+import { VectorUtils } from "../util/vector.utils";
+import { Vector3 } from "../types/vector3.type";
+import { Webani2DObjectCache as WebaniPolygonCache } from "./webani-polygon-cache.type" 
 
-export class LorentzPolygon extends LorentzPrimitiveObject {
+export class WebaniPolygon extends WebaniPrimitiveObject {
 
     filledPoints!: Vector3[];
     holes!: Vector3[][];
     opacity!: number;
     rotation!: Vector3;
-    _cache!: LorentzPolygonCache;
-    material!: LorentzMaterial;
-    animationClass = LorentzPolygonAnimation;
+    _cache!: WebaniPolygonCache;
+    material!: WebaniMaterial;
+    animationClass = WebaniPolygonAnimation;
 
-    constructor(position: number[], filledPoints: number[][], holes: number[][][] = [], rotation?: Vector3, scale?: Vector3, cache?: LorentzPolygonCache, rotationCenter?: Vector3, material?: LorentzMaterial) {
+    constructor(position: number[], filledPoints: number[][], holes: number[][][] = [], rotation?: Vector3, scale?: Vector3, cache?: WebaniPolygonCache, rotationCenter?: Vector3, material?: WebaniMaterial) {
         super(VectorUtils.convertPointTo3D(position), rotation, scale, rotationCenter, material);
         this.filledPoints = VectorUtils.convertPointsTo3D(filledPoints);
         this.holes = holes.map(holePoints => VectorUtils.convertPointsTo3D(holePoints))
@@ -43,7 +43,7 @@ export class LorentzPolygon extends LorentzPrimitiveObject {
     }
 
     get copy() {
-        return new LorentzPolygon(this.position, this.filledPoints, this.holes, this.rotation, this.scale, {
+        return new WebaniPolygon(this.position, this.filledPoints, this.holes, this.rotation, this.scale, {
             triangulation: this._cache.triangulation ? [...this._cache.triangulation] : undefined,
             points: [...this._cache.points]
         }, this._rotationCenterOverride, this.material);
@@ -58,7 +58,7 @@ export class LorentzPolygon extends LorentzPrimitiveObject {
     }
 
     get _normals() { 
-        return new Array(this._triangulation.length * 3).fill([0, 0, -1] as Vector3);
+        return new Array(this._triangulation.length * 3).fill([0, 0, 1] as Vector3);
     }
     
     _recomputedTriangulation(): Vector3[] {

@@ -1,6 +1,6 @@
-import { Vector3 } from "../util/vectors/vector3.type";
+import { Vector3 } from "../types/vector3.type";
 
-export class LorentzMaterial {
+export class WebaniMaterial {
     ambient: Vector3;
     diffuse: Vector3;
     specular: Vector3;
@@ -25,7 +25,7 @@ export class LorentzMaterial {
     }
 
     static fromColorAndOpacity(color: Vector3, opacity: number = 1) { 
-        const material = new LorentzMaterial(color)
+        const material = new WebaniMaterial(color)
         material.opacity = opacity;
         return material;
     }

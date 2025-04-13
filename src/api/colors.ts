@@ -1,4 +1,4 @@
-import { Vector3 } from "../util/vectors/vector3.type";
+import { Vector3 } from "../types/vector3.type";
 
 export const Colors: Record<string, Vector3> = {
     // Basic Colors

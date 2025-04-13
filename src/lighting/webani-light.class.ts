@@ -1,7 +1,7 @@
 import { Colors } from "../api/colors";
-import { Vector3 } from "../util/vectors/vector3.type";
+import { Vector3 } from "../types/vector3.type";
 
-export class LorentzLight {
+export class WebaniLight {
     color: Vector3;
     intensity: number;
     position: Vector3;

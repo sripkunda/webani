@@ -1,22 +1,21 @@
-import { RenderedCollection } from "../animations/rendered-collection.class";
-import { LorentzAnimation } from "../animations/lorentz-animation.class";
+import { WebaniAnimation } from "../animations/webani-animation.class";
 import { Colors } from "../api/colors";
-import { Vector3 } from "../util/vectors/vector3.type";
-import { LorentzScene } from "./lorentz-scene.class";
+import { Vector3 } from "../types/vector3.type";
+import { WebaniScene } from "./webani-scene.class";
 import { vertexShader, fragmentShader } from "../shaders/shaders"
-import { Playable } from "../animations/playable.type";
-import { ObjectLike } from "../objects/object-like.type";
-import { LorentzCamera } from "../camera/lorentz-camera.class";
-import { LorentzLight } from "../lighting/lorentz-light.class";
-import { LorentzPrimitiveObject } from "../objects/lorentz-primitive-object.class";
+import { Playable } from "../types/playable.type";
+import { ObjectLike } from "../types/object-like.type";
+import { WebaniCamera } from "../camera/webani-camera.class";
+import { WebaniLight } from "../lighting/webani-light.class";
+import { WebaniPrimitiveObject } from "../objects/webani-primitive-object.class";
 
-export class LorentzCanvas {
+export class WebaniCanvas {
     canvas: HTMLCanvasElement;
     interactive: boolean;
     gl: WebGL2RenderingContext;
     backgroundColor: Vector3;
-    animationQueue: LorentzAnimation[];
-    scene: LorentzScene;
+    animationQueue: WebaniAnimation[];
+    scene: WebaniScene;
     _playing: boolean;
     _onFinishAnimation: (() => void)[];
     video: {
@@ -24,12 +23,12 @@ export class LorentzCanvas {
         mediaRecorder?: MediaRecorder;
     };
     glProgram: WebGLProgram;
-    camera!: LorentzCamera;
-    light: LorentzLight
+    camera!: WebaniCamera;
+    light: WebaniLight
 
     constructor(canvas: HTMLCanvasElement, interactive: boolean = true, backgroundColor: Vector3 = Colors.BLACK) {
         if (!canvas)
-            throw Error("A canvas object must be provided to create a Lorentz canvas element.");
+            throw Error("A canvas object must be provided to create a Webani canvas element.");
 
         this.canvas = canvas;
         this.interactive = interactive;
@@ -38,19 +37,19 @@ export class LorentzCanvas {
         this.animationQueue = [];
 
         if (!this.gl)
-            throw Error("WebGL could not be initialized for Lorentz canvas.");
+            throw Error("WebGL could not be initialized for Webani canvas.");
 
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 
-        this.scene = new LorentzScene();
+        this.scene = new WebaniScene();
         this._clear();
         this._initShaders();
         this._playing = false;
         this._onFinishAnimation = [];
         this.video = {};
-        this.camera = new LorentzCamera();
-        this.light = new LorentzLight();
+        this.camera = new WebaniCamera();
+        this.light = new WebaniLight();
     }
 
     startRecording(): void {
@@ -71,7 +70,7 @@ export class LorentzCanvas {
             const videoURL = URL.createObjectURL(blob);
             const downloadLink = document.createElement('a');
             downloadLink.href = videoURL;
-            downloadLink.download = 'lorentz_output.webm';
+            downloadLink.download = 'webani_output.webm';
             downloadLink.click();
         };
     }
@@ -103,7 +102,7 @@ export class LorentzCanvas {
 
     play(...animations: Playable[]): void {
         for (const animation of animations) {
-            if (animation instanceof LorentzAnimation) {
+            if (animation instanceof WebaniAnimation) {
                 this.addAnimation(animation);
             } else {
                 this._addToScene(animation);
@@ -111,7 +110,7 @@ export class LorentzCanvas {
         }
     }
 
-    addAnimation(animation: LorentzAnimation): void {
+    addAnimation(animation: WebaniAnimation): void {
         this.animationQueue.unshift(animation);
         if (!this._playing)
             this.playAnimationQueue();
@@ -124,7 +123,7 @@ export class LorentzCanvas {
         this.animate(animation);
     }
 
-    animate(animation: LorentzAnimation, playNext: boolean = true): void {
+    animate(animation: WebaniAnimation, playNext: boolean = true): void {
         let t = 0;
         const startTime = Date.now();
         let prevTime = startTime;
@@ -132,7 +131,7 @@ export class LorentzCanvas {
 
         const drawFrame = () => {
             const frame = animation.frame(t);
-            if (frame instanceof LorentzCamera) { 
+            if (frame instanceof WebaniCamera) { 
                 this.camera = frame;
             } else {
                 if (objectIndex === undefined) { 
@@ -165,7 +164,7 @@ export class LorentzCanvas {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
 
-    _draw(object: LorentzPrimitiveObject) {
+    _draw(object: WebaniPrimitiveObject) {
         const vertices = object.triangles;
         const vertexBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);

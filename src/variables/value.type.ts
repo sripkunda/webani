@@ -1,3 +1,3 @@
-import { LorentzVariable } from "./lorentz-variable.class";
+import { WebaniVariable } from "./webani-variable.class";
 
-export type Value<T> = T | LorentzVariable<T>;
+export type Value<T> = T | WebaniVariable<T>;

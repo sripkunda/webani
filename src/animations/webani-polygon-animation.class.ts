@@ -1,18 +1,18 @@
-import { LorentzMaterial } from "../lighting/lorentz-material.class";
-import { LorentzPolygon } from "../polygon/lorentz-polygon.class";
-import { executeInParallel, windingOrderClockwise } from "../util/geometry/polygon.utils";
-import { VectorUtils } from "../util/vectors/vector.utils";
-import { Vector3 } from "../util/vectors/vector3.type";
-import { LorentzInterpolatedAnimation } from "./lorentz-interpolated-animation.class";
+import { WebaniMaterial } from "../lighting/webani-material.class";
+import { WebaniPolygon } from "../polygon/webani-polygon.class";
+import { executeInParallel, windingOrderClockwise } from "../util/polygon.utils";
+import { VectorUtils } from "../util/vector.utils";
+import { Vector3 } from "../types/vector3.type";
+import { WebaniInterpolatedAnimation } from "./webani-interpolated-animation.class";
 
-export class LorentzPolygonAnimation extends LorentzInterpolatedAnimation<LorentzPolygon> {
+export class WebaniPolygonAnimation extends WebaniInterpolatedAnimation<WebaniPolygon> {
     
-    cache: { time: number; object: LorentzPolygon }[] = [];
+    cache: { time: number; object: WebaniPolygon }[] = [];
     cacheFrames: boolean = false;
 
     constructor(
-        before: LorentzPolygon | null, 
-        after: LorentzPolygon | null, 
+        before: WebaniPolygon | null, 
+        after: WebaniPolygon | null, 
         duration: number = 1000,
         backwards: boolean = false, 
         cacheFrames: boolean = false,
@@ -23,29 +23,29 @@ export class LorentzPolygonAnimation extends LorentzInterpolatedAnimation<Lorent
         this._resolveCache();
     }
 
-    get before(): LorentzPolygon {
-        const trueBefore: LorentzPolygon = !this.backwards ? this._before.copy : this._after.copy;
+    get before(): WebaniPolygon {
+        const trueBefore: WebaniPolygon = !this.backwards ? this._before.copy : this._after.copy;
         trueBefore.rotation = trueBefore.rotation.map(x => x % 360) as Vector3; 
         return trueBefore;
     }
 
-    get after(): LorentzPolygon {
-        const trueAfter: LorentzPolygon = !this.backwards ? this._after.copy : this._before.copy;
+    get after(): WebaniPolygon {
+        const trueAfter: WebaniPolygon = !this.backwards ? this._after.copy : this._before.copy;
         trueAfter.rotation = trueAfter.rotation.map(x => x % 360) as Vector3;
         return trueAfter;
     }
 
-    set before(value: LorentzPolygon) { 
+    set before(value: WebaniPolygon) { 
         this._before = value;
         this._resolveAnimation();
     }
 
-    set after(value: LorentzPolygon) { 
+    set after(value: WebaniPolygon) { 
         this._after = value;
         this._resolveAnimation();
     }
 
-    frame(t: number, useCached = this.cacheFrames): LorentzPolygon {
+    frame(t: number, useCached = this.cacheFrames): WebaniPolygon {
         if (useCached) { 
             const cachedFrame = this._cachedFrame(t);
             if (cachedFrame !== undefined) {
@@ -56,8 +56,8 @@ export class LorentzPolygonAnimation extends LorentzInterpolatedAnimation<Lorent
         t = t / this.duration;
         if (t <= 0) return this.backwards ? this.after : this.before;
         if (t >= 1) return this.backwards ? this.before : this.after;
-        if (!(this._before instanceof LorentzPolygon) || !(this._after instanceof LorentzPolygon)) return this.before;
-        const frameObject = new LorentzPolygon(this._getPosition(t), this._getFilledPoints(t), this._getHolePoints(t), this._getRotation(t), this._getScale(t), this.resolvedBefore._cache, this._getRotationalCenter(t), this._getMaterial(t));
+        if (!(this._before instanceof WebaniPolygon) || !(this._after instanceof WebaniPolygon)) return this.before;
+        const frameObject = new WebaniPolygon(this._getPosition(t), this._getFilledPoints(t), this._getHolePoints(t), this._getRotation(t), this._getScale(t), this.resolvedBefore._cache, this._getRotationalCenter(t), this._getMaterial(t));
         return frameObject;
     }
 
@@ -164,7 +164,7 @@ export class LorentzPolygonAnimation extends LorentzInterpolatedAnimation<Lorent
     }
 
     _resolveAnimation() {
-        if (!(this._before instanceof LorentzPolygon) || !(this._after instanceof LorentzPolygon)) return;
+        if (!(this._before instanceof WebaniPolygon) || !(this._after instanceof WebaniPolygon)) return;
         this.resolvedBefore = this._before.copy;
         this.resolvedAfter = this._after.copy;
         this._resolvePointArray(this.resolvedBefore.filledPoints, this.resolvedAfter.filledPoints);
@@ -221,6 +221,6 @@ export class LorentzPolygonAnimation extends LorentzInterpolatedAnimation<Lorent
         const color = this._interpolatePoint(this.resolvedBefore.material.color, this.resolvedAfter.material.color, t);
         const opacity = this.interpolationFunction(this.resolvedBefore.material.opacity, this.resolvedAfter.material.opacity, this.backwards ? 1 - t : t);
         const shininess = this.interpolationFunction(this.resolvedBefore.material.shininess, this.resolvedAfter.material.shininess, this.backwards ? 1 - t : t);
-        return new LorentzMaterial(color, ambient, diffuse, specular, shininess, opacity)
+        return new WebaniMaterial(color, ambient, diffuse, specular, shininess, opacity)
     }
 }

@@ -1,17 +1,17 @@
 import { RenderedCollection } from "../../animations/rendered-collection.class";
-import { ObjectLike } from "../../objects/object-like.type";
-import { LorentzCollection } from "../../objects/lorentz-collection.class";
-import { ExecuteWhenSetFromParent, ExecuteWhenSetFromSelf, ResolveLorentzVariables } from "../../variables/resolvers";
+import { ObjectLike } from "../../types/object-like.type";
+import { WebaniCollection } from "../../objects/webani-collection.class";
+import { ExecuteWhenSetFromParent, ExecuteWhenSetFromSelf, ResolveWebaniVariables } from "../../variables/resolvers";
 
 export abstract class Component extends RenderedCollection {
     
     constructor(...vars: unknown[]) {
-        super(new LorentzCollection([]), false);
+        super(new WebaniCollection([]), false);
         Object.assign(this, this.generate(...vars));
     }
 
     private generate(...vars: unknown[]) { 
-          const renderedCollection = new RenderedCollection(this.objectConstructor(...ResolveLorentzVariables(...vars)));
+          const renderedCollection = new RenderedCollection(this.objectConstructor(...ResolveWebaniVariables(...vars)));
           ExecuteWhenSetFromSelf((...vars: unknown[]) => {
             renderedCollection.TransformInto(this.objectConstructor(...vars));
           }, ...vars);

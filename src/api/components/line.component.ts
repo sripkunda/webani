@@ -1,8 +1,8 @@
 import { Colors } from "../colors";
-import { ObjectLike } from "../../objects/object-like.type";
+import { ObjectLike } from "../../types/object-like.type";
 import { Component } from "./component.class";
 import { Rectangle } from "./rectangle.component";
-import { Vector2 } from "../../util/vectors/vector2.type";
+import { Vector2 } from "../../types/vector2.type";
 
 export class LineComponent extends Component {
     objectConstructor(position: Vector2, length: number, angle = 0, thickness = 2, color = Colors.WHITE, opacity = 1): ObjectLike {

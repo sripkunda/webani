@@ -1,53 +1,53 @@
-import { LorentzCollection } from "../objects/lorentz-collection.class";
-import { ObjectLike } from "../objects/object-like.type";
-import { LorentzPolygon } from "../polygon/lorentz-polygon.class";
-import { LorentzInterpolatedAnimation } from "./lorentz-interpolated-animation.class";
+import { WebaniCollection } from "../objects/webani-collection.class";
+import { ObjectLike } from "../types/object-like.type";
+import { WebaniPolygon } from "../polygon/webani-polygon.class";
+import { WebaniInterpolatedAnimation } from "./webani-interpolated-animation.class";
 
-export class LorentzCollectionAnimation extends LorentzInterpolatedAnimation<LorentzCollection> {
-    animations!: LorentzInterpolatedAnimation<ObjectLike>[];
+export class WebaniCollectionAnimation extends WebaniInterpolatedAnimation<WebaniCollection> {
+    animations!: WebaniInterpolatedAnimation<ObjectLike>[];
     cacheFrames: boolean = false;
 
     constructor(
-        before: LorentzCollection | LorentzPolygon,
-        after: LorentzCollection | LorentzPolygon,
+        before: WebaniCollection | WebaniPolygon,
+        after: WebaniCollection | WebaniPolygon,
         duration = 1000,
         backwards = false,
         cacheFrames: boolean = false,
         interpolationFunction?: (before: number, after: number, t: number) => number,
     ) {
-        const _before = before instanceof LorentzPolygon ? new LorentzCollection(before) : before;
-        const _after = after instanceof LorentzPolygon ? new LorentzCollection(after) : after;
+        const _before = before instanceof WebaniPolygon ? new WebaniCollection(before) : before;
+        const _after = after instanceof WebaniPolygon ? new WebaniCollection(after) : after;
         super(_before, _after, duration, backwards, interpolationFunction);
         this.cacheFrames = cacheFrames;
     }
 
-    get before(): LorentzCollection {
-        return new LorentzCollection(
+    get before(): WebaniCollection {
+        return new WebaniCollection(
             this.animations.map((x) => x.before),
             this._before._keepRotationCenters
         );
     }
 
-    get after(): LorentzCollection {
-        return new LorentzCollection(
+    get after(): WebaniCollection {
+        return new WebaniCollection(
             this.animations.map((x) => x.after),
             this._after._keepRotationCenters
         );
     }
 
-    set before(value: LorentzCollection) { 
+    set before(value: WebaniCollection) { 
         this._before = value;
         this._resolveAnimation();
     }
 
-    set after(value: LorentzCollection) { 
+    set after(value: WebaniCollection) { 
         this._after = value;
         this._resolveAnimation();
     }
 
     _resolveAnimation() {
         this.animations = []
-        if (!(this._before instanceof LorentzCollection) || !(this._after instanceof LorentzCollection)) return;
+        if (!(this._before instanceof WebaniCollection) || !(this._after instanceof WebaniCollection)) return;
         this.resolvedBefore = this._before.copy;
         this.resolvedAfter = this._after.copy;
         
@@ -82,11 +82,11 @@ export class LorentzCollectionAnimation extends LorentzInterpolatedAnimation<Lor
         );
     }
 
-    frame(t: number): LorentzCollection {
+    frame(t: number): WebaniCollection {
         if (t <= 0) return this.backwards ? this.after : this.before;
         if (t >= this.duration) return this.backwards ? this.before : this.after;
 
-        return new LorentzCollection(
+        return new WebaniCollection(
             this.animations.map((animation) => animation.frame(t)),
             this.before._keepRotationCenters
         );

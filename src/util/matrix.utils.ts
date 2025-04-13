@@ -1,6 +1,6 @@
-import { VectorUtils } from "../vectors/vector.utils";
-import { Vector3 } from "../vectors/vector3.type";
-import { Matrix4 } from "./matrix.type";
+import { VectorUtils } from "./vector.utils";
+import { Vector3 } from "../types/vector3.type";
+import { Matrix4 } from "../types/matrix4.type";
 
 export const MatrixUtils = {
     multiply(a: Matrix4, b: Matrix4): Matrix4 {

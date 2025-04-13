@@ -1,6 +1,6 @@
-import { LorentzCanvas } from "./lorentz-canvas.class";
+import { WebaniCanvas } from "./webani-canvas.class";
 
-export let _defaultCanvas: LorentzCanvas;
-export const setDefaultCanvas = (canvas: LorentzCanvas) => {
+export let _defaultCanvas: WebaniCanvas;
+export const setDefaultCanvas = (canvas: WebaniCanvas) => {
     _defaultCanvas = canvas;
 };

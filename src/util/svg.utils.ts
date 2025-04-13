@@ -1,22 +1,22 @@
-import { LorentzInterpolatedAnimation } from "../../animations/lorentz-interpolated-animation.class";
-import { SVGCommandList } from "./svg-command-list.type";
-import { SVGOutput } from "./svg-output.type";
-import { SVGPath } from "./svg-path.type";
-import { TransformedSVGCommandList } from "./transformed-svg-command-list.type";
-import { windingOrderClockwise } from "../geometry/polygon.utils";
-import { Vector2 } from "../vectors/vector2.type";
+import { WebaniInterpolatedAnimation } from "../animations/webani-interpolated-animation.class";
+import { SVGCommandList } from "../types/svg-command-list.type";
+import { SVGOutput } from "../types/svg-output.type";
+import { SVGPath } from "../types/svg-path.type";
+import { TransformedSVGCommandList } from "../types/transformed-svg-command-list.type";
+import { windingOrderClockwise } from "./polygon.utils";
+import { Vector2 } from "../types/vector2.type";
 
 export const lineFrom = (startingX: number, startingY: number, endX: number, endY: number, t: number) => {
-    const x = LorentzInterpolatedAnimation.lerp(startingX, endX, t);
-    const y = LorentzInterpolatedAnimation.lerp(startingY, endY, t);
+    const x = WebaniInterpolatedAnimation.lerp(startingX, endX, t);
+    const y = WebaniInterpolatedAnimation.lerp(startingY, endY, t);
     return [x, y] as Vector2;
 };
 
 export const quadraticBezier = (startingX: number, startingY: number, controlX: number, controlY: number, endX: number, endY: number, t: number) => {
-    const startPointX = LorentzInterpolatedAnimation.lerp(startingX, controlX, t);
-    const endPointX = LorentzInterpolatedAnimation.lerp(controlX, endX, t);
-    const startPointY = LorentzInterpolatedAnimation.lerp(startingY, controlY, t);
-    const endPointY = LorentzInterpolatedAnimation.lerp(controlY, endY, t);
+    const startPointX = WebaniInterpolatedAnimation.lerp(startingX, controlX, t);
+    const endPointX = WebaniInterpolatedAnimation.lerp(controlX, endX, t);
+    const startPointY = WebaniInterpolatedAnimation.lerp(startingY, controlY, t);
+    const endPointY = WebaniInterpolatedAnimation.lerp(controlY, endY, t);
     return lineFrom(startPointX, startPointY, endPointX, endPointY, t);
 };
 

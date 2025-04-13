@@ -1,19 +1,19 @@
-import { LorentzAnimation } from "./lorentz-animation.class";
-import { LorentzCollectionAnimation } from "./lorentz-collection-animation.class";
+import { WebaniAnimation } from "./webani-animation.class";
+import { WebaniCollectionAnimation } from "./webani-collection-animation.class";
 
-export class AnimationSet extends LorentzAnimation {
-    animations: LorentzCollectionAnimation[];
+export class AnimationSet extends WebaniAnimation {
+    animations: WebaniCollectionAnimation[];
     nextIsAsynchronous: boolean;
-    _onAnimationAdded: ((animation: LorentzCollectionAnimation, asynchronous: boolean) => void)[];
+    _onAnimationAdded: ((animation: WebaniCollectionAnimation, asynchronous: boolean) => void)[];
 
-    constructor(...animations: LorentzCollectionAnimation[]) {
+    constructor(...animations: WebaniCollectionAnimation[]) {
         super();
         this.animations = animations;
         this.nextIsAsynchronous = false;
         this._onAnimationAdded = [];
     }
 
-    get last(): LorentzCollectionAnimation {
+    get last(): WebaniCollectionAnimation {
         return this.animations[this.animations.length - 1];
     }
 
@@ -21,15 +21,15 @@ export class AnimationSet extends LorentzAnimation {
         return this.animations.reduce((sum, frame) => sum + frame.duration, 0);
     }
 
-    onAnimationAdded(handler: (animation: LorentzCollectionAnimation, asynchronous: boolean) => void): void {
+    onAnimationAdded(handler: (animation: WebaniCollectionAnimation, asynchronous: boolean) => void): void {
         this._onAnimationAdded.push(handler);
     }
 
-    addAnimation(animation: LorentzCollectionAnimation, asynchronous = true): void {
+    addAnimation(animation: WebaniCollectionAnimation, asynchronous = true): void {
         if (this.nextIsAsynchronous) {
             this.last.after = animation.frame(this.last.duration);
             if (this.last.duration < animation.duration) {
-                const remainingAnimation = new LorentzCollectionAnimation(
+                const remainingAnimation = new WebaniCollectionAnimation(
                     animation.frame(this.last.duration),
                     animation.frame(animation.duration),
                     animation.duration - this.last.duration,

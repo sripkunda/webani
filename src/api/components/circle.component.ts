@@ -1,12 +1,12 @@
 import { Colors } from "../colors";
-import { Vector3 } from "../../util/vectors/vector3.type";
+import { Vector3 } from "../../types/vector3.type";
 import { Component } from "./component.class";
-import { LorentzPolygon } from "../../polygon/lorentz-polygon.class";
-import { Vector2 } from "../../util/vectors/vector2.type";
-import { LorentzMaterial } from "../../lighting/lorentz-material.class";
+import { WebaniPolygon } from "../../polygon/webani-polygon.class";
+import { Vector2 } from "../../types/vector2.type";
+import { WebaniMaterial } from "../../lighting/webani-material.class";
 
 export class CircleComponent extends Component {
-    objectConstructor(center: Vector2, radius: number, color = Colors.WHITE, opacity = 1): LorentzPolygon {
+    objectConstructor(center: Vector2, radius: number, color = Colors.WHITE, opacity = 1): WebaniPolygon {
         const points: Vector3[] = [];
         const circle = (theta: number): Vector3 => {
             return [radius * Math.cos(theta), radius * Math.sin(theta), 0];
@@ -17,8 +17,8 @@ export class CircleComponent extends Component {
             angle += stepSize;
             points.push(circle(angle));
         }
-        const object = new LorentzPolygon(center, points, []);
-        object.material = LorentzMaterial.fromColorAndOpacity(color, opacity);
+        const object = new WebaniPolygon(center, points, []);
+        object.material = WebaniMaterial.fromColorAndOpacity(color, opacity);
         return object;
     }
 }
