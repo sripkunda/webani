@@ -1,16 +1,18 @@
+import { WebaniTransformable } from "../objects/webani-transformable.class";
 import { WebaniAnimation } from "./webani-animation.class";
 import { WebaniCollectionAnimation } from "./webani-collection-animation.class";
+import { WebaniInterpolatedAnimation } from "./webani-interpolated-animation.class";
 
 export class AnimationSet extends WebaniAnimation {
     animations: WebaniCollectionAnimation[];
     nextIsAsynchronous: boolean;
-    _onAnimationAdded: ((animation: WebaniCollectionAnimation, asynchronous: boolean) => void)[];
-
+    private animationAddedHandlers: ((animation: WebaniCollectionAnimation, asynchronous: boolean) => void)[];
+    private defaultObject: WebaniTransformable;
     constructor(...animations: WebaniCollectionAnimation[]) {
         super();
         this.animations = animations;
         this.nextIsAsynchronous = false;
-        this._onAnimationAdded = [];
+        this.animationAddedHandlers = [];
     }
 
     get last(): WebaniCollectionAnimation {
@@ -21,8 +23,11 @@ export class AnimationSet extends WebaniAnimation {
         return this.animations.reduce((sum, frame) => sum + frame.duration, 0);
     }
 
-    onAnimationAdded(handler: (animation: WebaniCollectionAnimation, asynchronous: boolean) => void): void {
-        this._onAnimationAdded.push(handler);
+    setDefaultObject(object: WebaniTransformable) { 
+        this.defaultObject = object;
+    }
+    onAnimationAdded(handler: (animation: WebaniInterpolatedAnimation<WebaniTransformable>, asynchronous: boolean) => void): void {
+        this.animationAddedHandlers.push(handler);
     }
 
     addAnimation(animation: WebaniCollectionAnimation, asynchronous = true): void {
@@ -43,14 +48,22 @@ export class AnimationSet extends WebaniAnimation {
             this.animations.push(animation);
         }
         this.nextIsAsynchronous = asynchronous;
-        this._onAnimationAdded.forEach((handler) => handler(animation, asynchronous));
+        this.setDefaultObject(animation.after);
+        this.animationAddedHandlers.forEach((handler) => handler(animation, asynchronous));
     }
 
     done(t: number): boolean {
+        if (this.animations.length < 1) return true;
         return t / this.duration >= 1;
     }
 
     frame(t: number) {
+        if (this.animations.length < 1) {
+            if (this.defaultObject)
+                return this.defaultObject; 
+            else 
+                throw Error("Animation set does not have animations or a default object, but it is still attempting to be played.");
+        }
         let durations = 0;
         for (const animation of this.animations) {
             if (t < animation.duration + durations) {

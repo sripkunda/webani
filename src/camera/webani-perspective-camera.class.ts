@@ -2,24 +2,27 @@ import { Matrix4 } from "../types/matrix4.type";
 import { MatrixUtils } from "../util/matrix.utils";
 import { VectorUtils } from "../util/vector.utils";
 import { Vector3 } from "../types/vector3.type";
+import { WebaniTransformable } from "../objects/webani-transformable.class";
 
-export class WebaniCamera {
-    position: Vector3;
-    rotation: Vector3; 
+export class WebaniPerspectiveCamera extends WebaniTransformable {
+
     fov: number;
     near: number;
     far: number;
 
     constructor(position: Vector3 = [0, 0, 10], rotation: Vector3 = [0, 180, 0], fov: number = 60, near: number = 0.1, far: number = 1000) {
-        this.position = position;
-        this.rotation = rotation;
+        super(position, rotation);
         this.fov = fov;
         this.near = near; 
         this.far = far;
     }
 
-    rotate(eulerAngles: Vector3) {
-        this.rotation = [...eulerAngles];
+    get localCenter() {
+        return [0, 0, 0] as Vector3;
+    }
+
+    get center() {
+        return this.transform.position;
     }
 
     vpMatrix(screenWidth: number, screenHeight: number): Matrix4 {
@@ -38,7 +41,7 @@ export class WebaniCamera {
     }
 
     get viewMatrix(): Matrix4 { 
-        const [pitch, yaw, roll] = this.rotation;
+        const [pitch, yaw, roll] = this.transform.rotation;
 
         const cosPitch = Math.cos(pitch * Math.PI / 180);
         const sinPitch = Math.sin(pitch * Math.PI / 180);
@@ -54,14 +57,14 @@ export class WebaniCamera {
         const up = VectorUtils.cross(right, forward);
 
         return new Float32Array([
-            right[0], right[1], right[2], -VectorUtils.dot(right, this.position),
-            up[0],    up[1],    up[2],    -VectorUtils.dot(up, this.position),
-            -forward[0], -forward[1], -forward[2], VectorUtils.dot(forward, this.position),
+            right[0], right[1], right[2], -VectorUtils.dot(right, this.transform.position),
+            up[0],    up[1],    up[2],    -VectorUtils.dot(up, this.transform.position),
+            -forward[0], -forward[1], -forward[2], VectorUtils.dot(forward, this.transform.position),
             0, 0, 0, 1
         ]) as Matrix4;        
     }
 
     get copy() {
-        return new WebaniCamera(this.position, this.rotation, this.fov, this.near, this.far);
+        return new WebaniPerspectiveCamera(this.transform.position, this.transform.rotation, this.fov, this.near, this.far);
     }
 }

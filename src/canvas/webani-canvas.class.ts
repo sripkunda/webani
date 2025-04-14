@@ -1,11 +1,11 @@
 import { WebaniAnimation } from "../animations/webani-animation.class";
-import { Colors } from "../api/colors";
+import { Colors } from "../lighting/colors";
 import { Vector3 } from "../types/vector3.type";
 import { WebaniScene } from "./webani-scene.class";
 import { vertexShader, fragmentShader } from "../shaders/shaders"
 import { Playable } from "../types/playable.type";
-import { ObjectLike } from "../types/object-like.type";
-import { WebaniCamera } from "../camera/webani-camera.class";
+import { RenderableObject } from "../types/renderable-object.type";
+import { WebaniPerspectiveCamera } from "../camera/webani-perspective-camera.class";
 import { WebaniLight } from "../lighting/webani-light.class";
 import { WebaniPrimitiveObject } from "../objects/webani-primitive-object.class";
 
@@ -23,8 +23,10 @@ export class WebaniCanvas {
         mediaRecorder?: MediaRecorder;
     };
     glProgram: WebGLProgram;
-    camera!: WebaniCamera;
-    light: WebaniLight
+    camera!: WebaniPerspectiveCamera;
+    light: WebaniLight;
+    
+    static defaultCanvas?: WebaniCanvas;
 
     constructor(canvas: HTMLCanvasElement, interactive: boolean = true, backgroundColor: Vector3 = Colors.BLACK) {
         if (!canvas)
@@ -43,15 +45,19 @@ export class WebaniCanvas {
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 
         this.scene = new WebaniScene();
-        this._clear();
-        this._initShaders();
+        this.camera = new WebaniPerspectiveCamera();
+        this.light = new WebaniLight();
+        this.setupCameraAndLighting();
+        this.clearGL();
+        this.initShaders();
         this._playing = false;
         this._onFinishAnimation = [];
         this.video = {};
-        this.camera = new WebaniCamera();
-        this.light = new WebaniLight();
-    }
 
+        if (!WebaniCanvas.defaultCanvas) { 
+            WebaniCanvas.defaultCanvas = this;
+        }
+    }
     startRecording(): void {
         this.video.recordedChunks = [];
         const stream = this.canvas.captureStream(30);
@@ -85,15 +91,15 @@ export class WebaniCanvas {
     }
 
     redraw(): void {
-        this._clear();
+        this.clearGL();
         for (const object of this.scene.objects) {
-            this._draw(object);
+            this.draw(object);
         }
     }
 
     clear(): void {
         this.scene.clear();
-        this._clear();
+        this.clearGL();
     }
 
     onFinishAnimation(handler: () => void): void {
@@ -105,7 +111,7 @@ export class WebaniCanvas {
             if (animation instanceof WebaniAnimation) {
                 this.addAnimation(animation);
             } else {
-                this._addToScene(animation);
+                this.addToScene(animation);
             } 
         }
     }
@@ -131,13 +137,13 @@ export class WebaniCanvas {
 
         const drawFrame = () => {
             const frame = animation.frame(t);
-            if (frame instanceof WebaniCamera) { 
+            if (frame instanceof WebaniPerspectiveCamera) { 
                 this.camera = frame;
             } else {
                 if (objectIndex === undefined) { 
-                    objectIndex = this.scene.add(frame as ObjectLike);
+                    objectIndex = this.scene.add(frame as RenderableObject);
                 }
-                this.scene._members[objectIndex] = frame as ObjectLike;
+                this.scene._members[objectIndex] = frame as RenderableObject;
             }
             this.redraw();
             if (!animation.done(t)) {
@@ -149,22 +155,29 @@ export class WebaniCanvas {
                 if (playNext) {
                     this.playAnimationQueue();
                 }
-                this._finishedAnimation();
+                this.finishedAnimation();
             }
         };
         requestAnimationFrame(drawFrame);
     }
 
-    remove(object: ObjectLike): void {
+    remove(object: RenderableObject): void {
         this.scene.remove(object);
     }
 
-    _clear(): void {
+    private setupCameraAndLighting() { 
+        const z = this.canvas.width / (2 * Math.tan(this.camera.fov));
+        this.camera.far = z + 1000;
+        this.camera.transform.position[2] = z;
+        this.light.transform.position[2] = z;
+    }
+
+    private clearGL(): void {
         this.gl.clearColor(this.backgroundColor[0], this.backgroundColor[1], this.backgroundColor[2], 1);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
 
-    _draw(object: WebaniPrimitiveObject) {
+    private draw(object: WebaniPrimitiveObject) {
         const vertices = object.triangles;
         const vertexBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
@@ -187,12 +200,12 @@ export class WebaniCanvas {
         const lightColorLoc = this.gl.getUniformLocation(this.glProgram, "uLightColor");
         const lightIntensityLoc = this.gl.getUniformLocation(this.glProgram, "uLightIntensity");
 
-        this.gl.uniform3fv(lightPositionLoc, this.light.position);
+        this.gl.uniform3fv(lightPositionLoc, this.light.transform.position);
         this.gl.uniform3fv(lightColorLoc, this.light.color);    
         this.gl.uniform1f(lightIntensityLoc, this.light.intensity);              
     
         const viewPositionLoc = this.gl.getUniformLocation(this.glProgram, "uViewPosition");
-        this.gl.uniform3fv(viewPositionLoc, this.camera.position);  
+        this.gl.uniform3fv(viewPositionLoc, this.camera.transform.position);  
     
         const materialDiffuseLoc = this.gl.getUniformLocation(this.glProgram, "uMaterialDiffuse");
         this.gl.uniform3fv(materialDiffuseLoc, object.material.diffuse);
@@ -224,7 +237,7 @@ export class WebaniCanvas {
         this.gl.drawArrays(this.gl.TRIANGLES, 0, n);
     }
 
-    _initShaders(): void {
+    private initShaders(): void {
         const makeShader = (glsl: string, type: number): WebGLShader => {
             const shader = this.gl.createShader(type);
             if (!shader) throw Error("An unknown error occurred while creating shader. Please report a bug.");
@@ -256,13 +269,13 @@ export class WebaniCanvas {
         this.glProgram = program;
     }
 
-    _addToScene(object: ObjectLike): void {
+    private addToScene(object: RenderableObject): void {
         this.scene.add(object);
         this.redraw();
-        this._finishedAnimation();
+        this.finishedAnimation();
     }
 
-    _finishedAnimation(): void {
+    private finishedAnimation(): void {
         this._onFinishAnimation.forEach(callback => callback());
     }
 }

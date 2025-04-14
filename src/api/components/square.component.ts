@@ -1,11 +1,11 @@
-import { Colors } from "../colors";
-import { ObjectLike } from "../../types/object-like.type";
+import { Colors } from "../../lighting/colors";
+import { RenderableObject } from "../../types/renderable-object.type";
 import { Component } from "./component.class";
 import { Rectangle } from "./rectangle.component";
 import { Vector2 } from "../../types/vector2.type";
 
 export class SquareComponent extends Component {
-    objectConstructor(position: Vector2, length: number, color = Colors.WHITE, opacity = 1): ObjectLike {
+    objectConstructor(position: Vector2, length: number, color = Colors.WHITE, opacity = 1): RenderableObject {
         return Rectangle(position, length, length, color, opacity);
     }
 }

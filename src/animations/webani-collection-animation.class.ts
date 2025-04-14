@@ -1,10 +1,10 @@
 import { WebaniCollection } from "../objects/webani-collection.class";
-import { ObjectLike } from "../types/object-like.type";
 import { WebaniPolygon } from "../polygon/webani-polygon.class";
 import { WebaniInterpolatedAnimation } from "./webani-interpolated-animation.class";
+import { WebaniPrimitiveObject } from "../objects/webani-primitive-object.class";
 
 export class WebaniCollectionAnimation extends WebaniInterpolatedAnimation<WebaniCollection> {
-    animations!: WebaniInterpolatedAnimation<ObjectLike>[];
+    animations!: WebaniInterpolatedAnimation<WebaniPrimitiveObject>[];
     cacheFrames: boolean = false;
 
     constructor(
@@ -23,33 +23,31 @@ export class WebaniCollectionAnimation extends WebaniInterpolatedAnimation<Weban
 
     get before(): WebaniCollection {
         return new WebaniCollection(
-            this.animations.map((x) => x.before),
-            this._before._keepRotationCenters
+            this.animations.map((x) => x.before)
         );
     }
 
     get after(): WebaniCollection {
         return new WebaniCollection(
-            this.animations.map((x) => x.after),
-            this._after._keepRotationCenters
+            this.animations.map((x) => x.after)
         );
     }
 
     set before(value: WebaniCollection) { 
-        this._before = value;
-        this._resolveAnimation();
+        this.unresolvedBefore = value;
+        this.resolveAnimation();
     }
 
     set after(value: WebaniCollection) { 
-        this._after = value;
-        this._resolveAnimation();
+        this.unresolvedAfter = value;
+        this.resolveAnimation();
     }
 
-    _resolveAnimation() {
+    resolveAnimation() {
         this.animations = []
-        if (!(this._before instanceof WebaniCollection) || !(this._after instanceof WebaniCollection)) return;
-        this.resolvedBefore = this._before.copy;
-        this.resolvedAfter = this._after.copy;
+        if (!(this.unresolvedBefore instanceof WebaniCollection) || !(this.unresolvedAfter instanceof WebaniCollection)) return;
+        this.resolvedBefore = this.unresolvedBefore.copy;
+        this.resolvedAfter = this.unresolvedAfter.copy;
         
         if (this.resolvedBefore._objects.length === 0 || this.resolvedAfter._objects.length === 0) return;
 
@@ -83,12 +81,11 @@ export class WebaniCollectionAnimation extends WebaniInterpolatedAnimation<Weban
     }
 
     frame(t: number): WebaniCollection {
-        if (t <= 0) return this.backwards ? this.after : this.before;
-        if (t >= this.duration) return this.backwards ? this.before : this.after;
-
-        return new WebaniCollection(
-            this.animations.map((animation) => animation.frame(t)),
-            this.before._keepRotationCenters
-        );
+        const transform = this.getTransform(t);
+        const extraTransforms = this.getExtraTransforms(t);
+        const collection = new WebaniCollection(this.animations.map((animation) => animation.frame(t)));
+        collection.transform = transform;
+        collection.extraTransforms = extraTransforms;
+        return collection;
     }
 }

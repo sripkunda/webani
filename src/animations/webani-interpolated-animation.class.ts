@@ -1,11 +1,13 @@
-import { WebaniAnimatable } from "../types/webani-animatable.type";
+import { WebaniTransformable } from "../objects/webani-transformable.class";
+import { WorldTransform } from "../types/world-transform.type";
+import { Vector3 } from "../types/vector3.type";
 import { WebaniAnimation } from "./webani-animation.class";
 
-export abstract class WebaniInterpolatedAnimation<T extends WebaniAnimatable> extends WebaniAnimation {
-    _before!: T;
-    _after!: T;
+export abstract class WebaniInterpolatedAnimation<T extends WebaniTransformable> extends WebaniAnimation {
     duration!: number;
     backwards!: boolean;
+    protected unresolvedBefore!: T;
+    protected unresolvedAfter!: T;
     protected resolvedBefore!: T;
     protected resolvedAfter!: T;
     interpolationFunction: (before: number, after: number, t: number) => number;
@@ -18,17 +20,33 @@ export abstract class WebaniInterpolatedAnimation<T extends WebaniAnimatable> ex
         interpolationFunction?: (before: number, after: number, t: number) => number
     ) {
         super();
-        this._before = before;
-        this._after = after;
+        this.unresolvedBefore = before;
+        this.unresolvedAfter = after;
         this.duration = duration;
         this.backwards = backwards;
         this.interpolationFunction = interpolationFunction || WebaniInterpolatedAnimation.easeInOut;
-        this._resolveAnimation();
+        this.resolveAnimation();
+        this.resolveTransforms();
     }
 
     abstract frame(t: number): T;
 
-    abstract _resolveAnimation(): void;
+    resolveTransforms() { 
+        while (this.resolvedAfter.extraTransforms.length != this.resolvedBefore.extraTransforms.length) { 
+            const empty: WorldTransform = {
+                position: [0, 0, 0],
+                rotation: [0, 0, 0],
+                scale: [1, 1, 1]
+            }
+            if (this.resolvedAfter.extraTransforms.length < this.resolvedBefore.extraTransforms.length) { 
+                this.resolvedAfter.extraTransforms.push(empty);
+            } else { 
+                this.resolvedBefore.extraTransforms.push(empty);
+            }
+        }
+    }
+
+    abstract resolveAnimation(): void;
 
     progress(t: number): number { 
         const normalizedT = t / this.duration;
@@ -40,21 +58,49 @@ export abstract class WebaniInterpolatedAnimation<T extends WebaniAnimatable> ex
     }
 
     get before(): T { 
-        return this._before;
+        return this.unresolvedBefore;
     }
 
     get after(): T { 
-        return this._after;
+        return this.unresolvedAfter;
     }
 
     set before(value: T) { 
-        this._before = value;
-        this._resolveAnimation();
+        this.unresolvedBefore = value;
+        this.resolveAnimation();
     }
 
     set after(value: T) { 
-        this._after = value;
-        this._resolveAnimation();
+        this.unresolvedAfter = value;
+        this.resolveAnimation();
+    }
+
+    protected interpolatePoints(beforePoints: Vector3[], afterPoints: Vector3[], t: number) {
+        return beforePoints.map((before, i) => {
+            const after = afterPoints[i];
+            return this.interpolatePoint(before, after, t);
+        }) as Vector3[];
+    }
+
+    protected interpolatePoint(before: Vector3, after: Vector3, t: number) { 
+        if (t >= this.duration) return this.backwards ? before : after;
+        if (t < 0) return before;
+        t = this.backwards ? 1 - t / this.duration : t / this.duration;
+        return before.map((x, j) => this.interpolationFunction(x, after[j], t)) as Vector3;
+    }
+
+    protected getTransform(t: number, beforeTransform: WorldTransform = this.resolvedBefore.completeTransform, afterTransform: WorldTransform = this.resolvedAfter.completeTransform): WorldTransform { 
+        const position = this.interpolatePoint(beforeTransform.position, afterTransform.position, t);
+        const scale = this.interpolatePoint(beforeTransform.scale, afterTransform.scale, t);
+        const rotation = this.interpolatePoint(beforeTransform.rotation, afterTransform.rotation, t);
+        const rotationCenter = this.interpolatePoint(beforeTransform?.rotationCenter || afterTransform?.rotationCenter, afterTransform?.rotationCenter || beforeTransform?.rotationCenter, t);
+        return {
+            position, scale, rotation, rotationCenter
+        }
+    }
+
+    protected getExtraTransforms(t: number): WorldTransform[] { 
+        return this.resolvedBefore.extraTransforms.map((x, i) => this.getTransform(t, x, this.resolvedAfter.extraTransforms[i]));
     }
 
     static lerp(before: number, after: number, t: number): number {

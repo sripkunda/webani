@@ -1,4 +1,4 @@
-import { Colors } from "../colors";
+import { Colors } from "../../lighting/colors";
 import { textToPoints } from "../../util/svg.utils";
 import { Component } from "./component.class";
 import { WebaniCollection } from "../../objects/webani-collection.class";
@@ -6,7 +6,7 @@ import { WebaniPolygon } from "../../polygon/webani-polygon.class";
 import { Vector2 } from "../../types/vector2.type";
 
 export class TextComponent extends Component {
-    objectConstructor(string: string, position: Vector2, fontSize = 0.5, color = Colors.WHITE, opacity = 1): WebaniCollection {
+    objectConstructor(string: string, position: Vector2, fontSize = 72, color = Colors.WHITE, opacity = 1): WebaniCollection {
         const pointsObject = textToPoints(string, fontSize);
         return new WebaniCollection(
             pointsObject.points.map(

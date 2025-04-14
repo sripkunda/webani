@@ -1,43 +1,39 @@
 import { WebaniInterpolatedAnimation } from "../animations/webani-interpolated-animation.class";
-import { Colors } from "../api/colors";
+import { Colors } from "../lighting/colors";
 import { WebaniMaterial } from "../lighting/webani-material.class";
 import { Matrix4 } from "../types/matrix4.type";
 import { MatrixUtils } from "../util/matrix.utils";
 import { VectorUtils } from "../util/vector.utils";
 import { Vector3 } from "../types/vector3.type";
+import { WorldTransform } from "../types/world-transform.type";
+import { WebaniTransformable } from "./webani-transformable.class";
 
-export abstract class WebaniPrimitiveObject { 
+export abstract class WebaniPrimitiveObject extends WebaniTransformable { 
     
-    position: Vector3;
-    rotation: Vector3;
-    scale: Vector3;
-    _rotationCenterOverride?: Vector3;
     material: WebaniMaterial;
 
-    constructor(position: Vector3 = [0, 0, 0], rotation: Vector3 = [0, 0, 0], scale: Vector3 = [1, 1, 1], rotationalCenter?: Vector3, material?: WebaniMaterial, cachedNormals?: Vector3[]) { 
-        this.position = position;
-        this.rotation = rotation;
-        this.scale = scale;
-        this._rotationCenterOverride = rotationalCenter;
+    constructor(position: Vector3 = [0, 0, 0], rotation: Vector3 = [0, 0, 0], scale: Vector3 = [1, 1, 1], rotationalCenter?: Vector3, material?: WebaniMaterial, extraTransforms: WorldTransform[] = []) { 
+        super(position, rotation, scale, rotationalCenter, extraTransforms);
         this.material = material || new WebaniMaterial(Colors.WHITE);
-    }
-
-    get rotationCenter() {
-        return this._rotationCenterOverride || this.center;
-    }
-
-    set rotationCenter(value: Vector3) {
-        this._rotationCenterOverride = value
     }
 
     abstract animationClass?: new (...args: unknown[]) => WebaniInterpolatedAnimation<WebaniPrimitiveObject>;
     abstract get _triangulation(): Vector3[];
     abstract get _normals(): Vector3[];
     abstract get copy(): WebaniPrimitiveObject;
-    abstract get center(): Vector3;
+    abstract get localCenter(): Vector3;
 
+    get center(): Vector3 { 
+        return MatrixUtils.multiplyVector3(MatrixUtils.fromTRS(this.transform.position, [0, 0, 0], this.transform.scale), this.localCenter);
+    }
+    
     get modelMatrix(): Matrix4 {
-        return MatrixUtils.fromTRS(this.position, this.rotation, this.scale, this.rotationCenter);
+        const transform = this.completeTransform;
+        let matrix = MatrixUtils.fromTRS(transform.position, transform.rotation, transform.scale, transform.rotationCenter);
+        for (let transform of this.completeExtraTransforms) { 
+            matrix = MatrixUtils.multiply(MatrixUtils.fromTRS(transform.position, transform.rotation, transform.scale, transform.rotationCenter), matrix);
+        }
+        return matrix;
     }
 
     get triangles(): Vector3[] { 
@@ -52,23 +48,7 @@ export abstract class WebaniPrimitiveObject {
         newCenter = VectorUtils.convertPointTo3D(newCenter) || newCenter;
         const copy = this.copy;
         const center = this.center;
-        copy.position = VectorUtils.add(copy.position, VectorUtils.subtract(newCenter, center));
+        copy.transform.position = VectorUtils.add(copy.transform.position, VectorUtils.subtract(newCenter, center));
         return copy;
-    }
-
-    translate(offset: Vector3): void {
-        this.position = VectorUtils.add(this.position, offset);
-    }
-    
-    rotate(offset: Vector3): void {
-        this.rotation = VectorUtils.add(this.rotation, offset);
-    }
-    
-    scaleBy(factor: Vector3): void {
-        this.scale = [
-            this.scale[0] * factor[0],
-            this.scale[1] * factor[1],
-            this.scale[2] * factor[2]
-        ];
     }
 }

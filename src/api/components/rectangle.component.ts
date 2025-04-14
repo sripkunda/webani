@@ -1,4 +1,4 @@
-import { Colors } from "../colors";
+import { Colors } from "../../lighting/colors";
 import { WebaniPolygon } from "../../polygon/webani-polygon.class";
 import { Component } from "./component.class";
 import { Vector2 } from "../../types/vector2.type";

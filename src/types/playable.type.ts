@@ -1,4 +1,4 @@
-import { ObjectLike } from "./object-like.type";
+import { RenderableObject } from "./renderable-object.type";
 import { WebaniAnimation } from "../animations/webani-animation.class";
 
-export type Playable = ObjectLike | WebaniAnimation;
+export type Playable = RenderableObject | WebaniAnimation;

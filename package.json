@@ -2,6 +2,7 @@
   "devDependencies": {
     "@eslint/js": "^9.23.0",
     "@types/earcut": "^3.0.0",
+    "@types/ws": "^8.18.1",
     "eslint": "^9.23.0",
     "ts-loader": "^9.5.2",
     "typescript": "^5.8.2",
@@ -24,5 +25,6 @@
   "version": "1.0.0",
   "description": "A library for creating interactive animations with JavaScript, with extensive support for mathematical animations.",
   "author": "Sri Pranav Kunda",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "type": "module"
 }

@@ -1,21 +1,21 @@
-import { RenderedCollection } from "../animations/rendered-collection.class";
+import { RenderedGroupNode } from "../animations/rendered-group-node.class";
 import { VectorUtils } from "../util/vector.utils";
 import { Vector3 } from "../types/vector3.type";
-import { ObjectLike } from "../types/object-like.type";
+import { RenderableObject } from "../types/renderable-object.type";
 import { WebaniPolygon } from "../polygon/webani-polygon.class";
 import { WebaniPrimitiveObject } from "./webani-primitive-object.class";
 import { WebaniCollectionAnimation } from "../animations/webani-collection-animation.class";
+import { WebaniTransformable } from "./webani-transformable.class";
 
-export class WebaniCollection {
-    _objects: WebaniPrimitiveObject[];
-    _keepRotationCenters: boolean;
-
-    constructor(objects: ObjectLike | ObjectLike[], keepRotationCenters = false) {
+export class WebaniCollection extends WebaniTransformable {
+    _objects!: WebaniPrimitiveObject[];
+    
+    constructor(objects: RenderableObject | RenderableObject[]) {
+        super();
         if (objects instanceof WebaniCollection) { 
             return objects;
         }
         this._objects = [];
-        this._keepRotationCenters = keepRotationCenters;
         if (Array.isArray(objects)) {
             this.add(...objects);
         } else {
@@ -33,26 +33,34 @@ export class WebaniCollection {
     }
 
     get copy(): WebaniCollection {
-        return new WebaniCollection(this._objects.map((obj) => obj.copy), this._keepRotationCenters);
+        return new WebaniCollection(this._objects.map((obj) => obj.copy));
+    }
+
+    get localCenter(): Vector3 {
+        return VectorUtils.center(this._objects.map((obj) => obj.localCenter));
     }
 
     get center(): Vector3 {
         return VectorUtils.center(this._objects.map((obj) => obj.center));
     }
 
-    add(...newObjects: ObjectLike[]): number {
+    get objects(): WebaniPrimitiveObject[] { 
+        return this._objects.map(obj => {
+            const copy = obj.copy;
+            copy.extraTransforms.push(this.completeTransform, ...this.completeExtraTransforms);
+            return obj;
+        });
+    }
+
+    add(...newObjects: RenderableObject[]): number {
         for (const object of newObjects) {
             if (object instanceof WebaniPolygon) {
                 this._objects.push(object.copy);
             } else if (object instanceof WebaniCollection) {
                 this._objects.push(...object.copy._objects);
-            } else if (object instanceof RenderedCollection) {
+            } else if (object instanceof RenderedGroupNode) {
                 this._objects.push(...object.collection._objects);
             }
-        }
-
-        if (!this._keepRotationCenters) {
-            this._updateObjectCenters();
         }
 
         return this._objects.length - 1;
@@ -66,12 +74,5 @@ export class WebaniCollection {
     removeIndex(index: number): this {
         this._objects.splice(index, 1);
         return this;
-    }
-
-    _updateObjectCenters(): void {
-        const center = this.center;
-        for (const object of this._objects) {
-            object.rotationCenter = center;
-        }
     }
 }

@@ -17,6 +17,24 @@ export const MatrixUtils = {
         return result;
     },
 
+    multiplyVector3(matrix: Matrix4, point: Vector3): Vector3 {
+        const [x, y, z] = point;
+        const resultX =
+            matrix[0] * x + matrix[1] * y + matrix[2] * z + matrix[3];
+        const resultY =
+            matrix[4] * x + matrix[5] * y + matrix[6] * z + matrix[7];
+        const resultZ =
+            matrix[8] * x + matrix[9] * y + matrix[10] * z + matrix[11];
+        const w =
+            matrix[12] * x + matrix[13] * y + matrix[14] * z + matrix[15];
+
+        if (w !== 0 && w !== 1) {
+            return [resultX / w, resultY / w, resultZ / w];
+        }
+    
+        return [resultX, resultY, resultZ];
+    },
+
     translationMatrix(t: Vector3): Matrix4 {
         return new Float32Array([
             1, 0, 0, t[0],
@@ -81,7 +99,7 @@ export const MatrixUtils = {
 
     fromTRS(translation: Vector3, rotation: Vector3, scale: Vector3, rotationCenter?: Vector3): Matrix4 {
         const T = MatrixUtils.translationMatrix(translation);
-        const R = rotationCenter ? MatrixUtils.rotationMatrix(rotation) : MatrixUtils.rotationMatrixAboutPoint(rotation, rotationCenter);
+        const R = rotationCenter ? MatrixUtils.rotationMatrixAboutPoint(rotation, rotationCenter) : MatrixUtils.rotationMatrix(rotation);
         const S = MatrixUtils.scaleMatrix(scale);
 
         return MatrixUtils.multiply(
