@@ -8,14 +8,14 @@ import { WebaniCollectionAnimation } from "../animations/webani-collection-anima
 import { WebaniTransformable } from "./webani-transformable.class";
 
 export class WebaniCollection extends WebaniTransformable {
-    _objects!: WebaniPrimitiveObject[];
+    _objects: WebaniPrimitiveObject[];
     
     constructor(objects: RenderableObject | RenderableObject[]) {
         super();
+        this._objects = [];
         if (objects instanceof WebaniCollection) { 
             return objects;
         }
-        this._objects = [];
         if (Array.isArray(objects)) {
             this.add(...objects);
         } else {

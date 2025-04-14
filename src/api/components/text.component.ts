@@ -12,7 +12,7 @@ export class TextComponent extends Component {
             pointsObject.points.map(
                 (x, i) => new WebaniPolygon(position, x, pointsObject.holes[i], color)
             )
-        ).setAnchor([0, 0, 0]);
+        ).setAnchor([position[0], position[1], 0]);
     }
 }
 

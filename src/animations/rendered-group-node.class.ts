@@ -16,13 +16,14 @@ export class RenderedGroupNode extends WebaniAnimation {
 
     constructor(collection?: RenderableObject) {
         super();
+        this.animationSet = new AnimationSet();
         if (collection) { 
             if (collection instanceof RenderedGroupNode) return collection;
             this._collection = new WebaniCollection(collection);
+        } else { 
+            this._collection = new WebaniCollection([]);
         }
-        this.animationSet = new AnimationSet();
-        if (this._collection)
-            this.animationSet.setDefaultObject(this._collection);
+        this.animationSet.setDefaultObject(this._collection);
     }
 
     static CreateGroup(object: object) { 
@@ -54,7 +55,7 @@ export class RenderedGroupNode extends WebaniAnimation {
     };
 
     get collection() {
-        if (!this.isLeaf) {
+        if (!this.isLeaf || !this._collection) {
             throw Error("Attempted to call collection() on RenderedGroupNode which is not a leaf node.");
         }
         return this._collection;

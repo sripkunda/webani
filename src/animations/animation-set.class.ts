@@ -6,8 +6,8 @@ import { WebaniInterpolatedAnimation } from "./webani-interpolated-animation.cla
 export class AnimationSet extends WebaniAnimation {
     animations: WebaniCollectionAnimation[];
     nextIsAsynchronous: boolean;
-    private animationAddedHandlers: ((animation: WebaniCollectionAnimation, asynchronous: boolean) => void)[];
-    private defaultObject: WebaniTransformable;
+    private animationAddedHandlers: ((animation: WebaniInterpolatedAnimation<WebaniTransformable>, asynchronous: boolean) => void)[];
+    private defaultObject?: WebaniTransformable;
     constructor(...animations: WebaniCollectionAnimation[]) {
         super();
         this.animations = animations;
@@ -26,7 +26,7 @@ export class AnimationSet extends WebaniAnimation {
     setDefaultObject(object: WebaniTransformable) { 
         this.defaultObject = object;
     }
-    onAnimationAdded(handler: (animation: WebaniInterpolatedAnimation<WebaniTransformable>, asynchronous: boolean) => void): void {
+    onAnimationAdded<T extends WebaniTransformable>(handler: (animation: WebaniInterpolatedAnimation<T>, asynchronous: boolean) => void): void {
         this.animationAddedHandlers.push(handler);
     }
 
