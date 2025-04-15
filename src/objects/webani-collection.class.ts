@@ -23,9 +23,9 @@ export class WebaniCollection extends WebaniTransformable {
         }
     }
 
-    animationClass = WebaniCollectionAnimation
+    animationClass = WebaniCollectionAnimation;
 
-    setAnchor(newCenter: Vector3): WebaniCollection {
+    copyCenteredAt(newCenter: Vector3): WebaniCollection {
         const copy = this.copy;
         const center = this.center;
         copy._objects = copy._objects.map((obj) => obj.copyCenteredAt(VectorUtils.add(obj.center, VectorUtils.subtract(newCenter, center))));
@@ -55,9 +55,9 @@ export class WebaniCollection extends WebaniTransformable {
     add(...newObjects: RenderableObject[]): number {
         for (const object of newObjects) {
             if (object instanceof WebaniPolygon) {
-                this._objects.push(object.copy);
+                this._objects.push(object);
             } else if (object instanceof WebaniCollection) {
-                this._objects.push(...object.copy._objects);
+                this._objects.push(...object._objects);
             } else if (object instanceof RenderedGroupNode) {
                 this._objects.push(...object.collection._objects);
             }

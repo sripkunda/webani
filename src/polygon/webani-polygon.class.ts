@@ -17,7 +17,7 @@ export class WebaniPolygon extends WebaniPrimitiveObject {
     constructor(position: number[], filledPoints: number[][], holes: number[][][] = [], rotation?: Vector3, scale?: Vector3, cache?: WebaniPolygonCache, rotationCenter?: Vector3, material?: WebaniMaterial, extraTransforms: WorldTransform[] = []) {
         super(VectorUtils.convertPointTo3D(position), rotation, scale, rotationCenter, material, extraTransforms);
         this.filledPoints = VectorUtils.convertPointsTo3D(filledPoints);
-        this.holes = holes.map(holePoints => VectorUtils.convertPointsTo3D(holePoints))
+        this.holes = holes.map(holePoints => VectorUtils.convertPointsTo3D(holePoints));
         this.cacheTriangulation(cache?.triangulation, cache?.points);
     }
 
@@ -54,14 +54,15 @@ export class WebaniPolygon extends WebaniPrimitiveObject {
     }
 
     get _triangulation() { 
-        return this.isCachedTriangulationValid(this.pointArray) ? this.cache.triangulation : this.recomputedTriangulation();
+        const triangulationValid = this.isCachedTriangulationValid(this.pointArray);
+        return triangulationValid ? this.cache.triangulation : this.recomputeTriangulation();
     }
 
     get _normals() { 
         return new Array(this._triangulation.length * 3).fill([0, 0, 1] as Vector3);
     }
     
-    private recomputedTriangulation(): Vector3[] {
+    recomputeTriangulation(): Vector3[] {
         let triangulation: Vector3[] = [];
         const holeIndices = this.holeIndices;
         const points = this.holes.length > 0 ? this.pointArray : this.filledPoints;

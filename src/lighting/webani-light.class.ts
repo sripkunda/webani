@@ -8,12 +8,12 @@ export class WebaniLight extends WebaniTransformable {
     intensity: number;
 
     constructor(
-        position: Vector3 = [0, 0, 5],
+        position: Vector3 = [0, 0, 0],
         rotation: Vector3 = [0, 0, 0],
         color: Vector3 = Colors.WHITE,
         intensity: number = 1,
     ) {
-        super(position, rotation, [1, 1, 1])
+        super(position, rotation, [1, 1, 1]);
         this.color = color;
         this.intensity = intensity;
     }

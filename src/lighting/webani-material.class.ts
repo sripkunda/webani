@@ -10,7 +10,7 @@ export class WebaniMaterial {
 
     constructor(
         color: Vector3,
-        ambient: Vector3 = [0.5, 0.5, 0.5],
+        ambient: Vector3 = [0.1, 0.1, 0.1],
         diffuse: Vector3 = [1, 1, 1],
         specular: Vector3 = [1, 1, 1],
         shininess: number = 32,

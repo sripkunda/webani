@@ -2,62 +2,67 @@ import { WebaniAnimation } from "../animations/webani-animation.class";
 import { Colors } from "../lighting/colors";
 import { Vector3 } from "../types/vector3.type";
 import { WebaniScene } from "./webani-scene.class";
-import { vertexShader, fragmentShader } from "../shaders/shaders"
+import { objectShaderSet, skyboxShaderSet } from "../shaders/shaders"
 import { Playable } from "../types/playable.type";
 import { RenderableObject } from "../types/renderable-object.type";
 import { WebaniPerspectiveCamera } from "../camera/webani-perspective-camera.class";
 import { WebaniLight } from "../lighting/webani-light.class";
 import { WebaniPrimitiveObject } from "../objects/webani-primitive-object.class";
+import { ShaderSet } from "../types/shader-set.type";
+import { WebaniSkybox } from "./webani-skybox.class";
 
 export class WebaniCanvas {
     canvas: HTMLCanvasElement;
-    interactive: boolean;
     gl: WebGL2RenderingContext;
     backgroundColor: Vector3;
     animationQueue: WebaniAnimation[];
-    scene: WebaniScene;
+    scene!: WebaniScene;
     _playing: boolean;
     _onFinishAnimation: (() => void)[];
     video: {
         recordedChunks?: BlobPart[];
         mediaRecorder?: MediaRecorder;
     };
-    glProgram: WebGLProgram;
+    shaderPrograms: Record<string, WebGLProgram> = {};
     camera!: WebaniPerspectiveCamera;
-    light: WebaniLight;
+    light!: WebaniLight;
+    attributeLocations: object = {};
+    attributeBuffers: object = {};
+    skybox?: WebaniSkybox;
     
     static defaultCanvas?: WebaniCanvas;
 
-    constructor(canvas: HTMLCanvasElement, interactive: boolean = true, backgroundColor: Vector3 = Colors.BLACK) {
+    constructor(canvas: HTMLCanvasElement, backgroundColor: Vector3 = Colors.BLACK, shaders: Record<string, ShaderSet> = {
+        object: objectShaderSet,
+        skybox: skyboxShaderSet
+    }, skybox?: WebaniSkybox) {
         if (!canvas)
             throw Error("A canvas object must be provided to create a Webani canvas element.");
 
         this.canvas = canvas;
-        this.interactive = interactive;
-        this.gl = canvas.getContext("webgl2", { antialias: true })!;
+        this.gl = canvas.getContext("webgl2", { antialias: true });
         this.backgroundColor = backgroundColor;
         this.animationQueue = [];
+        this.video = {};
+        this._playing = false;
+        this._onFinishAnimation = [];
+        
+        this.skybox = skybox; 
 
         if (!this.gl)
             throw Error("WebGL could not be initialized for Webani canvas.");
 
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
-
-        this.scene = new WebaniScene();
-        this.camera = new WebaniPerspectiveCamera();
-        this.light = new WebaniLight();
-        this.setupCameraAndLighting();
-        this.clearGL();
-        this.initShaders();
-        this._playing = false;
-        this._onFinishAnimation = [];
-        this.video = {};
+        this.initializeScene();
+        this.glClear();
+        this.createShaders(shaders);
 
         if (!WebaniCanvas.defaultCanvas) { 
             WebaniCanvas.defaultCanvas = this;
         }
     }
+
     startRecording(): void {
         this.video.recordedChunks = [];
         const stream = this.canvas.captureStream(30);
@@ -91,15 +96,14 @@ export class WebaniCanvas {
     }
 
     redraw(): void {
-        this.clearGL();
-        for (const object of this.scene.objects) {
-            this.draw(object);
-        }
+        this.glClear();
+        this.drawSkybox();
+        this.drawObjects();
     }
 
     clear(): void {
         this.scene.clear();
-        this.clearGL();
+        this.glClear();
     }
 
     onFinishAnimation(handler: () => void): void {
@@ -165,80 +169,65 @@ export class WebaniCanvas {
         this.scene.remove(object);
     }
 
-    private setupCameraAndLighting() { 
+    private initializeScene() {
+        this.scene = new WebaniScene();
+        this.camera = new WebaniPerspectiveCamera();
+        this.light = new WebaniLight();
         const z = this.canvas.width / (2 * Math.tan(this.camera.fov));
-        this.camera.far = z + 1000;
+        this.camera.far = z + 10000;
         this.camera.transform.position[2] = z;
         this.light.transform.position[2] = z;
     }
 
-    private clearGL(): void {
+    private glClear(): void {
+        this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
         this.gl.clearColor(this.backgroundColor[0], this.backgroundColor[1], this.backgroundColor[2], 1);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
 
-    private draw(object: WebaniPrimitiveObject) {
+    private drawSkybox() {
+        if (!this.skybox) { 
+            return;
+        }
+        this.changeShaderProgram("skybox");
+    }
+
+    private drawObjects() { 
+        this.changeShaderProgram("object");
+        for (const object of this.scene.objects) {
+            this.drawObject(object);
+        }
+    }
+
+    private drawObject(object: WebaniPrimitiveObject) {
         const vertices = object.triangles;
-        const vertexBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices.flat()), this.gl.STATIC_DRAW);
-    
-        const position = this.gl.getAttribLocation(this.glProgram, 'position');
-        this.gl.vertexAttribPointer(position, 3, this.gl.FLOAT, false, 0, 0);
-        this.gl.enableVertexAttribArray(position);
 
-        const projectionMatrixLoc = this.gl.getUniformLocation(this.glProgram, 'projectionMatrix');
-        this.gl.uniformMatrix4fv(projectionMatrixLoc, true, this.camera.projectionMatrix(this.canvas.width, this.canvas.height));
-
-        const viewMatrixLoc = this.gl.getUniformLocation(this.glProgram, 'viewMatrix');
-        this.gl.uniformMatrix4fv(viewMatrixLoc, true, this.camera.viewMatrix);
-
-        const modelMatrixLoc = this.gl.getUniformLocation(this.glProgram, 'modelMatrix');
-        this.gl.uniformMatrix4fv(modelMatrixLoc, true, object.modelMatrix);
+        this.bindAttributeBuffer("position", new Float32Array(vertices.flat()), 3);
+        this.bindAttributeBuffer("normal", new Float32Array(object.normals.flat()), 3);
     
-        const lightPositionLoc = this.gl.getUniformLocation(this.glProgram, "uLightPosition");
-        const lightColorLoc = this.gl.getUniformLocation(this.glProgram, "uLightColor");
-        const lightIntensityLoc = this.gl.getUniformLocation(this.glProgram, "uLightIntensity");
-
-        this.gl.uniform3fv(lightPositionLoc, this.light.transform.position);
-        this.gl.uniform3fv(lightColorLoc, this.light.color);    
-        this.gl.uniform1f(lightIntensityLoc, this.light.intensity);              
-    
-        const viewPositionLoc = this.gl.getUniformLocation(this.glProgram, "uViewPosition");
-        this.gl.uniform3fv(viewPositionLoc, this.camera.transform.position);  
-    
-        const materialDiffuseLoc = this.gl.getUniformLocation(this.glProgram, "uMaterialDiffuse");
-        this.gl.uniform3fv(materialDiffuseLoc, object.material.diffuse);
-    
-        const materialSpecularLoc = this.gl.getUniformLocation(this.glProgram, "uMaterialSpecular");
-        this.gl.uniform3fv(materialSpecularLoc, object.material.specular);
-
-        const materialAmbientLoc = this.gl.getUniformLocation(this.glProgram, "uMaterialAmbient");
-        this.gl.uniform3fv(materialAmbientLoc, object.material.ambient);
-    
-        const materialColorLoc = this.gl.getUniformLocation(this.glProgram, "uMaterialColor");
-        this.gl.uniform3fv(materialColorLoc, object.material.color);
-
-        const materialShininessLoc = this.gl.getUniformLocation(this.glProgram, "uMaterialShininess");
-        this.gl.uniform1f(materialShininessLoc, object.material.shininess);
-
-        const materialOpacityLoc = this.gl.getUniformLocation(this.glProgram, "uMaterialOpacity");
-        this.gl.uniform1f(materialOpacityLoc, object.material.opacity);
-    
-        const normalBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, normalBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(object.normals.flat()), this.gl.STATIC_DRAW);
-    
-        const normalLocation = this.gl.getAttribLocation(this.glProgram, 'normal');
-        this.gl.vertexAttribPointer(normalLocation, 3, this.gl.FLOAT, false, 0, 0);
-        this.gl.enableVertexAttribArray(normalLocation);
+        this.gl.uniformMatrix4fv(this.attributeLocations["projectionMatrix"], true, this.camera.projectionMatrix(this.canvas.width, this.canvas.height));
+        this.gl.uniformMatrix4fv(this.attributeLocations["viewMatrix"], true, this.camera.viewMatrix);
+        this.gl.uniformMatrix4fv(this.attributeLocations["modelMatrix"], true, object.modelMatrix);
+        
+        this.gl.uniform3fv(this.attributeLocations["uLightPosition"], this.light.transform.position);
+        this.gl.uniform3fv(this.attributeLocations["uLightColor"], this.light.color);
+        this.gl.uniform1f(this.attributeLocations["uLightIntensity"], this.light.intensity);
+        
+        this.gl.uniform3fv(this.attributeLocations["uViewPosition"], this.camera.transform.position);
+        
+        this.gl.uniform3fv(this.attributeLocations["uMaterialDiffuse"], object.material.diffuse);
+        this.gl.uniform3fv(this.attributeLocations["uMaterialSpecular"], object.material.specular);
+        this.gl.uniform3fv(this.attributeLocations["uMaterialAmbient"], object.material.ambient);
+        this.gl.uniform3fv(this.attributeLocations["uMaterialColor"], object.material.color);
+        this.gl.uniform1f(this.attributeLocations["uMaterialShininess"], object.material.shininess);
+        this.gl.uniform1f(this.attributeLocations["uMaterialOpacity"], object.material.opacity);
     
         const n = vertices.length;
         this.gl.drawArrays(this.gl.TRIANGLES, 0, n);
     }
 
-    private initShaders(): void {
-        const makeShader = (glsl: string, type: number): WebGLShader => {
+    private createShaders(shaders: Record<string, ShaderSet>): void {
+        const compileShaders = (glsl: string, type: number): WebGLShader => {
             const shader = this.gl.createShader(type);
             if (!shader) throw Error("An unknown error occurred while creating shader. Please report a bug.");
             this.gl.shaderSource(shader, glsl);
@@ -249,24 +238,61 @@ export class WebaniCanvas {
             return shader;
         };
 
-        const vertex = makeShader(vertexShader, this.gl.VERTEX_SHADER);
-        const fragment = makeShader(fragmentShader, this.gl.FRAGMENT_SHADER);
-        const program = this.gl.createProgram();
-        this.gl.attachShader(program, vertex);
-        this.gl.attachShader(program, fragment);
-        this.gl.linkProgram(program);
+        const linkShaders = (vertex: WebGLShader, fragment: WebGLShader): WebGLProgram => {
+            const program = this.gl.createProgram();
+            if (!program) throw Error("An unknown error occurred while creating program. Please report a bug.");
+            this.gl.attachShader(program, vertex);
+            this.gl.attachShader(program, fragment);
+            this.gl.linkProgram(program);
+            if (!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {
+                throw Error(`A GLSL occurred while linking shaders: ${this.gl.getProgramInfoLog(program)}`);
+            }
+            return program;
+        };
 
-        if (!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {
-            const log = this.gl.getProgramInfoLog(program);
-            console.error("Program linking error:\n", log);
-            this.gl.deleteShader(vertex);
-            this.gl.deleteShader(fragment);
-            this.gl.deleteProgram(program);
-            throw Error("Unable to initialize the shader program");
+        const createShaderProgram = (vertex: string, fragment: string): WebGLProgram => {
+            const vertexShader = compileShaders(vertex, this.gl.VERTEX_SHADER);
+            const fragmentShader = compileShaders(fragment, this.gl.FRAGMENT_SHADER);
+            const program = linkShaders(vertexShader, fragmentShader);
+            return program;
         }
 
-        this.gl.useProgram(program);
-        this.glProgram = program;
+        for (const shaderName in shaders) {
+            const shader = shaders[shaderName];
+            const program = createShaderProgram(shader.vertex, shader.fragment);
+            this.shaderPrograms[shaderName] = program;
+        }
+    }
+
+    private bindAttributeBuffer(attribName: string, data: Float32Array, size: number): void {
+        const buffer = this.attributeBuffers[attribName];
+        const loc = this.attributeLocations[attribName];
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, data, this.gl.DYNAMIC_DRAW);
+        this.gl.vertexAttribPointer(loc, size, this.gl.FLOAT, false, 0, 0);
+    }
+
+    private changeShaderProgram(name: string) { 
+        this.gl.useProgram(this.shaderPrograms[name]);
+        const program = this.shaderPrograms[name];
+        this.attributeLocations = {};
+        this.attributeBuffers = {};
+        const numUniforms = this.gl.getProgramParameter(program, this.gl.ACTIVE_UNIFORMS);
+        for (let i = 0; i < numUniforms; i++) {
+            const info = this.gl.getActiveUniform(program, i);
+            if (!info) continue;
+            this.attributeLocations[info.name] = this.gl.getUniformLocation(program, info.name)!;
+        }
+    
+        const numAttributes = this.gl.getProgramParameter(program, this.gl.ACTIVE_ATTRIBUTES);
+        for (let i = 0; i < numAttributes; i++) {
+            const info = this.gl.getActiveAttrib(program, i);
+            if (!info) continue;
+            const loc = this.gl.getAttribLocation(program, info.name);
+            this.attributeLocations[info.name] = loc;
+            this.gl.enableVertexAttribArray(loc);
+            this.attributeBuffers[info.name] = this.gl.createBuffer();
+        }
     }
 
     private addToScene(object: RenderableObject): void {

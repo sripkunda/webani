@@ -200,7 +200,7 @@ export class RenderedGroupNode extends WebaniAnimation {
 
     MoveCenterTo(position: Vector3, duration: number = 1000, asynchronous: boolean = false) {
         return this.constructAnimation(function(this: RenderedGroupNode) {
-            return this.addAnimation(new WebaniCollectionAnimation(this.collection, this.collection.setAnchor(position), duration), asynchronous);
+            return this.addAnimation(new WebaniCollectionAnimation(this.collection, this.collection.copyCenteredAt(position), duration), asynchronous);
         });
     }
 

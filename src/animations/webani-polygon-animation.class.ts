@@ -168,7 +168,8 @@ export class WebaniPolygonAnimation extends WebaniInterpolatedAnimation<WebaniPo
         for (const i in this.resolvedBefore.holes) {
             this.resolvePointArray(this.resolvedBefore.holes[i], this.resolvedAfter.holes[i]);
         }
-        console.log(this.resolvedBefore, this.resolvedAfter)
+        this.resolvedBefore.recomputeTriangulation();
+        this.resolvedAfter.recomputeTriangulation();
     }
 
     private getFilledPoints(t: number) {

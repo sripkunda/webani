@@ -10,7 +10,7 @@ export class WebaniPerspectiveCamera extends WebaniTransformable {
     near: number;
     far: number;
 
-    constructor(position: Vector3 = [0, 0, 10], rotation: Vector3 = [0, 180, 0], fov: number = 60, near: number = 0.1, far: number = 1000) {
+    constructor(position: Vector3 = [0, 0, 0], rotation: Vector3 = [0, 180, 0], fov: number = 60, near: number = 0.1, far: number = 1000) {
         super(position, rotation);
         this.fov = fov;
         this.near = near; 
