@@ -1,9 +1,9 @@
-declare module "*.frag" {
+declare module "*.png" {
     const content: string;
     export default content;
 }
 
-declare module "*.vert" {
+declare module "*.jpg" {
     const content: string;
     export default content;
 }

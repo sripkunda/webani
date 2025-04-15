@@ -20,6 +20,10 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /\.(png)$/,
+        type: 'asset/resource',
+      },
+      {
         test: /\.(vert|frag|glsl)$/,
         type: 'asset/source',
       },

@@ -2,7 +2,7 @@ import { WebaniAnimation } from "../animations/webani-animation.class";
 import { Colors } from "../lighting/colors";
 import { Vector3 } from "../types/vector3.type";
 import { WebaniScene } from "./webani-scene.class";
-import { objectShaderSet, skyboxShaderSet } from "../shaders/shaders"
+import { objectShaderSet, skyboxShaderSet } from "../lighting/shaders/shaders"
 import { Playable } from "../types/playable.type";
 import { RenderableObject } from "../types/renderable-object.type";
 import { WebaniPerspectiveCamera } from "../camera/webani-perspective-camera.class";
@@ -15,27 +15,31 @@ export class WebaniCanvas {
     canvas: HTMLCanvasElement;
     gl: WebGL2RenderingContext;
     backgroundColor: Vector3;
-    animationQueue: WebaniAnimation[];
-    scene!: WebaniScene;
-    _playing: boolean;
-    _onFinishAnimation: (() => void)[];
+    
+    private animationQueue: WebaniAnimation[];
+    private scene!: WebaniScene;
+    private playing: boolean;
+    private animationFinishedHandlers: (() => void)[];
+    
     video: {
         recordedChunks?: BlobPart[];
         mediaRecorder?: MediaRecorder;
     };
-    shaderPrograms: Record<string, WebGLProgram> = {};
+
     camera!: WebaniPerspectiveCamera;
     light!: WebaniLight;
+    skybox?: WebaniSkybox;
+
+    shaderPrograms: Record<string, WebGLProgram> = {};
     attributeLocations: object = {};
     attributeBuffers: object = {};
-    skybox?: WebaniSkybox;
     
     static defaultCanvas?: WebaniCanvas;
 
     constructor(canvas: HTMLCanvasElement, backgroundColor: Vector3 = Colors.BLACK, shaders: Record<string, ShaderSet> = {
         object: objectShaderSet,
         skybox: skyboxShaderSet
-    }, skybox?: WebaniSkybox) {
+    }) {
         if (!canvas)
             throw Error("A canvas object must be provided to create a Webani canvas element.");
 
@@ -44,11 +48,8 @@ export class WebaniCanvas {
         this.backgroundColor = backgroundColor;
         this.animationQueue = [];
         this.video = {};
-        this._playing = false;
-        this._onFinishAnimation = [];
-        
-        this.skybox = skybox; 
-
+        this.playing = false;
+        this.animationFinishedHandlers = []; 
         if (!this.gl)
             throw Error("WebGL could not be initialized for Webani canvas.");
 
@@ -61,6 +62,11 @@ export class WebaniCanvas {
         if (!WebaniCanvas.defaultCanvas) { 
             WebaniCanvas.defaultCanvas = this;
         }
+    }
+
+    setSkybox(hdrImage: ImageBitmap) { 
+        this.skybox = new WebaniSkybox(hdrImage, this);
+        this.redraw();
     }
 
     startRecording(): void {
@@ -88,7 +94,7 @@ export class WebaniCanvas {
 
     finishPlaying(): Promise<void> {
         return new Promise(resolve => {
-            if (!this._playing) {
+            if (!this.playing) {
                 resolve();
             }
             this.onFinishAnimation(resolve);
@@ -98,16 +104,23 @@ export class WebaniCanvas {
     redraw(): void {
         this.glClear();
         this.drawSkybox();
-        this.drawObjects();
+        // this.drawObjects();
     }
+
+    glClear(): void {
+        this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+        this.gl.clearColor(this.backgroundColor[0], this.backgroundColor[1], this.backgroundColor[2], 1);
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+    }
+
 
     clear(): void {
         this.scene.clear();
         this.glClear();
     }
 
-    onFinishAnimation(handler: () => void): void {
-        this._onFinishAnimation.push(handler);
+    remove(object: RenderableObject): void {
+        this.scene.remove(object);
     }
 
     play(...animations: Playable[]): void {
@@ -120,20 +133,20 @@ export class WebaniCanvas {
         }
     }
 
-    addAnimation(animation: WebaniAnimation): void {
+    private addAnimation(animation: WebaniAnimation): void {
         this.animationQueue.unshift(animation);
-        if (!this._playing)
+        if (!this.playing)
             this.playAnimationQueue();
     }
 
-    playAnimationQueue(): void {
+    private playAnimationQueue(): void {
         const animation = this.animationQueue.pop();
         if (!animation) return;
-        this._playing = true;
+        this.playing = true;
         this.animate(animation);
     }
 
-    animate(animation: WebaniAnimation, playNext: boolean = true): void {
+    private animate(animation: WebaniAnimation, playNext: boolean = true): void {
         let t = 0;
         const startTime = Date.now();
         let prevTime = startTime;
@@ -165,8 +178,8 @@ export class WebaniCanvas {
         requestAnimationFrame(drawFrame);
     }
 
-    remove(object: RenderableObject): void {
-        this.scene.remove(object);
+    private onFinishAnimation(handler: () => void): void {
+        this.animationFinishedHandlers.push(handler);
     }
 
     private initializeScene() {
@@ -174,15 +187,9 @@ export class WebaniCanvas {
         this.camera = new WebaniPerspectiveCamera();
         this.light = new WebaniLight();
         const z = this.canvas.width / (2 * Math.tan(this.camera.fov));
-        this.camera.far = z + 10000;
+        this.camera.far = 1000 + z;
         this.camera.transform.position[2] = z;
         this.light.transform.position[2] = z;
-    }
-
-    private glClear(): void {
-        this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-        this.gl.clearColor(this.backgroundColor[0], this.backgroundColor[1], this.backgroundColor[2], 1);
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
 
     private drawSkybox() {
@@ -190,6 +197,23 @@ export class WebaniCanvas {
             return;
         }
         this.changeShaderProgram("skybox");
+
+        this.gl.activeTexture(this.gl.TEXTURE0);
+        this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.skybox.texture);
+
+        this.gl.depthMask(false);
+        this.gl.depthFunc(this.gl.LEQUAL);
+
+        this.gl.uniformMatrix4fv(this.attributeLocations["projectionMatrix"], true, this.camera.projectionMatrix(this.canvas.width, this.canvas.height));
+        this.gl.uniformMatrix4fv(this.attributeLocations["viewMatrix"], true, this.camera.viewMatrix);
+
+        this.gl.uniform1i(this.attributeLocations["uHDRTexture"], 0);
+
+        this.bindAttributeBuffer("position", this.skybox.vertices, 3);
+
+        this.gl.drawArrays(this.gl.TRIANGLES, 0, this.skybox.vertices.length / 3);
+        this.gl.depthMask(true);
+        this.gl.depthFunc(this.gl.LESS);
     }
 
     private drawObjects() { 
@@ -272,7 +296,7 @@ export class WebaniCanvas {
         this.gl.vertexAttribPointer(loc, size, this.gl.FLOAT, false, 0, 0);
     }
 
-    private changeShaderProgram(name: string) { 
+    changeShaderProgram(name: string) { 
         this.gl.useProgram(this.shaderPrograms[name]);
         const program = this.shaderPrograms[name];
         this.attributeLocations = {};
@@ -302,6 +326,6 @@ export class WebaniCanvas {
     }
 
     private finishedAnimation(): void {
-        this._onFinishAnimation.forEach(callback => callback());
+        this.animationFinishedHandlers.forEach(callback => callback());
     }
 }

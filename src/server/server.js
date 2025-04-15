@@ -32,7 +32,6 @@ const mimeTypes = {
 const server = createServer((req, res) => {
   let filePath = join(publicDir, req.url === '/' ? 'index.html' : req.url);
 
-  // Prevent directory traversal attacks
   if (!filePath.startsWith(publicDir)) {
     res.writeHead(403);
     return res.end('Access denied');
