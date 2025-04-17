@@ -1,6 +1,6 @@
 import { Group, Play } from "./src/api/animate";
 import { defaultSkybox } from "./src/util/skyboxes.util";
-import { WebaniCanvas } from "./src/canvas/webani-canvas.class";
+import { WebaniCanvas } from "./src/rendering/webani-canvas.class";
 
 WebaniCanvas.defaultCanvas.setSkybox(defaultSkybox);
 

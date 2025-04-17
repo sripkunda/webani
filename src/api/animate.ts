@@ -1,6 +1,6 @@
 import { Playable } from "../types/playable.type";
 import { WebaniPolygonAnimation } from "../animations/webani-polygon-animation.class";
-import { WebaniCanvas } from "../canvas/webani-canvas.class";
+import { WebaniCanvas } from "../rendering/webani-canvas.class";
 import { WebaniPolygon } from "../polygon/webani-polygon.class";
 import { WebaniVariable } from "../variables/webani-variable.class";
 import { RenderedGroupNode } from "../animations/rendered-group-node.class";

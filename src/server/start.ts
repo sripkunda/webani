@@ -1,4 +1,4 @@
-import { FPSDisplay } from "../canvas/fps-display.class";
+import { FPSDisplay } from "../rendering/fps-display.class";
 import { LoadCanvas } from "../api/animate";
 
 new FPSDisplay(document.querySelector("#fps"));

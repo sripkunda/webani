@@ -2,7 +2,7 @@ import { WebaniAnimation } from "../animations/webani-animation.class";
 import { Colors } from "../lighting/colors";
 import { Vector3 } from "../types/vector3.type";
 import { WebaniScene } from "./webani-scene.class";
-import { objectShaderSet, skyboxShaderSet } from "../lighting/shaders/shaders"
+import { irradianceComputeShaderSet, objectShaderSet, prefilterComputeShaderSet, skyboxShaderSet } from "../lighting/shaders/shaders"
 import { Playable } from "../types/playable.type";
 import { RenderableObject } from "../types/renderable-object.type";
 import { WebaniPerspectiveCamera } from "../camera/webani-perspective-camera.class";
@@ -36,10 +36,7 @@ export class WebaniCanvas {
     
     static defaultCanvas?: WebaniCanvas;
 
-    constructor(canvas: HTMLCanvasElement, backgroundColor: Vector3 = Colors.BLACK, shaders: Record<string, ShaderSet> = {
-        object: objectShaderSet,
-        skybox: skyboxShaderSet
-    }) {
+    constructor(canvas: HTMLCanvasElement, backgroundColor: Vector3 = Colors.BLACK, shaders: Record<string, ShaderSet> = {}) {
         if (!canvas)
             throw Error("A canvas object must be provided to create a Webani canvas element.");
 
@@ -57,6 +54,12 @@ export class WebaniCanvas {
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
         this.initializeScene();
         this.glClear();
+        this.createShaders({
+            object: objectShaderSet,
+            skybox: skyboxShaderSet,
+            irradianceCompute: irradianceComputeShaderSet,
+            prefilterCompute: prefilterComputeShaderSet,
+        });
         this.createShaders(shaders);
 
         if (!WebaniCanvas.defaultCanvas) { 
@@ -199,19 +202,19 @@ export class WebaniCanvas {
         this.changeShaderProgram("skybox");
 
         this.gl.activeTexture(this.gl.TEXTURE0);
-        this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.skybox.texture);
+        this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.skybox.prefilteredTexture);
 
         this.gl.depthMask(false);
         this.gl.depthFunc(this.gl.LEQUAL);
 
-        this.gl.uniformMatrix4fv(this.attributeLocations["projectionMatrix"], true, this.camera.projectionMatrix(this.canvas.width, this.canvas.height));
-        this.gl.uniformMatrix4fv(this.attributeLocations["viewMatrix"], true, this.camera.viewMatrix);
+        this.gl.uniformMatrix4fv(this.attributeLocations["uProjectionMatrix"], true, this.camera.projectionMatrix(this.canvas.width, this.canvas.height));
+        this.gl.uniformMatrix4fv(this.attributeLocations["uViewMatrix"], true, this.camera.viewMatrix);
 
         this.gl.uniform1i(this.attributeLocations["uHDRTexture"], 0);
 
-        this.bindAttributeBuffer("position", this.skybox.vertices, 3);
+        this.bindAttributeBuffer("position", this.skybox.cubeVertices, 3);
 
-        this.gl.drawArrays(this.gl.TRIANGLES, 0, this.skybox.vertices.length / 3);
+        this.gl.drawArrays(this.gl.TRIANGLES, 0, this.skybox.cubeVertices.length / 3);
         this.gl.depthMask(true);
         this.gl.depthFunc(this.gl.LESS);
     }
@@ -288,7 +291,7 @@ export class WebaniCanvas {
         }
     }
 
-    private bindAttributeBuffer(attribName: string, data: Float32Array, size: number): void {
+    bindAttributeBuffer(attribName: string, data: Float32Array, size: number): void {
         const buffer = this.attributeBuffers[attribName];
         const loc = this.attributeLocations[attribName];
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
@@ -305,7 +308,7 @@ export class WebaniCanvas {
         for (let i = 0; i < numUniforms; i++) {
             const info = this.gl.getActiveUniform(program, i);
             if (!info) continue;
-            this.attributeLocations[info.name] = this.gl.getUniformLocation(program, info.name)!;
+            this.attributeLocations[info.name] = this.gl.getUniformLocation(program, info.name);
         }
     
         const numAttributes = this.gl.getProgramParameter(program, this.gl.ACTIVE_ATTRIBUTES);

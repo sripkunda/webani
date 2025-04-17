@@ -15,7 +15,7 @@ module.exports = {
     filename: '[name].js',
     path: path.resolve(__dirname, 'dist'),
     publicPath: '/',
-    clean: true, // cleans output dir before each build
+    clean: true,
   },
   module: {
     rules: [

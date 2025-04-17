@@ -1,0 +1,5 @@
+class WebaniInteractionHandler { 
+    constructor(handler) { 
+        
+    }
+}
