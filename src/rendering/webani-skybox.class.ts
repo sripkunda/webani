@@ -40,13 +40,14 @@ export class WebaniSkybox {
         ]);
 
         this.quadVertices = new Float32Array([
-            -1.0,  1.0,
+            -1.0, -1.0,
+             1.0, -1.0,
+             1.0,  1.0,
             -1.0, -1.0,
              1.0,  1.0,
-             1.0,  1.0,
-            -1.0, -1.0,
-             1.0, -1.0
-        ])
+            -1.0,  1.0
+        ]);
+
         this.roughness = roughness;
         this.reloadSkybox(canvas);
     }
@@ -60,7 +61,7 @@ export class WebaniSkybox {
         this.cubeMapTexture = this.createCubemapTexture(canvas);
         this.irradianceTexture = this.createIrradianceMap(canvas);
         this.prefilteredTexture = this.createPrefilterMap(canvas);
-        // this.brdfLUTTexture = this.createBRDFLUT(gl);
+        this.brdfLUTTexture = this.createBRDFLUT(canvas);
     }
 
     private createGeometry(canvas: WebaniCanvas) {
@@ -215,7 +216,6 @@ export class WebaniSkybox {
         gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
     
-        // Allocate texture storage for each face and mip level
         for (let mip = 0; mip < maxMipLevels; mip++) {
             const mipWidth = Math.max(1, baseWidth >> mip);
             const mipHeight = Math.max(1, baseHeight >> mip);
@@ -274,27 +274,46 @@ export class WebaniSkybox {
         return texture;
     }
 
-    createBRDFLUT(canvas: WebaniCanvas): WebGLTexture {
+    private createBRDFLUT(canvas: WebaniCanvas): WebGLTexture {
         const gl = canvas.gl;
-        const texture = gl.createTexture();
+        const size = 512;
+    
+        const texture = gl.createTexture()!;
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
         gl.texImage2D(
             gl.TEXTURE_2D,
             0,
             gl.RGBA,
-            512, 512, 0,
+            size, size, 0,
             gl.RGBA,
-            gl.FLOAT,
+            gl.UNSIGNED_BYTE,
             null
         );
 
+        const framebuffer = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+        gl.framebufferTexture2D(
+            gl.FRAMEBUFFER,
+            gl.COLOR_ATTACHMENT0,
+            gl.TEXTURE_2D,
+            texture,
+            0
+        );
+
+        canvas.changeShaderProgram("brdfLUTCompute");
+        canvas.bindAttributeBuffer("position", this.quadVertices, 2);
+
+        gl.viewport(0, 0, size, size);
+        canvas.glClear();
+        gl.drawArrays(gl.TRIANGLES, 0, this.quadVertices.length / 2);
+   
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.deleteFramebuffer(framebuffer);
         gl.bindTexture(gl.TEXTURE_2D, null);
-        
         return texture;
     }
 }

@@ -54,7 +54,7 @@ export class WebaniCollection extends WebaniTransformable {
 
     add(...newObjects: RenderableObject[]): number {
         for (const object of newObjects) {
-            if (object instanceof WebaniPolygon) {
+            if (object instanceof WebaniPrimitiveObject) {
                 this._objects.push(object);
             } else if (object instanceof WebaniCollection) {
                 this._objects.push(...object._objects);

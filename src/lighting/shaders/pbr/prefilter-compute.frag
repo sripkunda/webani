@@ -13,9 +13,11 @@ const uint NUM_SAMPLES = 1024u;
 const float PI = 3.14159265359;
 
 float ggxDistribution(float NdotH, float roughness) {
-    float a = NdotH * roughness;
-    float k = roughness / (1.0 - NdotH * NdotH + a * a);
-    return k * k * (1.0 / PI);
+    float a = roughness*roughness;
+    float nom = a * a;
+    float denom = (NdotH*NdotH * (a * a - 1.0) + 1.0);
+    denom = PI * denom * denom;
+    return nom / denom;
 }
 
 vec3 importanceSampleBRDF(vec2 random, vec3 normalVector, float roughness) {

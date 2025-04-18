@@ -1,22 +1,21 @@
 #version 300 es
-precision highp float;
+precision mediump float;
 
 // Input attributes
 in vec4 position;
 in vec3 normal;
 
-uniform mat4 projectionMatrix; 
-uniform mat4 viewMatrix;
-uniform mat4 modelMatrix;
+uniform mat4 uProjectionMatrix; 
+uniform mat4 uViewMatrix;
+uniform mat4 uModelMatrix;
 
 // Output to fragment shader
-out vec3 vertexPosition;
-out vec3 vertexNormal;
+out vec3 fragPos;
+out vec3 fragNormal;
 
 void main() {
-    vertexPosition = (modelMatrix * position).xyz;
-    vertexNormal = normalize(mat3(transpose(inverse(modelMatrix))) * normal);
-    
-    gl_Position = projectionMatrix * viewMatrix * modelMatrix * position;
+    fragPos = (uModelMatrix * position).xyz;
+    fragNormal = normalize(mat3(transpose(inverse(uModelMatrix))) * normal);
+    gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * position;
     gl_PointSize = 2.0;
 }

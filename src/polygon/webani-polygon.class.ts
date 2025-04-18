@@ -40,7 +40,7 @@ export class WebaniPolygon extends WebaniPrimitiveObject {
     }
 
     get copy() {
-        const copiedMaterial = new WebaniMaterial(this.material.color, this.material.ambient, this.material.diffuse, this.material.specular, this.material.shininess, this.material.opacity);
+        const copiedMaterial = new WebaniMaterial(this.material.color, this.material.metalic, this.material.roughness, this.material.opacity);
         const copiedTransforms = [...this.extraTransforms];
         const copiedCache = {
             triangulation: this.cache.triangulation ? [...this.cache.triangulation] : undefined,

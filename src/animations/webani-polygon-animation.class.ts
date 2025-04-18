@@ -183,12 +183,11 @@ export class WebaniPolygonAnimation extends WebaniInterpolatedAnimation<WebaniPo
     }
 
     private getMaterial(t: number) { 
-        const ambient = this.interpolatePoint(this.resolvedBefore.material.ambient, this.resolvedAfter.material.ambient, t);
-        const diffuse = this.interpolatePoint(this.resolvedBefore.material.diffuse, this.resolvedAfter.material.diffuse, t);
-        const specular = this.interpolatePoint(this.resolvedBefore.material.specular, this.resolvedAfter.material.specular, t);
+        const normalizedT = this.backwards ? 1 - t / this.duration : t / this.duration;
         const color = this.interpolatePoint(this.resolvedBefore.material.color, this.resolvedAfter.material.color, t);
-        const opacity = this.interpolationFunction(this.resolvedBefore.material.opacity, this.resolvedAfter.material.opacity, this.backwards ? 1 - t / this.duration : t / this.duration);
-        const shininess = this.interpolationFunction(this.resolvedBefore.material.shininess, this.resolvedAfter.material.shininess, this.backwards ? 1 - t / this.duration : t / this.duration);
-        return new WebaniMaterial(color, ambient, diffuse, specular, shininess, opacity);
+        const opacity = this.interpolationFunction(this.resolvedBefore.material.opacity, this.resolvedAfter.material.opacity, normalizedT);
+        const metalic = this.interpolationFunction(this.resolvedBefore.material.metalic, this.resolvedAfter.material.metalic, normalizedT);
+        const roughness = this.interpolationFunction(this.resolvedBefore.material.roughness, this.resolvedAfter.material.roughness, normalizedT);
+        return new WebaniMaterial(color, metalic, roughness, opacity);
     }
 }

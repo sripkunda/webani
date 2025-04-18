@@ -2,7 +2,7 @@ import { WebaniAnimation } from "../animations/webani-animation.class";
 import { Colors } from "../lighting/colors";
 import { Vector3 } from "../types/vector3.type";
 import { WebaniScene } from "./webani-scene.class";
-import { irradianceComputeShaderSet, objectShaderSet, prefilterComputeShaderSet, skyboxShaderSet } from "../lighting/shaders/shaders"
+import { brdfLUTComputeShaderSet, irradianceComputeShaderSet, objectShaderSet, prefilterComputeShaderSet, skyboxShaderSet } from "../lighting/shaders/shaders"
 import { Playable } from "../types/playable.type";
 import { RenderableObject } from "../types/renderable-object.type";
 import { WebaniPerspectiveCamera } from "../camera/webani-perspective-camera.class";
@@ -50,8 +50,6 @@ export class WebaniCanvas {
         if (!this.gl)
             throw Error("WebGL could not be initialized for Webani canvas.");
 
-        this.gl.enable(this.gl.BLEND);
-        this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
         this.initializeScene();
         this.glClear();
         this.createShaders({
@@ -59,6 +57,7 @@ export class WebaniCanvas {
             skybox: skyboxShaderSet,
             irradianceCompute: irradianceComputeShaderSet,
             prefilterCompute: prefilterComputeShaderSet,
+            brdfLUTCompute: brdfLUTComputeShaderSet
         });
         this.createShaders(shaders);
 
@@ -107,10 +106,16 @@ export class WebaniCanvas {
     redraw(): void {
         this.glClear();
         this.drawSkybox();
-        // this.drawObjects();
+        this.drawObjects();
     }
 
     glClear(): void {
+        this.gl.enable(this.gl.BLEND);
+        this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+        this.gl.enable(this.gl.DEPTH_TEST);
+        this.gl.depthMask(true);
+        this.gl.depthFunc(this.gl.LESS);
+        this.gl.clearDepth(1.0);
         this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
         this.gl.clearColor(this.backgroundColor[0], this.backgroundColor[1], this.backgroundColor[2], 1);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
@@ -192,17 +197,13 @@ export class WebaniCanvas {
         const z = this.canvas.width / (2 * Math.tan(this.camera.fov));
         this.camera.far = 1000 + z;
         this.camera.transform.position[2] = z;
-        this.light.transform.position[2] = z;
     }
 
     private drawSkybox() {
-        if (!this.skybox) { 
-            return;
-        }
         this.changeShaderProgram("skybox");
 
         this.gl.activeTexture(this.gl.TEXTURE0);
-        this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.skybox.prefilteredTexture);
+        this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.skybox.cubeMapTexture);
 
         this.gl.depthMask(false);
         this.gl.depthFunc(this.gl.LEQUAL);
@@ -228,27 +229,37 @@ export class WebaniCanvas {
 
     private drawObject(object: WebaniPrimitiveObject) {
         const vertices = object.triangles;
-
         this.bindAttributeBuffer("position", new Float32Array(vertices.flat()), 3);
         this.bindAttributeBuffer("normal", new Float32Array(object.normals.flat()), 3);
     
-        this.gl.uniformMatrix4fv(this.attributeLocations["projectionMatrix"], true, this.camera.projectionMatrix(this.canvas.width, this.canvas.height));
-        this.gl.uniformMatrix4fv(this.attributeLocations["viewMatrix"], true, this.camera.viewMatrix);
-        this.gl.uniformMatrix4fv(this.attributeLocations["modelMatrix"], true, object.modelMatrix);
+        
+        this.gl.uniformMatrix4fv(this.attributeLocations["uProjectionMatrix"], true, this.camera.projectionMatrix(this.canvas.width, this.canvas.height));
+        this.gl.uniformMatrix4fv(this.attributeLocations["uViewMatrix"], true, this.camera.viewMatrix);
+        this.gl.uniformMatrix4fv(this.attributeLocations["uModelMatrix"], true, object.modelMatrix);
+        this.gl.uniform3fv(this.attributeLocations["uViewPosition"], this.camera.transform.position);
         
         this.gl.uniform3fv(this.attributeLocations["uLightPosition"], this.light.transform.position);
         this.gl.uniform3fv(this.attributeLocations["uLightColor"], this.light.color);
         this.gl.uniform1f(this.attributeLocations["uLightIntensity"], this.light.intensity);
         
-        this.gl.uniform3fv(this.attributeLocations["uViewPosition"], this.camera.transform.position);
-        
-        this.gl.uniform3fv(this.attributeLocations["uMaterialDiffuse"], object.material.diffuse);
-        this.gl.uniform3fv(this.attributeLocations["uMaterialSpecular"], object.material.specular);
-        this.gl.uniform3fv(this.attributeLocations["uMaterialAmbient"], object.material.ambient);
+        this.gl.uniform1f(this.attributeLocations["uMaterialMetallic"], object.material.metalic);
         this.gl.uniform3fv(this.attributeLocations["uMaterialColor"], object.material.color);
-        this.gl.uniform1f(this.attributeLocations["uMaterialShininess"], object.material.shininess);
+        this.gl.uniform1f(this.attributeLocations["uMaterialRoughness"], object.material.roughness);
         this.gl.uniform1f(this.attributeLocations["uMaterialOpacity"], object.material.opacity);
-    
+        
+        this.gl.uniform1f(this.attributeLocations["uResolution"], this.skybox.image.width);
+
+        this.gl.activeTexture(this.gl.TEXTURE0);
+        this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.skybox.irradianceTexture);
+        this.gl.uniform1i(this.attributeLocations["uIrradianceMap"], 0);
+
+        this.gl.activeTexture(this.gl.TEXTURE1);
+        this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.skybox.prefilteredTexture);
+        this.gl.uniform1i(this.attributeLocations["uPrefilteredEnvMap"], 1);
+
+        this.gl.activeTexture(this.gl.TEXTURE2);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.skybox.brdfLUTTexture);
+        this.gl.uniform1i(this.attributeLocations["uBrdfLUT"], 2);
         const n = vertices.length;
         this.gl.drawArrays(this.gl.TRIANGLES, 0, n);
     }
