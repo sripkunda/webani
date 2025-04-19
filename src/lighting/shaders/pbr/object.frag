@@ -10,7 +10,7 @@ uniform float uMaterialRoughness;
 uniform float uMaterialMetallic;
 uniform float uMaterialOpacity;
 
-uniform vec3 uLightPos; 
+uniform vec3 uLightPosition; 
 uniform vec3 uLightColor;
 uniform float uLightIntensity;
 
@@ -24,11 +24,11 @@ out vec4 outColor;
 const float PI = 3.14159265359;
 const float MAX_REFLECTION_LOD = 4.0;
 
-float geometrySchlickGGX(float NdotV, float roughness) {
+float geometrySchlickGGX(float NdotX, float roughness) {
     float r = (roughness + 1.0);
     float k = (r*r) / 8.0;
-    float nom   = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
+    float nom   = NdotX;
+    float denom = NdotX * (1.0 - k) + k;
     return nom / denom;
 }
 
@@ -60,7 +60,7 @@ vec3 computeDiffuse(vec3 specularContribution, float metallic) {
     return (vec3(1.0) - specularContribution) * (1.0 - metallic); 
 }
 
-vec3 computeLo(vec3 lightPos, vec3 lightColor, float lightIntensity, vec3 worldPos, vec3 N, vec3 V, vec3 F0, float roughness) { 
+vec3 computeLo(vec3 lightPos, vec3 lightColor, float lightIntensity, vec3 worldPos, vec3 N, vec3 V, vec3 F0, float roughness) {
     float distance = length(lightPos - worldPos);
     if (distance <= 0.0) { 
         return vec3(0.0);
@@ -74,10 +74,10 @@ vec3 computeLo(vec3 lightPos, vec3 lightColor, float lightIntensity, vec3 worldP
     float NdotV = max(dot(N, V), 0.0);
     float NdotL = max(dot(N, L), 0.0);
     float HdotV = max(dot(H, V), 0.0);
-    float DF = ggxDistribution(NdotH, roughness); 
+    float D = ggxDistribution(NdotH, roughness); 
     float G = geometrySmith(NdotV, NdotL, roughness);
     vec3 F = fresnelSchlick(HdotV, F0);
-    vec3 numerator = DF * G * F;
+    vec3 numerator = D * G * F;
     float denominator = 4.0 * NdotV * NdotL + 1e-3; 
     vec3 specular = numerator / denominator; 
     vec3 kD = computeDiffuse(F, uMaterialMetallic);
@@ -91,10 +91,10 @@ vec3 computeF0(vec3 albedo, float metallic) {
 void main() {
     vec3 N = normalize(fragNormal);
     vec3 V = normalize(uCameraPosition - fragPos);
-    vec3 R = reflect(-V, N);
+    vec3 R = normalize(reflect(-V, N));
 
     vec3 F0 = computeF0(uMaterialColor, uMaterialMetallic);
-    vec3 Lo = computeLo(uLightPos, uLightColor, uLightIntensity, fragPos, N, V, F0, uMaterialRoughness);
+    vec3 Lo = computeLo(uLightPosition, uLightColor, uLightIntensity, fragPos, N, V, F0, uMaterialRoughness);
 
     vec3 irradiance = texture(uIrradianceMap, N).rgb;
     float NdotV = max(dot(N, V), 0.0);

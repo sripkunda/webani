@@ -20,6 +20,8 @@ export class WebaniCanvas {
     private scene!: WebaniScene;
     private playing: boolean;
     private animationFinishedHandlers: (() => void)[];
+    private animationQueueFinishedHandlers: (() => void)[];
+
     
     video: {
         recordedChunks?: BlobPart[];
@@ -47,6 +49,7 @@ export class WebaniCanvas {
         this.video = {};
         this.playing = false;
         this.animationFinishedHandlers = []; 
+        this.animationQueueFinishedHandlers = [];
         if (!this.gl)
             throw Error("WebGL could not be initialized for Webani canvas.");
 
@@ -66,8 +69,8 @@ export class WebaniCanvas {
         }
     }
 
-    setSkybox(hdrImage: ImageBitmap) { 
-        this.skybox = new WebaniSkybox(hdrImage, this);
+    async setSkybox(images: ImageBitmap[]) { 
+        this.skybox = new WebaniSkybox(images, this);
         this.redraw();
     }
 
@@ -99,7 +102,8 @@ export class WebaniCanvas {
             if (!this.playing) {
                 resolve();
             }
-            this.onFinishAnimation(resolve);
+            console.log("here");
+            this.onFinishAnimationQueue(resolve);
         });
     }
 
@@ -110,8 +114,6 @@ export class WebaniCanvas {
     }
 
     glClear(): void {
-        this.gl.enable(this.gl.BLEND);
-        this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthMask(true);
         this.gl.depthFunc(this.gl.LESS);
@@ -141,6 +143,14 @@ export class WebaniCanvas {
         }
     }
 
+    onFinishAnimationQueue(handler: () => void): void {
+        this.animationQueueFinishedHandlers.push(handler);
+    }
+
+    onFinishAnimation(handler: () => void): void {
+        this.animationFinishedHandlers.push(handler);
+    }
+
     private addAnimation(animation: WebaniAnimation): void {
         this.animationQueue.unshift(animation);
         if (!this.playing)
@@ -149,7 +159,10 @@ export class WebaniCanvas {
 
     private playAnimationQueue(): void {
         const animation = this.animationQueue.pop();
-        if (!animation) return;
+        if (!animation) {
+            this.finishedAnimationQueue();
+            return;
+        };
         this.playing = true;
         this.animate(animation);
     }
@@ -186,16 +199,12 @@ export class WebaniCanvas {
         requestAnimationFrame(drawFrame);
     }
 
-    private onFinishAnimation(handler: () => void): void {
-        this.animationFinishedHandlers.push(handler);
-    }
-
     private initializeScene() {
         this.scene = new WebaniScene();
         this.camera = new WebaniPerspectiveCamera();
         this.light = new WebaniLight();
         const z = this.canvas.width / (2 * Math.tan(this.camera.fov));
-        this.camera.far = 1000 + z;
+        this.camera.far = 10000 + z;
         this.camera.transform.position[2] = z;
     }
 
@@ -236,7 +245,7 @@ export class WebaniCanvas {
         this.gl.uniformMatrix4fv(this.attributeLocations["uProjectionMatrix"], true, this.camera.projectionMatrix(this.canvas.width, this.canvas.height));
         this.gl.uniformMatrix4fv(this.attributeLocations["uViewMatrix"], true, this.camera.viewMatrix);
         this.gl.uniformMatrix4fv(this.attributeLocations["uModelMatrix"], true, object.modelMatrix);
-        this.gl.uniform3fv(this.attributeLocations["uViewPosition"], this.camera.transform.position);
+        this.gl.uniform3fv(this.attributeLocations["uCameraPosition"], this.camera.transform.position);
         
         this.gl.uniform3fv(this.attributeLocations["uLightPosition"], this.light.transform.position);
         this.gl.uniform3fv(this.attributeLocations["uLightColor"], this.light.color);
@@ -246,8 +255,6 @@ export class WebaniCanvas {
         this.gl.uniform3fv(this.attributeLocations["uMaterialColor"], object.material.color);
         this.gl.uniform1f(this.attributeLocations["uMaterialRoughness"], object.material.roughness);
         this.gl.uniform1f(this.attributeLocations["uMaterialOpacity"], object.material.opacity);
-        
-        this.gl.uniform1f(this.attributeLocations["uResolution"], this.skybox.image.width);
 
         this.gl.activeTexture(this.gl.TEXTURE0);
         this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.skybox.irradianceTexture);
@@ -260,6 +267,7 @@ export class WebaniCanvas {
         this.gl.activeTexture(this.gl.TEXTURE2);
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.skybox.brdfLUTTexture);
         this.gl.uniform1i(this.attributeLocations["uBrdfLUT"], 2);
+
         const n = vertices.length;
         this.gl.drawArrays(this.gl.TRIANGLES, 0, n);
     }
@@ -341,5 +349,9 @@ export class WebaniCanvas {
 
     private finishedAnimation(): void {
         this.animationFinishedHandlers.forEach(callback => callback());
+    }
+
+    private finishedAnimationQueue(): void {
+        this.animationQueueFinishedHandlers.forEach(callback => callback());
     }
 }

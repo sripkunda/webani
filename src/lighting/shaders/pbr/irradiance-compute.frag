@@ -5,7 +5,6 @@ in vec4 fragPos;
 out vec4 outColor;
 
 uniform samplerCube uCubeMap;
-uniform float uDeltaTheta;
 
 const float PI = 3.14159265359;
 
@@ -17,14 +16,14 @@ void main() {
     
     vec3 totalIrradiance = vec3(0.0);
     float numSamples = 0.0;
-    for (float phi = 0.0; phi < 2.0 * PI; phi += uDeltaTheta) {
-        for (float theta = 0.0; theta < PI / 2.0; theta += uDeltaTheta) {
+    for (float phi = 0.0; phi < 2.0 * PI; phi += 0.02) {
+        for (float theta = 0.0; theta < PI * 0.5; theta += 0.02) {
             vec3 H = T * (sin(theta) * cos(phi)) + B * (sin(theta) * sin(phi)) + N * cos(theta);
             vec3 L = texture(uCubeMap, H).rgb;
             totalIrradiance += L * sin(theta) * cos(theta);
             numSamples++;
         }
     }
-
-    outColor = vec4(totalIrradiance * PI / numSamples, 1.0);
+    totalIrradiance = totalIrradiance * PI / numSamples;
+    outColor = vec4(totalIrradiance, 1.0);
 }

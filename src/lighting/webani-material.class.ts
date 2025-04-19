@@ -9,7 +9,7 @@ export class WebaniMaterial {
     constructor(
         color: Vector3,
         metalic: number = 0,
-        roughness: number = 0,
+        roughness: number = 0.0,
         opacity = 1
     ) {
         this.color = color;
@@ -19,8 +19,12 @@ export class WebaniMaterial {
     }
 
     static fromColorAndOpacity(color: Vector3, opacity: number = 1) { 
-        const material = new WebaniMaterial(color)
+        const material = new WebaniMaterial(color);
         material.opacity = opacity;
         return material;
+    }
+
+    get copy() { 
+        return new WebaniMaterial(this.color, this.metalic, this.roughness, this.opacity);
     }
 }

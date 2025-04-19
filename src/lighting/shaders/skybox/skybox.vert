@@ -10,7 +10,6 @@ out vec3 texCoords;
 
 void main() {
     mat4 viewRot = mat4(mat3(uViewMatrix)); 
-    vec4 transformedPosition = uProjectionMatrix * viewRot * position;
-    texCoords = position.xyz;
-    gl_Position = transformedPosition;
+    texCoords = vec3(-position.x, position.y, position.z);
+    gl_Position = uProjectionMatrix * viewRot * position;
 }

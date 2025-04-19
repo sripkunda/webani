@@ -1,80 +1,42 @@
 import { Group, Play } from "./src/api/animate";
-import { defaultSkybox } from "./src/util/skyboxes.util";
+import { defaultSkybox } from "./src/util/skybox.util";
 import { WebaniCanvas } from "./src/rendering/webani-canvas.class";
-import { Text } from "./src/api/components/text.component";
-import { Square } from "./src/api/components/square.component";
 import { Cube } from "./src/api/components/cube.component";
+import { Colors } from "./src/lighting/colors";
+import { SphereMesh } from "./src/api/components/models/models";
+import { Sphere } from "./src/api/components/sphere.component";
+import { Text } from "./src/api/components/text.component";
+import { Square, SquareComponent } from "./src/api/components/square.component";
+import { WebaniMaterial } from "./src/lighting/webani-material.class";
 
 WebaniCanvas.defaultCanvas.setSkybox(defaultSkybox);
 
-const lookAround = (e) => {
-    const sensitivity = 0.1;
-    const dx = e.movementX;
-    const dy = e.movementY;
-
-    WebaniCanvas.defaultCanvas.camera.transform.rotation[1] -= dx * sensitivity;
-    WebaniCanvas.defaultCanvas.camera.transform.rotation[0] -= dy * sensitivity;
-    WebaniCanvas.defaultCanvas.camera.transform.rotation[0] = Math.max(-90, Math.min(90, WebaniCanvas.defaultCanvas.camera.transform.rotation[0]));
-    WebaniCanvas.defaultCanvas.redraw();
-};
-
-WebaniCanvas.defaultCanvas.canvas.addEventListener("click", () => {
-    if (document.pointerLockElement === WebaniCanvas.defaultCanvas.canvas) {
-        return;
-    }
-    WebaniCanvas.defaultCanvas.canvas.requestPointerLock();
-});
-
-document.addEventListener("pointerlockchange", () => {
-    if (document.pointerLockElement === WebaniCanvas.defaultCanvas.canvas) {
-        WebaniCanvas.defaultCanvas.canvas.style.cursor = "none";
-        document.addEventListener("mousemove", lookAround);
-    } else {
-        WebaniCanvas.defaultCanvas.canvas.style.cursor = "default";
-        document.removeEventListener("mousemove", lookAround);
-    }
-});
-
-// --- Movement based on WASD ---
-const moveCamera = (direction: string) => {
-    const camera = WebaniCanvas.defaultCanvas.camera.transform;
-    const yaw = camera.rotation[1] * Math.PI / 180; // convert to radians
-    const speed = 10;
-
-    // Calculate direction vectors
-    const forwardX = Math.sin(yaw);
-    const forwardZ = Math.cos(yaw);
-    const rightX = Math.sin(yaw + Math.PI / 2);
-    const rightZ = Math.cos(yaw + Math.PI / 2);
-
-    switch (direction) {
-        case "w":
-            camera.position[0] += forwardX * speed;
-            camera.position[2] += forwardZ * speed;
-            break;
-        case "s":
-            camera.position[0] -= forwardX * speed;
-            camera.position[2] -= forwardZ * speed;
-            break;
-        case "a":
-            camera.position[0] += rightX * speed;
-            camera.position[2] += rightZ * speed;
-            break;
-        case "d":
-            camera.position[0] -= rightX * speed;
-            camera.position[2] -= rightZ * speed;
-            break;
-    }
-
-    WebaniCanvas.defaultCanvas.redraw();
-};
-
-document.addEventListener("keydown", (e) => {
-    const keys = ["w", "a", "s", "d"];
-    if (keys.includes(e.key.toLowerCase())) {
-        moveCamera(e.key.toLowerCase());
-    }
-});
-
-const cube = Cube([0, 0, 0], 100);
-Play(cube);
+const text = Text("Hello Aniket.", [0, 0], 700, Colors.BLACK);
+text.Wait(3000);
+text.TransformInto(Text("I stayed up.", [0, 0], 700, Colors.BLACK));
+text.Wait(2000);
+text.TransformInto(Text("As you can see...", [0, 0], 500, Colors.BLACK));
+text.Wait(2000);
+text.TransformInto(Text("It was worth it.", [0, 0], 600, Colors.BLACK));
+text.Wait(2000);
+text.TransformInto(Text("Here's a demo:", [0, 0], 600, Colors.BLACK));
+text.Wait(2000);
+text.TransformInto(Square([0, 0], 1500, Colors.BLACK));
+text.Rotate([0, 45, 0], 5000);
+text.Wait(500);
+text.TransformInto(Text("Let's change the surface roughness.", [0, 0], 400, Colors.BLACK));
+text.Wait(2000);
+text.TransformInto(Square([0, 0], 1500, Colors.BLACK));
+text.Wait(2000);
+text.TransformInto(Square([0, 0], 1500, Colors.BLACK, 1, new WebaniMaterial(Colors.BLACK, 0, 0.3, 1)), 2000);
+text.Rotate([0, 360, 0], 20000);
+text.TransformInto(Square([0, 0], 1500, Colors.BLACK));
+text.Wait(2000);
+text.TransformInto(Text("Don't worry.", [0, 0], 400, Colors.BLACK));
+text.Wait(2000);
+text.TransformInto(Text("It's still a math animation library.", [0, 0], 400, Colors.BLACK));
+text.Wait(2000);
+text.TransformInto(Text("$\\int_a^b f(x) \\, dx = F(b) - F(a)$", [0, 0], 400, Colors.BLACK));
+text.Wait(2000);
+text.Rotate([360, 360, 0], 20000);
+Play(text);

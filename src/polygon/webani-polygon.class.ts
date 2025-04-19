@@ -40,13 +40,12 @@ export class WebaniPolygon extends WebaniPrimitiveObject {
     }
 
     get copy() {
-        const copiedMaterial = new WebaniMaterial(this.material.color, this.material.metalic, this.material.roughness, this.material.opacity);
         const copiedTransforms = [...this.extraTransforms];
         const copiedCache = {
             triangulation: this.cache.triangulation ? [...this.cache.triangulation] : undefined,
             points: [...this.cache.points]
         };
-        return new WebaniPolygon(this.transform.position, this.filledPoints, this.holes, this.transform.rotation, this.transform.scale, copiedCache, this.transform.rotationCenter, copiedMaterial, copiedTransforms);
+        return new WebaniPolygon(this.transform.position, this.filledPoints, this.holes, this.transform.rotation, this.transform.scale, copiedCache, this.transform.rotationCenter, this.material.copy, copiedTransforms);
     }
 
     get localCenter() {
