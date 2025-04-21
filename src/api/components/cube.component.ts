@@ -5,10 +5,10 @@ import { Vector3 } from "../../types/vector3.type";
 import { WebaniMaterial } from "../../lighting/webani-material.class";
 
 export class CubeComponent extends Component {
-    objectConstructor(position: Vector3, length: number, color = Colors.WHITE, opacity = 1) {
-        const mesh = new WebaniMesh(
+    objectConstructor(position: Vector3, length: number, color = Colors.BLACK, opacity = 1) {
+        return new WebaniMesh({
             position, 
-            [
+            triangleVertices: [
                 // +X face
                 [ length,  length, -length], [ length, -length, -length], [ length, -length,  length],
                 [ length, -length,  length], [ length,  length,  length], [ length,  length, -length],
@@ -33,7 +33,7 @@ export class CubeComponent extends Component {
                 [ length,  length, -length], [-length,  length, -length], [-length, -length, -length],
                 [-length, -length, -length], [ length, -length, -length], [ length,  length, -length]
             ],
-            [
+            vertexNormals: [
                 // +X face normals
                 [1, 0, 0], [1, 0, 0], [1, 0, 0],
                 [1, 0, 0], [1, 0, 0], [1, 0, 0],
@@ -57,10 +57,9 @@ export class CubeComponent extends Component {
                 // -Z face normals
                 [0, 0, -1], [0, 0, -1], [0, 0, -1],
                 [0, 0, -1], [0, 0, -1], [0, 0, -1]
-            ]
-        ).copyCenteredAt([0, 0, 0]);
-        mesh.material = WebaniMaterial.fromColorAndOpacity(color, opacity);
-        return mesh;
+            ],
+            material: new WebaniMaterial({ color, opacity })
+        }).copyCenteredAt([0, 0, 0]);
     }
 }
 

@@ -2,7 +2,7 @@ import { RenderedGroupNode } from "../animations/rendered-group-node.class";
 import { VectorUtils } from "../util/vector.utils";
 import { Vector3 } from "../types/vector3.type";
 import { RenderableObject } from "../types/renderable-object.type";
-import { WebaniPolygon } from "../polygon/webani-polygon.class";
+import { WebaniPolygon } from "./webani-polygon.class";
 import { WebaniPrimitiveObject } from "./webani-primitive-object.class";
 import { WebaniCollectionAnimation } from "../animations/webani-collection-animation.class";
 import { WebaniTransformable } from "./webani-transformable.class";

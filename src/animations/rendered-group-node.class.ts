@@ -98,7 +98,7 @@ export class RenderedGroupNode extends WebaniAnimation {
         return this;
     }
 
-    private constructAnimation(animationConstructor: (parent: RenderedGroupNode) => void, parent?: RenderedGroupNode) { 
+    protected constructAnimation(animationConstructor: (parent: RenderedGroupNode) => void, parent?: RenderedGroupNode) { 
         if (this.isLeaf) { 
             if (!animationConstructor.prototype) {
                 throw Error("Animation constructors cannot be arrow functions.")
@@ -142,7 +142,7 @@ export class RenderedGroupNode extends WebaniAnimation {
             });
             const before = new WebaniCollection(beforeObjects);
             const after = new WebaniCollection(afterObjects);
-            return this.addAnimation(new WebaniCollectionAnimation(before, after, duration), asynchronous);
+            return this.addAnimation(new WebaniCollectionAnimation({before, after, duration}), asynchronous);
         });
     }
 
@@ -154,7 +154,11 @@ export class RenderedGroupNode extends WebaniAnimation {
                 return a;
             });
             const after = new WebaniCollection(afterObjects);
-            return this.addAnimation(new WebaniCollectionAnimation(this.collection, after, duration), asynchronous);
+            return this.addAnimation(new WebaniCollectionAnimation({
+                before: this.collection, 
+                after, 
+                duration
+            }), asynchronous);
         });
     }
 
@@ -166,7 +170,12 @@ export class RenderedGroupNode extends WebaniAnimation {
                 return after;
             });
             const after = new WebaniCollection(afterObjects);
-            return this.addAnimation(new WebaniCollectionAnimation(this.collection, after, duration, backwards), asynchronous);
+            return this.addAnimation(new WebaniCollectionAnimation({
+                before: this.collection, 
+                after, 
+                duration, 
+                backwards
+            }), asynchronous);
         });
     }
 
@@ -187,20 +196,32 @@ export class RenderedGroupNode extends WebaniAnimation {
                 return copy;
             });
             const after = new WebaniCollection(afterObjects);
-            return this.addAnimation(new WebaniCollectionAnimation(this.collection, after, duration), asynchronous);
+            return this.addAnimation(new WebaniCollectionAnimation({
+                before: this.collection, 
+                after, 
+                duration
+            }), asynchronous);
         });
     }
 
     TransformInto(after: RenderableObject, duration: number = 800, asynchronous: boolean = false) {
         return this.constructAnimation(function(this: RenderedGroupNode) {
             after = new RenderedGroupNode(after);
-            return this.addAnimation(new WebaniCollectionAnimation(this.collection, after.collection, duration, false, true), asynchronous);
+            return this.addAnimation(new WebaniCollectionAnimation({
+                before: this.collection, 
+                after: after.collection, 
+                duration: duration
+            }), asynchronous);
         });
     }
 
     MoveCenterTo(position: Vector3, duration: number = 1000, asynchronous: boolean = false) {
         return this.constructAnimation(function(this: RenderedGroupNode) {
-            return this.addAnimation(new WebaniCollectionAnimation(this.collection, this.collection.copyCenteredAt(position), duration), asynchronous);
+            return this.addAnimation(new WebaniCollectionAnimation({
+                before: this.collection, 
+                after: this.collection.copyCenteredAt(position), 
+                duration
+            }), asynchronous);
         });
     }
 
@@ -213,12 +234,16 @@ export class RenderedGroupNode extends WebaniAnimation {
         return this.constructAnimation(function(this: RenderedGroupNode, parent) {
             const afterObjects = this.collection.objects.map(obj => {
                 const a = obj.copy;
-                const rotationCenter = center || parent?.center;
-                a.rotate(rotation, rotationCenter);
+                const rotationalCenter = center || parent?.center;
+                a.rotate(rotation, rotationalCenter);
                 return a;
             });
             const after = new WebaniCollection(afterObjects);
-            return this.addAnimation(new WebaniCollectionAnimation(this.collection, after, duration), asynchronous);
+            return this.addAnimation(new WebaniCollectionAnimation({
+                before: this.collection, 
+                after, 
+                duration
+            }), asynchronous);
         });
     }
 
@@ -237,7 +262,12 @@ export class RenderedGroupNode extends WebaniAnimation {
             for (const i in after._objects) {
                 after._objects[i].material.opacity = 1;
                 const afterCollection = after.copy;
-                this.addAnimation(new WebaniCollectionAnimation(before, afterCollection, objectDuration, false, false, WebaniInterpolatedAnimation.lerp));
+                this.addAnimation(new WebaniCollectionAnimation({
+                    before,
+                    after: afterCollection, 
+                    duration: objectDuration, 
+                    interpolationFunction: WebaniInterpolatedAnimation.lerp
+                }));
                 before = afterCollection;
             }
             return this;
@@ -246,7 +276,11 @@ export class RenderedGroupNode extends WebaniAnimation {
 
     Wait(duration: number) {
         return this.constructAnimation(function(this: RenderedGroupNode) {
-            return this.addAnimation(new WebaniCollectionAnimation(this.collection, this.collection, duration));
+            return this.addAnimation(new WebaniCollectionAnimation({
+                before: this.collection, 
+                after: this.collection, 
+                duration: duration
+            }));
         });
     }
 }

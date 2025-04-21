@@ -7,10 +7,10 @@ import { SphereMesh } from "./models/models";
 
 
 export class SphereComponent extends Component {
-    objectConstructor(position: Vector3, radius: number, color = Colors.WHITE, opacity = 1) {
-        const mesh = SphereMesh.copy;
+    objectConstructor(position: Vector3, radius: number, color = Colors.BLACK, opacity = 1) {
+        const mesh = SphereMesh.copyCenteredAt(position);
         mesh.scaleBy([radius, radius, radius]);
-        mesh.material = WebaniMaterial.fromColorAndOpacity(color, opacity);
+        mesh.material = new WebaniMaterial({color, opacity});
         return mesh;
     }
 }

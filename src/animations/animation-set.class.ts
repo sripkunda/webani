@@ -34,14 +34,13 @@ export class AnimationSet extends WebaniAnimation {
         if (this.nextIsAsynchronous) {
             this.last.after = animation.frame(this.last.duration);
             if (this.last.duration < animation.duration) {
-                const remainingAnimation = new WebaniCollectionAnimation(
-                    animation.frame(this.last.duration),
-                    animation.frame(animation.duration),
-                    animation.duration - this.last.duration,
-                    animation.backwards,
-                    animation.cacheFrames,
-                    animation.interpolationFunction
-                );
+                const remainingAnimation = new WebaniCollectionAnimation({
+                    before: animation.frame(this.last.duration),
+                    after: animation.frame(animation.duration),
+                    duration: animation.duration - this.last.duration,
+                    backwards: animation.backwards,
+                    interpolationFunction: animation.interpolationFunction
+                });
                 this.animations.push(remainingAnimation);
             }
         } else {

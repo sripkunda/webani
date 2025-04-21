@@ -4,5 +4,5 @@ export type WorldTransform = {
     position: Vector3;
     rotation: Vector3;
     scale: Vector3;
-    rotationCenter?: Vector3
+    rotationalCenter?: Vector3
 }

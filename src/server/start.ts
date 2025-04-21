@@ -1,8 +1,8 @@
-import { FPSDisplay } from "../rendering/fps-display.class";
+import { WebaniFPSDisplay } from "../rendering/webani-fps-display.class";
 import { LoadCanvas } from "../api/animate";
 
-new FPSDisplay(document.querySelector("#fps"));
-const canvas = document.querySelector("canvas");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-await LoadCanvas(canvas);
+const __canvas__ = document.querySelector("canvas");
+__canvas__.width = window.innerWidth;
+__canvas__.height = window.innerHeight;
+const __webaniCanvas__ = await LoadCanvas({ canvas: __canvas__ });
+new WebaniFPSDisplay(document.querySelector("#fps"), __webaniCanvas__);

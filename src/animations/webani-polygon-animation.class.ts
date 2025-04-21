@@ -1,60 +1,49 @@
 import { WebaniMaterial } from "../lighting/webani-material.class";
-import { WebaniPolygon } from "../polygon/webani-polygon.class";
+import { WebaniPolygon } from "../objects/webani-polygon.class";
 import { executeInParallel, windingOrderClockwise } from "../util/polygon.utils";
 import { VectorUtils } from "../util/vector.utils";
 import { Vector3 } from "../types/vector3.type";
 import { WebaniInterpolatedAnimation } from "./webani-interpolated-animation.class";
 
+export type WebaniPolygonAnimationOptions = {
+    before: WebaniPolygon | null;
+    after: WebaniPolygon | null;
+    duration?: number;
+    backwards?: boolean;
+    interpolationFunction?: (before: number, after: number, t: number) => number;
+};
+
 export class WebaniPolygonAnimation extends WebaniInterpolatedAnimation<WebaniPolygon> {
     
-    private cache: { time: number; object: WebaniPolygon }[] = [];
-    cacheFrames: boolean = false;
+    private geometryChanged!: boolean; 
 
-    constructor(
-        before: WebaniPolygon | null, 
-        after: WebaniPolygon | null, 
-        duration: number = 1000,
-        backwards: boolean = false, 
-        cacheFrames: boolean = false,
-        interpolationFunction?: (before: number, after: number, t: number) => number
-    ) {
-        super(before, after, duration, backwards, interpolationFunction);
-        this.cacheFrames = cacheFrames;
-        this.resolveCache();
+    constructor({
+        before,
+        after,
+        duration = 1000,
+        backwards = false,
+        interpolationFunction = WebaniInterpolatedAnimation.easeInOut,
+    }: WebaniPolygonAnimationOptions) {
+        super({
+            before,
+            after, 
+            duration, 
+            backwards, 
+            interpolationFunction
+        });
     }
 
-    get before(): WebaniPolygon {
-        const trueBefore: WebaniPolygon = !this.backwards ? this.unresolvedBefore.copy : this.unresolvedAfter.copy;
-        trueBefore.transform.rotation = trueBefore.transform.rotation.map(x => x % 360) as Vector3; 
-        return trueBefore;
-    }
-
-    get after(): WebaniPolygon {
-        const trueAfter: WebaniPolygon = !this.backwards ? this.unresolvedAfter.copy : this.unresolvedBefore.copy;
-        trueAfter.transform.rotation = trueAfter.transform.rotation.map(x => x % 360) as Vector3;
-        return trueAfter;
-    }
-
-    set before(value: WebaniPolygon) { 
-        this.unresolvedBefore = value;
-        this.resolveAnimation();
-    }
-
-    set after(value: WebaniPolygon) { 
-        this.unresolvedAfter = value;
-        this.resolveAnimation();
-    }
-
-    frame(t: number, useCached = this.cacheFrames): WebaniPolygon {
-        if (useCached) { 
-            const cachedFrame = this.cachedFrame(t);
-            if (cachedFrame !== undefined) {
-                return cachedFrame;
-            }
-        }
+    setFrame(t: number): WebaniPolygon {
         if (!(this.unresolvedBefore instanceof WebaniPolygon) || !(this.unresolvedAfter instanceof WebaniPolygon)) return this.before;
         const transform = this.getTransform(t);
-        return new WebaniPolygon(transform.position, this.getFilledPoints(t), this.getHoles(t), transform.rotation, transform.scale, this.resolvedBefore.cache, transform.rotationCenter, this.getMaterial(t), this.getExtraTransforms(t));
+        this.currentObject.transform = transform;
+        this.currentObject.extraTransforms = this.getExtraTransforms(t);
+        this.currentObject.material = this.getMaterial(t);
+        if (this.geometryChanged) { 
+            this.currentObject.setFilledPoints(this.getFilledPoints(t));
+            this.currentObject.setHoles(this.getHoles(t));
+        }
+        return this.currentObject;
     }
 
     private tracePoints(points: Vector3[], numOfPoints: number): Vector3[] { 
@@ -93,7 +82,7 @@ export class WebaniPolygonAnimation extends WebaniInterpolatedAnimation<WebaniPo
                         p1[0] + t * (p2[0] - p1[0]),
                         p1[1] + t * (p2[1] - p1[1]),
                         p1[2] + t * (p2[2] - p1[2])
-                    ]);
+                    ]); 
                 } else {
                     tracedPoints.push(points[j]);
                 }
@@ -124,70 +113,28 @@ export class WebaniPolygonAnimation extends WebaniInterpolatedAnimation<WebaniPo
         }
     }
 
-    private cachedFrame(t: number) {
-        if (!this.cache) return;
-        const items = this.cache.filter(x => Math.abs(x.time - t) < 50);
-        if (items.length > 0) {
-            return items[0].object;
-        }
-    }
-
-    private get cacheStep() {
-        return Math.ceil(this.duration / 60);
-    }
-
-    private cacheUntilFrame(t: number) {
-        while (t > 0) {
-            this.cacheTimes(t);
-            t -= this.cacheStep;
-        }
-    }
-
-    private cacheTimes(...times: number[]) {
-        if (!this.cache) this.cache = [];
-        executeInParallel((t: number) => {
-            this.cache.push({
-                time: t,
-                object: this.frame(t, false)
-            });
-        }, times);
-    }
-
-    private resolveCache() { 
-        if (this.cacheFrames) { 
-            this.cacheUntilFrame(this.duration);
-        }
-    }
-
     resolveAnimation() {
         if (!(this.unresolvedBefore instanceof WebaniPolygon) || !(this.unresolvedAfter instanceof WebaniPolygon)) return;
         this.resolvedBefore = this.unresolvedBefore.copy;
         this.resolvedAfter = this.unresolvedAfter.copy;
-        this.resolvePointArray(this.resolvedBefore.filledPoints, this.resolvedAfter.filledPoints);
-        this.equateHoleCount(this.resolvedBefore.holes, this.resolvedAfter.holes, this.resolvedBefore.filledPoints[0], this.resolvedAfter.filledPoints[0]);
-        for (const i in this.resolvedBefore.holes) {
-            this.resolvePointArray(this.resolvedBefore.holes[i], this.resolvedAfter.holes[i]);
+        this.currentObject = this.resolvedBefore.copy;
+        this.geometryChanged = !VectorUtils.arraysEqual(this.resolvedBefore.pointArray, this.resolvedAfter.pointArray);
+        if (this.geometryChanged) {
+            this.resolvePointArray(this.resolvedBefore._filledPoints, this.resolvedAfter._filledPoints);
+            this.equateHoleCount(this.resolvedBefore._holes, this.resolvedAfter._holes, this.resolvedBefore._filledPoints[0], this.resolvedAfter._filledPoints[0]);
+            for (const i in this.resolvedBefore._holes) {
+                this.resolvePointArray(this.resolvedBefore._holes[i], this.resolvedAfter._holes[i]);
+            }
         }
-        this.resolvedBefore.recomputeTriangulation();
-        this.resolvedAfter.recomputeTriangulation();
     }
 
     private getFilledPoints(t: number) {
-        return this.interpolatePoints(this.resolvedBefore.filledPoints, this.resolvedAfter.filledPoints, t);
+        return this.interpolatePoints(this.resolvedBefore._filledPoints, this.resolvedAfter._filledPoints, t);
     }
 
     private getHoles(t: number) {
-        return this.resolvedBefore.holes.map((beforeHolePoints, i) => {
-            return this.interpolatePoints(beforeHolePoints, this.resolvedAfter.holes[i], t);
+        return this.resolvedBefore._holes.map((beforeHolePoints, i) => {
+            return this.interpolatePoints(beforeHolePoints, this.resolvedAfter._holes[i], t);
         });
-    }
-
-    private getMaterial(t: number) { 
-        const normalizedT = this.backwards ? 1 - t / this.duration : t / this.duration;
-        const color = this.interpolatePoint(this.resolvedBefore.material.color, this.resolvedAfter.material.color, t);
-        const opacity = this.interpolationFunction(this.resolvedBefore.material.opacity, this.resolvedAfter.material.opacity, normalizedT);
-        const metalic = this.interpolationFunction(this.resolvedBefore.material.metalic, this.resolvedAfter.material.metalic, normalizedT);
-        const roughness = this.interpolationFunction(this.resolvedBefore.material.roughness, this.resolvedAfter.material.roughness, normalizedT);
-        return new WebaniMaterial(color, metalic, roughness, opacity);
     }
 }

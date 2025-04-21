@@ -1,7 +1,7 @@
 import { Colors } from "../../lighting/colors";
 import { Vector3 } from "../../types/vector3.type";
 import { Component } from "./component.class";
-import { WebaniPolygon } from "../../polygon/webani-polygon.class";
+import { WebaniPolygon } from "../../objects/webani-polygon.class";
 import { Vector2 } from "../../types/vector2.type";
 import { WebaniMaterial } from "../../lighting/webani-material.class";
 
@@ -17,9 +17,11 @@ export class CircleComponent extends Component {
             angle += stepSize;
             points.push(circle(angle));
         }
-        const object = new WebaniPolygon(center, points, []);
-        object.material = WebaniMaterial.fromColorAndOpacity(color, opacity);
-        return object;
+        return new WebaniPolygon({
+            position: center,
+            filledPoints: points,
+            material: new WebaniMaterial({ color, opacity })
+        });
     }
 }
 

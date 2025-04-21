@@ -97,9 +97,9 @@ export const MatrixUtils = {
         );
     },
 
-    fromTRS(translation: Vector3, rotation: Vector3, scale: Vector3, rotationCenter?: Vector3): Matrix4 {
+    fromTRS(translation: Vector3, rotation: Vector3, scale: Vector3, rotationalCenter?: Vector3): Matrix4 {
         const T = MatrixUtils.translationMatrix(translation);
-        const R = rotationCenter ? MatrixUtils.rotationMatrixAboutPoint(rotation, rotationCenter) : MatrixUtils.rotationMatrix(rotation);
+        const R = rotationalCenter ? MatrixUtils.rotationMatrixAboutPoint(rotation, rotationalCenter) : MatrixUtils.rotationMatrix(rotation);
         const S = MatrixUtils.scaleMatrix(scale);
 
         return MatrixUtils.multiply(

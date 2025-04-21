@@ -1,24 +1,35 @@
 import { WebaniCollection } from "../objects/webani-collection.class";
-import { WebaniPolygon } from "../polygon/webani-polygon.class";
+import { WebaniPolygon } from "../objects/webani-polygon.class";
 import { WebaniInterpolatedAnimation } from "./webani-interpolated-animation.class";
 import { WebaniPrimitiveObject } from "../objects/webani-primitive-object.class";
 
+export type WebaniCollectionAnimationOptions = {
+    before: WebaniCollection | WebaniPolygon;
+    after: WebaniCollection | WebaniPolygon;
+    duration?: number;
+    backwards?: boolean;
+    interpolationFunction?: (before: number, after: number, t: number) => number;
+};
+
 export class WebaniCollectionAnimation extends WebaniInterpolatedAnimation<WebaniCollection> {
     animations!: WebaniInterpolatedAnimation<WebaniPrimitiveObject>[];
-    cacheFrames: boolean = false;
 
-    constructor(
-        before: WebaniCollection | WebaniPolygon,
-        after: WebaniCollection | WebaniPolygon,
+    constructor({
+        before,
+        after,
         duration = 1000,
         backwards = false,
-        cacheFrames: boolean = false,
-        interpolationFunction?: (before: number, after: number, t: number) => number,
-    ) {
+        interpolationFunction = WebaniInterpolatedAnimation.easeInOut,
+    }: WebaniCollectionAnimationOptions) {
         const _before = before instanceof WebaniPolygon ? new WebaniCollection(before) : before;
         const _after = after instanceof WebaniPolygon ? new WebaniCollection(after) : after;
-        super(_before, _after, duration, backwards, interpolationFunction);
-        this.cacheFrames = cacheFrames;
+        super({
+            before: _before,
+            after: _after,
+            duration,
+            backwards,
+            interpolationFunction
+        });
     }
 
     get before(): WebaniCollection {
@@ -44,11 +55,11 @@ export class WebaniCollectionAnimation extends WebaniInterpolatedAnimation<Weban
     }
 
     resolveAnimation() {
-        this.animations = []
+        this.animations = [];
         if (!(this.unresolvedBefore instanceof WebaniCollection) || !(this.unresolvedAfter instanceof WebaniCollection)) return;
         this.resolvedBefore = this.unresolvedBefore.copy;
         this.resolvedAfter = this.unresolvedAfter.copy;
-        
+        this.currentObject = this.unresolvedBefore.copy;
         if (this.resolvedBefore._objects.length === 0 || this.resolvedAfter._objects.length === 0) return;
 
         while (this.resolvedBefore._objects.length !== this.resolvedAfter._objects.length) {
@@ -67,25 +78,26 @@ export class WebaniCollectionAnimation extends WebaniInterpolatedAnimation<Weban
             (before, i) => {
                 if (before.animationClass) { 
                     return new before.animationClass(
-                        before,
-                        this.resolvedAfter._objects[i],
-                        this.duration,
-                        this.backwards,
-                        this.cacheFrames,
-                        this.interpolationFunction
-                    )
+                        {
+                            before,
+                            after: this.resolvedAfter._objects[i],
+                            duration: this.duration,
+                            backwards: this.backwards,
+                            interpolationFunction: this.interpolationFunction
+                        }
+                    );
                 }
                 throw Error(`Cannot generate an animation for object ${before} because there is no compatible animation class.`);
             }
         );
     }
 
-    frame(t: number): WebaniCollection {
-        const transform = this.getTransform(t);
-        const extraTransforms = this.getExtraTransforms(t);
-        const collection = new WebaniCollection(this.animations.map((animation) => animation.frame(t)));
-        collection.transform = transform;
-        collection.extraTransforms = extraTransforms;
-        return collection;
+    setFrame(t: number): WebaniCollection {
+        this.currentObject.transform = this.getTransform(t);
+        this.currentObject.extraTransforms = this.getExtraTransforms(t);
+        for (let i = 0; i < this.currentObject._objects.length; i++) { 
+            this.currentObject._objects[i] = this.animations[i].frame(t);
+        }
+        return this.currentObject;
     }
 }

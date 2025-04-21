@@ -91,4 +91,14 @@ export const VectorUtils = {
     isZero: (a: Vector3): boolean => {
         return a[0] === 0 && a[1] === 0 && a[2] === 0;
     },
+
+    equal(a: number[], b: number[]) { 
+        if (a.length != b.length) return false;
+        return a.every((x, i) => x == b[i]);
+    },
+
+    arraysEqual(a: number[][], b: number[][]) { 
+        if (a.length != b.length) return false;
+        a.every((x, i) => VectorUtils.equal(x, b[i]));
+    }
 };

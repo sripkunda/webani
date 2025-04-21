@@ -12,13 +12,14 @@ export class WebaniSkybox {
     normalMapTexture!: WebGLTexture;
     irradianceTexture!: WebGLTexture;
     prefilteredTexture!: WebGLTexture;
-    brdfLUTTexture!: WebGLTexture;
     faces!: number[];
     viewMatrices!: Matrix4[];
     projectionMatrix!: Matrix4;
     roughness: number;
+    
+    static brdfLUTTexture: WebGLTexture;
 
-    constructor(images: ImageBitmap[], canvas: WebaniCanvas, roughness: number = 1.0) {
+    constructor(canvas: WebaniCanvas, images: ImageBitmap[], roughness: number = 1.0) {
         this.images = images;
         this.textureSize = images[0].width;
         this.cubeVertices = new Float32Array([
@@ -54,6 +55,19 @@ export class WebaniSkybox {
         this.reloadSkybox(canvas);
     }
 
+    static async fallback(canvas: WebaniCanvas) {
+        if (canvas.skybox) return canvas.skybox;
+        const image = new ImageData(256, 256);
+        for (let i = 0; i < image.data.length; i += 4) {
+            image.data[i] = Math.ceil(canvas.backgroundColor[0] * 255);
+            image.data[i + 1] = Math.ceil(canvas.backgroundColor[1] * 255);
+            image.data[i + 2] = Math.ceil(canvas.backgroundColor[2] * 255);
+            image.data[i + 3] = 255;
+        }           
+        const ibm = await createImageBitmap(image);
+        return canvas.skybox || new WebaniSkybox(canvas, [ibm, ibm, ibm, ibm, ibm, ibm]);
+    }
+
     reloadSkybox(canvas: WebaniCanvas) {
         this.createGeometry(canvas);
         this.createTextures(canvas);
@@ -63,7 +77,7 @@ export class WebaniSkybox {
         this.cubeMapTexture = this.createCubemapTexture(canvas);
         this.irradianceTexture = this.createIrradianceMap(canvas);
         this.prefilteredTexture = this.createPrefilterMap(canvas);
-        this.brdfLUTTexture = this.createBRDFLUT(canvas);
+        WebaniSkybox.brdfLUTTexture ??= this.createBRDFLUT(canvas);
     }
 
     private createGeometry(canvas: WebaniCanvas) {
@@ -76,7 +90,13 @@ export class WebaniSkybox {
             canvas.gl.TEXTURE_CUBE_MAP_NEGATIVE_Z
         ];
         
-        const camera = new WebaniPerspectiveCamera([0, 0, 0], [0, 0, 0], 90, 0.1, 10);
+        const camera = new WebaniPerspectiveCamera({
+            position: [0, 0, 0], 
+            rotation: [0, 0, 0], 
+            fov: 90, 
+            near: 0.1, 
+            far: 10
+        });
         this.projectionMatrix = camera.projectionMatrix(this.textureSize, this.textureSize);
         this.viewMatrices = this.faces.map((face) => {
             switch (face) {
@@ -122,7 +142,7 @@ export class WebaniSkybox {
                 this.textureSize, this.textureSize, 0,
                 gl.RGB,
                 gl.UNSIGNED_BYTE,
-                this.images[i]
+                this.images ? this.images[i] : null
             );
         });
 
@@ -133,6 +153,7 @@ export class WebaniSkybox {
     }
 
     private createIrradianceMap(canvas: WebaniCanvas): WebGLTexture {
+        canvas.changeShaderProgram("irradianceCompute");
         const gl = canvas.gl;
         const texture = gl.createTexture();
         const irradianceSize = 32;
@@ -163,19 +184,17 @@ export class WebaniSkybox {
         gl.bindRenderbuffer(gl.RENDERBUFFER, renderBuffer);
         gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, irradianceSize, irradianceSize);
         gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderBuffer);
-    
-        canvas.changeShaderProgram("irradianceCompute");
 
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_CUBE_MAP, this.cubeMapTexture);
 
-        gl.uniform1i(canvas.attributeLocations["uCubeMap"], 0); 
+        gl.uniform1i(canvas.getShaderVariableLocation("uCubeMap"), 0); 
         canvas.bindAttributeBuffer("position", this.cubeVertices, 3);
-        gl.uniformMatrix4fv(canvas.attributeLocations["uProjectionMatrix"], true, this.projectionMatrix);
+        gl.uniformMatrix4fv(canvas.getShaderVariableLocation("uProjectionMatrix"), true, this.projectionMatrix);
         
         this.faces.forEach((face, i) => {
             gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, face, texture, 0);
-            gl.uniformMatrix4fv(canvas.attributeLocations["uViewMatrix"], true, this.viewMatrices[i]);
+            gl.uniformMatrix4fv(canvas.getShaderVariableLocation("uViewMatrix"), true, this.viewMatrices[i]);
             canvas.glClear();
             gl.viewport(0, 0, irradianceSize, irradianceSize);
             gl.drawArrays(gl.TRIANGLES, 0, this.cubeVertices.length / 3);
@@ -190,10 +209,12 @@ export class WebaniSkybox {
     }
 
     private createPrefilterMap(canvas: WebaniCanvas): WebGLTexture {
+        canvas.changeShaderProgram("prefilterCompute");
         const gl = canvas.gl;
         const texture = gl.createTexture();
-    
-        const maxMipLevels = Math.floor(Math.log2(this.textureSize)) + 1;
+        const size = 256;
+
+        const maxMipLevels = Math.floor(Math.log2(size)) + 1;
     
         gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
         gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
@@ -203,8 +224,8 @@ export class WebaniSkybox {
         gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
     
         for (let mip = 0; mip < maxMipLevels; mip++) {
-            const mipWidth = Math.max(1, this.textureSize >> mip);
-            const mipHeight = Math.max(1, this.textureSize >> mip);
+            const mipWidth = Math.max(1, size >> mip);
+            const mipHeight = Math.max(1, size >> mip);
     
             this.faces.forEach(face => {
                 gl.texImage2D(
@@ -225,26 +246,24 @@ export class WebaniSkybox {
         const renderBuffer = gl.createRenderbuffer();
         gl.bindRenderbuffer(gl.RENDERBUFFER, renderBuffer);
     
-        canvas.changeShaderProgram("prefilterCompute");
-    
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_CUBE_MAP, this.cubeMapTexture);
-        gl.uniform1i(canvas.attributeLocations["uCubeMap"], 0);
-        gl.uniformMatrix4fv(canvas.attributeLocations["uProjectionMatrix"], true, this.projectionMatrix);
+        gl.uniform1i(canvas.getShaderVariableLocation("uCubeMap"), 0);
+        gl.uniformMatrix4fv(canvas.getShaderVariableLocation("uProjectionMatrix"), true, this.projectionMatrix);
 
         canvas.bindAttributeBuffer("position", this.cubeVertices, 3);
     
         for (let mip = 0; mip < maxMipLevels; mip++) {
-            const mipWidth = Math.max(1, this.textureSize >> mip);
-            const mipHeight = Math.max(1, this.textureSize >> mip);
+            const mipWidth = Math.max(1, size >> mip);
+            const mipHeight = Math.max(1, size >> mip);
             const roughness = mip / (maxMipLevels - 1);
     
             gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, mipWidth, mipHeight);
-            gl.uniform1f(canvas.attributeLocations["uRoughness"], roughness);
-            gl.uniform1f(canvas.attributeLocations["uResolution"], mipWidth);
+            gl.uniform1f(canvas.getShaderVariableLocation("uRoughness"), roughness);
+            gl.uniform1f(canvas.getShaderVariableLocation("uResolution"), mipWidth);
     
             this.faces.forEach((face, i) => {
-                gl.uniformMatrix4fv(canvas.attributeLocations["uViewMatrix"], true, this.viewMatrices[i]);
+                gl.uniformMatrix4fv(canvas.getShaderVariableLocation("uViewMatrix"), true, this.viewMatrices[i]);
                 gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, face, texture, mip);
                 canvas.glClear();
                 gl.viewport(0, 0, mipWidth, mipHeight);
@@ -262,6 +281,7 @@ export class WebaniSkybox {
     }
 
     private createBRDFLUT(canvas: WebaniCanvas): WebGLTexture {
+        canvas.changeShaderProgram("brdfLUTCompute");
         const gl = canvas.gl;
         const size = 512;
     
@@ -290,8 +310,6 @@ export class WebaniSkybox {
             texture,
             0
         );
-
-        canvas.changeShaderProgram("brdfLUTCompute");
         canvas.bindAttributeBuffer("position", this.quadVertices, 2);
 
         gl.viewport(0, 0, size, size);

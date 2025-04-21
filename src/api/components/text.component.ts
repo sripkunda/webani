@@ -2,7 +2,7 @@ import { Colors } from "../../lighting/colors";
 import { textToPoints } from "../../util/svg.utils";
 import { Component } from "./component.class";
 import { WebaniCollection } from "../../objects/webani-collection.class";
-import { WebaniPolygon } from "../../polygon/webani-polygon.class";
+import { WebaniPolygon } from "../../objects/webani-polygon.class";
 import { Vector2 } from "../../types/vector2.type";
 import { WebaniMaterial } from "../../lighting/webani-material.class";
 
@@ -11,9 +11,14 @@ export class TextComponent extends Component {
         const pointsObject = textToPoints(string, fontSize);
         return new WebaniCollection(
             pointsObject.points.map((x, i) => {
-                const polygon = new WebaniPolygon(position, x, pointsObject.holes[i]);
-                    polygon.material = new WebaniMaterial(color);
-                    polygon.material.opacity = opacity;
+                const polygon = new WebaniPolygon({
+                    position, 
+                    filledPoints: x,
+                    holes: pointsObject.holes[i],
+                    material: new WebaniMaterial({
+                        color, opacity
+                    })
+                });
                     return polygon;
             })
         ).copyCenteredAt([position[0], position[1], 0]);

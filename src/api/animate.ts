@@ -1,28 +1,20 @@
 import { Playable } from "../types/playable.type";
 import { WebaniPolygonAnimation } from "../animations/webani-polygon-animation.class";
-import { WebaniCanvas } from "../rendering/webani-canvas.class";
-import { WebaniPolygon } from "../polygon/webani-polygon.class";
+import { WebaniCanvas, WebaniCanvasOptions } from "../rendering/webani-canvas.class";
+import { WebaniPolygon } from "../objects/webani-polygon.class";
 import { WebaniVariable } from "../variables/webani-variable.class";
 import { RenderedGroupNode } from "../animations/rendered-group-node.class";
 
-export const LoadCanvas = async function (...canvases: HTMLCanvasElement[]) {
-    const webaniCanvases = await new Promise<WebaniCanvas[]>(resolve => {
-        const loadedWebaniCanvases = canvases.map(canvas => new WebaniCanvas(canvas));
+export const LoadCanvas = async function (options: WebaniCanvasOptions) {
+    return await new Promise<WebaniCanvas>(resolve => {
+        const loadedCanvas = new WebaniCanvas(options);
         if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", () => resolve(loadedWebaniCanvases));
+            document.addEventListener("DOMContentLoaded", () => resolve(loadedCanvas));
         } else {
-            resolve(loadedWebaniCanvases);
+            resolve(loadedCanvas);
         }
     });
-    if (webaniCanvases.length > 0) {
-        return webaniCanvases[0];
-    }
 }
-
-export const Wait = (duration: number): void => {
-    const animation = new WebaniPolygonAnimation(new WebaniPolygon([], []), new WebaniPolygon([], []), duration);
-    WebaniCanvas.defaultCanvas?.play(animation);
-};
 
 export const Play = (...animations: Playable[]): void => {
     WebaniCanvas.defaultCanvas?.play(...animations);
@@ -33,21 +25,26 @@ export const Variable = (value: unknown): WebaniVariable<unknown> => {
 }
 
 export const BottomLeft = (webaniCanvas: WebaniCanvas = WebaniCanvas.defaultCanvas): [number, number] => {
-    return [-webaniCanvas.canvas.width, -webaniCanvas.canvas.height];
+    return [-webaniCanvas.htmlCanvas.width, -webaniCanvas.htmlCanvas.height];
 };
 
 export const BottomRight = (webaniCanvas: WebaniCanvas = WebaniCanvas.defaultCanvas): [number, number] => {
-    return [webaniCanvas.canvas.width, -webaniCanvas.canvas.height];
+    return [webaniCanvas.htmlCanvas.width, -webaniCanvas.htmlCanvas.height];
 };
 
 export const TopLeft = (webaniCanvas: WebaniCanvas = WebaniCanvas.defaultCanvas): [number, number] => {
-    return [-webaniCanvas.canvas.width, webaniCanvas.canvas.height];
+    return [-webaniCanvas.htmlCanvas.width, webaniCanvas.htmlCanvas.height];
 };
 
 export const TopRight = (webaniCanvas: WebaniCanvas = WebaniCanvas.defaultCanvas): [number, number] => {
-    return [webaniCanvas.canvas.width, webaniCanvas.canvas.height];
+    return [webaniCanvas.htmlCanvas.width, webaniCanvas.htmlCanvas.height];
 };
 
 export const Group = (object: object) => { 
     return RenderedGroupNode.CreateGroup(object);
 }
+
+export const UP = (webaniCanvas = WebaniCanvas.defaultCanvas) => [0, webaniCanvas.htmlCanvas.height / 10, 0];
+export const DOWN = (webaniCanvas = WebaniCanvas.defaultCanvas) => [0, -webaniCanvas.htmlCanvas.height / 10, 0];
+export const RIGHT = (webaniCanvas = WebaniCanvas.defaultCanvas) => [webaniCanvas.htmlCanvas.width / 10, 0, 0];
+export const LEFT = (webaniCanvas = WebaniCanvas.defaultCanvas) => [-webaniCanvas.htmlCanvas.width / 10, 0, 0];

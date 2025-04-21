@@ -4,14 +4,31 @@ import { VectorUtils } from "../util/vector.utils";
 import { Vector3 } from "../types/vector3.type";
 import { WebaniTransformable } from "../objects/webani-transformable.class";
 
+export type WebaniPerspectiveCameraOptions = {
+    position?: Vector3;
+    rotation?: Vector3;
+    fov?: number;
+    near?: number;
+    far?: number;
+};
+
 export class WebaniPerspectiveCamera extends WebaniTransformable {
 
     fov: number;
     near: number;
     far: number;
 
-    constructor(position: Vector3 = [0, 0, 0], rotation: Vector3 = [0, 180, 0], fov: number = 60, near: number = 0.1, far: number = 1000) {
-        super(position, rotation);
+    constructor({
+        position = [0, 0, 0],
+        rotation = [0, 180, 0],
+        fov = 60,
+        near = 0.1,
+        far = 1000
+    }: WebaniPerspectiveCameraOptions = {}) {
+        super({
+            position,
+            rotation
+        });
         this.fov = fov;
         this.near = near; 
         this.far = far;
@@ -65,6 +82,12 @@ export class WebaniPerspectiveCamera extends WebaniTransformable {
     }
 
     get copy() {
-        return new WebaniPerspectiveCamera(this.transform.position, this.transform.rotation, this.fov, this.near, this.far);
+        return new WebaniPerspectiveCamera({
+            position: this.transform.position, 
+            rotation: this.transform.rotation, 
+            fov: this.fov, 
+            near: this.near, 
+            far: this.far
+        });
     }
 }

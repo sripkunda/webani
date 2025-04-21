@@ -6,8 +6,8 @@ import { Vector2 } from "../../types/vector2.type";
 import { WebaniMaterial } from "../../lighting/webani-material.class";
 
 export class SquareComponent extends Component {
-    objectConstructor(position: Vector2, length: number, color = Colors.WHITE, opacity = 1, material?: WebaniMaterial): RenderableObject {
-        return Rectangle(position, length, length, color, opacity, material);
+    objectConstructor(position: Vector2, length: number, color = Colors.WHITE, opacity = 1): RenderableObject {
+        return Rectangle(position, length, length, color, opacity);
     }
 }
 

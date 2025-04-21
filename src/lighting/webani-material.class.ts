@@ -1,30 +1,41 @@
 import { Vector3 } from "../types/vector3.type";
+import { Colors } from "./colors";
+
+export type WebaniMaterialOptions = {
+    color?: Vector3;
+    metallic?: number;
+    roughness?: number;
+    opacity?: number;
+};
 
 export class WebaniMaterial {
     color: Vector3;
     roughness: number;
-    metalic: number;
+    metallic: number;
     opacity: number;
+    baseColorTexture?: ImageBitmap;
+    metallicRoughnessTexture?: ImageBitmap;
+    normalMap?: ImageBitmap;
+    normalScale?: number;
 
-    constructor(
-        color: Vector3,
-        metalic: number = 0,
-        roughness: number = 0.0,
+    constructor({
+        color = Colors.BLACK,
+        metallic = 0,
+        roughness = 0,
         opacity = 1
-    ) {
+    }: WebaniMaterialOptions) {
         this.color = color;
-        this.metalic = metalic;
+        this.metallic = metallic;
         this.roughness = roughness;
         this.opacity = opacity;
     }
 
-    static fromColorAndOpacity(color: Vector3, opacity: number = 1) { 
-        const material = new WebaniMaterial(color);
-        material.opacity = opacity;
-        return material;
-    }
-
-    get copy() { 
-        return new WebaniMaterial(this.color, this.metalic, this.roughness, this.opacity);
+    get copy() {
+        return new WebaniMaterial({
+            color: this.color,
+            metallic: this.metallic,
+            roughness: this.roughness,
+            opacity: this.opacity
+        });
     }
 }
