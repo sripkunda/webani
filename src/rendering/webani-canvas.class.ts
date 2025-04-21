@@ -281,6 +281,7 @@ export class WebaniCanvas {
     }
 
     private drawObject(object: WebaniPrimitiveObject) {
+        object.material.bindToContext(this.gl);
         const triangles = object.triangles;
         this.bindAttributeBuffer("position", triangles, 3);
         this.bindAttributeBuffer("normal", object.normals, 3);
@@ -310,6 +311,10 @@ export class WebaniCanvas {
         this.gl.activeTexture(this.gl.TEXTURE2);
         this.gl.bindTexture(this.gl.TEXTURE_2D, WebaniSkybox.brdfLUTTexture);
         this.gl.uniform1i(this.getShaderVariableLocation("uBrdfLUT"), 2);
+
+        this.gl.activeTexture(this.gl.TEXTURE3);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, object.material.baseColorTexture);
+        this.gl.uniform1i(this.getShaderVariableLocation("uBaseColorTexture"), 2);
 
         const n = triangles.length / 3;
         this.gl.drawArrays(this.gl.TRIANGLES, 0, n);

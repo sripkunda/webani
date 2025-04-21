@@ -12,5 +12,6 @@ import { Cone } from "./src/api/components/cone.component";
 import { BirdMesh } from "./src/api/components/models/models";
 
 WebaniCanvas.defaultCanvas.setSkybox(defaultSkybox);
-const cone = Square([0, 0], 500, Colors.BLACK);
+const cone = Bird([0, 0, 0], [50, 50, 50], Colors.BLACK);
+cone.Rotate([720, 720, 720], 5000);
 Play(cone);

@@ -161,19 +161,19 @@ export async function importGLB(path: string) {
         }
     
         // Textures
-        material.baseColorTexture = await getImageBitmapFromTextureIndex(
+        material.baseColorImage = await getImageBitmapFromTextureIndex(
             pbr.baseColorTexture?.index,
             gltf,
             binaryBuffer,
             path
         );
-        material.metallicRoughnessTexture = await getImageBitmapFromTextureIndex(
+        material.metallicRoughnessImage = await getImageBitmapFromTextureIndex(
             pbr.metallicRoughnessTexture?.index,
             gltf,
             binaryBuffer,
             path
         );
-        material.normalMap = await getImageBitmapFromTextureIndex(
+        material.normalMapImage = await getImageBitmapFromTextureIndex(
             mat.normalTexture?.index,
             gltf,
             binaryBuffer,

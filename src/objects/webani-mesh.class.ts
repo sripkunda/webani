@@ -1,5 +1,6 @@
 import { WebaniMeshAnimation } from "../animations/webani-mesh-animation.class";
 import { WebaniMaterial } from "../lighting/webani-material.class";
+import { Vector2 } from "../types/vector2.type";
 import { Vector3 } from "../types/vector3.type";
 import { WorldTransform } from "../types/world-transform.type";
 import { importGLB } from "../util/glb.util";
@@ -14,29 +15,33 @@ export type WebaniMeshOptions = {
     scale?: Vector3; 
     rotationalCenter?: Vector3, 
     material?: WebaniMaterial, 
-    extraTransforms?: WorldTransform[];
+    extraTransforms?: WorldTransform[],
+    vertexUV?: Vector2[]
 };
 
 export class WebaniMesh extends WebaniPrimitiveObject { 
     animationClass = WebaniMeshAnimation;
     private triangleVertices: Vector3[]
     private vertexNormals: Vector3[];
+    private vertexUV: Vector2[];
 
     constructor({
         position, 
         triangleVertices, 
         vertexNormals, 
+        vertexUV,
         rotation = [0, 0, 0], 
         scale = [1, 1, 1], 
         rotationalCenter, 
         material, 
-        extraTransforms = []
+        extraTransforms = [],
     }: WebaniMeshOptions) { 
         super({ 
             position, rotation, scale, rotationalCenter, material, extraTransforms
          });
         this.triangleVertices = triangleVertices;
         this.vertexNormals = vertexNormals;
+        this.vertexUV = vertexUV;
         this.resolveObjectGeometry();
     }
 
@@ -49,7 +54,8 @@ export class WebaniMesh extends WebaniPrimitiveObject {
             scale: this.transform.scale, 
             rotationalCenter: this.transform.rotationalCenter, 
             material: this.material.copy, 
-            extraTransforms: [...this.extraTransforms]
+            extraTransforms: [...this.extraTransforms],
+            vertexUV: this.vertexUV
         });
     }
 
