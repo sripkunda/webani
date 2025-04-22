@@ -1,90 +1,176 @@
 import { WebaniMaterial } from "../renderer/lighting/webani-material.class";
+import { Matrix4 } from "../types/matrix4.type";
 import { Vector2 } from "../types/vector2.type";
 import { Vector3 } from "../types/vector3.type";
 import { VectorUtils } from "./vector.utils";
 
-export async function importGLB(path: string) {
+async function fetchGLBData(path: string): Promise<ArrayBuffer> {
     const res = await fetch(path);
-    const arrayBuffer = await res.arrayBuffer();
-    const dataView = new DataView(arrayBuffer);
+    if (!res.ok) {
+        throw new Error(`Webani: Failed to fetch GLB file at ${path}. Status: ${res.status}`);
+    }
+    return await res.arrayBuffer();
+}
 
-    const magic = new TextDecoder().decode(new Uint8Array(arrayBuffer, 0, 4));
-    if (magic !== 'glTF') throw new Error('Webani: File is not a valid GLB file.');
+function validateGLBHeader(dataView: DataView): void {
+    const magic = new TextDecoder().decode(new Uint8Array(dataView.buffer, 0, 4));
+    if (magic !== 'glTF') {
+        throw new Error('Webani: File is not a valid GLB file.');
+    }
+}
 
+function parseGLBJSON(dataView: DataView): any {
     const jsonLength = dataView.getUint32(12, true);
     const jsonStart = 20;
-    const jsonChunk = new Uint8Array(arrayBuffer, jsonStart, jsonLength);
+    const jsonChunk = new Uint8Array(dataView.buffer, jsonStart, jsonLength);
     const jsonText = new TextDecoder().decode(jsonChunk);
-    const gltf = JSON.parse(jsonText);
+    return JSON.parse(jsonText);
+}
 
+function extractGLBBinary(dataView: DataView, jsonLength: number): Uint8Array {
+    const jsonStart = 20;
     const binLength = dataView.getUint32(jsonStart + jsonLength, true);
     const binStart = jsonStart + jsonLength + 8;
-    const binaryBuffer = new Uint8Array(arrayBuffer, binStart, binLength);
+    return new Uint8Array(dataView.buffer, binStart, binLength);
+}
 
-    const primitive = gltf.meshes[0].primitives[0];
+function extractJoints(gltf: any, skinIndex: number): number[] {
+    const skin = gltf.skins?.[skinIndex];
+    if (!skin) return [];
+    return skin.joints || [];
+}
 
-    const extractAttribute = (semantic: string, type: string = "VEC3"): Vector3[] | Vector2[] => {
-        const accessorIndex = primitive.attributes[semantic];
-        if (accessorIndex === undefined) return [];
+function extractInverseBindMatrices(gltf: any, binaryBuffer: Uint8Array, skinIndex: number): Matrix4[] {
+    const skin = gltf.skins?.[skinIndex];
+    if (!skin || skin.inverseBindMatrices === undefined) return [];
 
-        const accessor = gltf.accessors[accessorIndex];
-        const bufferView = gltf.bufferViews[accessor.bufferView];
+    const { accessorCount: count, dataView, byteLength, byteOffset, byteStride } = readBinaryBuffer(gltf, binaryBuffer, skin.inverseBindMatrices);
+    const inverseBindMatrices: Matrix4[] = [];
 
-        const componentType = accessor.componentType;
-        const count = accessor.count;
+    for (let i = 0; i < count; i++) {
+        const offset = byteOffset + i * byteStride;
+        const matrix: Matrix4 = new Float32Array([
+            dataView.getFloat32(offset + 0, true), dataView.getFloat32(offset + 4, true), dataView.getFloat32(offset + 8, true), dataView.getFloat32(offset + 12, true),
+            dataView.getFloat32(offset + 16, true), dataView.getFloat32(offset + 20, true), dataView.getFloat32(offset + 24, true), dataView.getFloat32(offset + 28, true),
+            dataView.getFloat32(offset + 32, true), dataView.getFloat32(offset + 36, true), dataView.getFloat32(offset + 40, true), dataView.getFloat32(offset + 44, true),
+            dataView.getFloat32(offset + 48, true), dataView.getFloat32(offset + 52, true), dataView.getFloat32(offset + 56, true), dataView.getFloat32(offset + 60, true),
+        ]) as Matrix4;
+        inverseBindMatrices.push(matrix);
+    }
 
-        const expectedTypeSizes: Record<string, number> = { "VEC2": 2, "VEC3": 3 };
-        const expectedStride = expectedTypeSizes[type] * 4;
+    return inverseBindMatrices;
+}
 
-        if (componentType !== 5126 || accessor.type !== type) {
-            throw new Error(`Unsupported attribute format: type=${accessor.type}, componentType=${componentType}`);
-        }
 
-        const byteOffset = (bufferView.byteOffset || 0) + (accessor.byteOffset || 0);
-        const byteStride = bufferView.byteStride || expectedStride;
-        const dataView = new DataView(binaryBuffer.buffer, binaryBuffer.byteOffset, binaryBuffer.byteLength);
-        
-        const result: any[] = [];
-        for (let i = 0; i < count; i++) {
-            const offset = byteOffset + i * byteStride;
-            if (type === "VEC2") {
-                const x = dataView.getFloat32(offset, true);
-                const y = dataView.getFloat32(offset + 4, true);
-                result.push([x, y]);
-            } else if (type === "VEC3") {
-                const x = dataView.getFloat32(offset, true);
-                const y = dataView.getFloat32(offset + 4, true);
-                const z = dataView.getFloat32(offset + 8, true);
-                result.push([x, y, z]);
-            }
-        }
-        return result;
+function getAccessor(gltf: any, index: number) {
+    const accessor = gltf.accessors?.[index];
+    if (!accessor || accessor.bufferView === undefined) return undefined;
+    return accessor;
+}
+
+function getComponentSize(componentType: number): number | undefined {
+    const sizes: Record<number, number> = {
+        5120: 1,
+        5121: 1, 
+        5122: 2,
+        5123: 2, 
+        5125: 4,
+        5126: 4
     };
+    return sizes[componentType];
+}
 
-    const vertices = extractAttribute("POSITION") as Vector3[];
-    const normals = extractAttribute("NORMAL") as Vector3[];
-    const uvs = extractAttribute("TEXCOORD_0", "VEC2") as Vector2[];
+function getTypeSize(type: string): number | undefined {
+    const typeSizes: Record<string, number> = {
+        SCALAR: 1,
+        VEC2: 2,
+        VEC3: 3,
+        VEC4: 4,
+        MAT2: 4,
+        MAT3: 9,
+        MAT4: 16
+    };
+    return typeSizes[type];
+}
 
+export function readBinaryBuffer(gltf: any, binaryBuffer: Uint8Array, accessorIndex: number) {
+    const accessor = getAccessor(gltf, accessorIndex);
+    if (!accessor) return undefined;
+
+    const bufferView = gltf.bufferViews[accessor.bufferView];
+    const componentSize = getComponentSize(accessor.componentType);
+    const typeSize = getTypeSize(accessor.type);
+
+    const byteOffset = (bufferView.byteOffset || 0) + (accessor.byteOffset || 0);
+    const byteLength = bufferView.byteLength;
+    const byteStride = bufferView.byteStride || (componentSize * typeSize);
+
+    const dataView = new DataView(
+        binaryBuffer.buffer,
+        binaryBuffer.byteOffset,
+        binaryBuffer.byteLength
+    );
+
+    return {
+        bufferView,
+        dataView,
+        byteOffset,
+        byteLength,
+        accessorCount: accessor.count,
+        componentType: accessor.componentType,
+        type: accessor.type,
+        byteStride
+    };
+}
+
+function extractAttributeData(gltf: any, binaryBuffer: Uint8Array, accessorIndex: number): number[][] {
+    if (accessorIndex === undefined) return [];
+    const {
+        bufferView,
+        dataView, 
+        byteOffset,
+        byteLength,
+        accessorCount,
+        componentType,
+        type,
+        byteStride
+    } = readBinaryBuffer(gltf, binaryBuffer, accessorIndex);
+    
+    const result: number[][] = [];
+
+    for (let i = 0; i < accessorCount; i++) {
+        const offset = byteOffset + i * byteStride;
+        if (type === "VEC2") {
+            const x = dataView.getFloat32(offset, true);
+            const y = dataView.getFloat32(offset + 4, true);
+            result.push([x, y]);
+        } else if (type === "VEC3") {
+            const x = dataView.getFloat32(offset, true);
+            const y = dataView.getFloat32(offset + 4, true);
+            const z = dataView.getFloat32(offset + 8, true);
+            result.push([x, y, z]);
+        }
+    }
+    return result;
+}
+
+function extractIndicesData(gltf: any, binaryBuffer: Uint8Array, indicesAccessorIndex: number, vertices: Vector3[], normals: Vector3[], uvs: Vector2[]): { vertices: Vector3[], normals: Vector3[], uvs: Vector2[] } {
     let triangleVertices: Vector3[] = [];
     let triangleVertexNormals: Vector3[] = [];
     let triangleUVs: Vector2[] = [];
 
-    if (primitive.indices !== undefined) {
-        const accessor = gltf.accessors[primitive.indices];
-        const bufferView = gltf.bufferViews[accessor.bufferView];
+    if (indicesAccessorIndex !== undefined) {
+        const {
+            bufferView,
+            dataView, 
+            byteOffset,
+            accessorCount,
+            byteLength,
+            componentType,
+            byteStride
+        } = readBinaryBuffer(gltf, binaryBuffer, indicesAccessorIndex);
 
-        const componentType = accessor.componentType;
-        const count = accessor.count;
-        const byteOffset = (bufferView.byteOffset || 0) + (accessor.byteOffset || 0);
-        const byteStride = {
-            5121: 1,
-            5123: 2,
-            5125: 4 
-        }[componentType];
-
-        const dataView = new DataView(binaryBuffer.buffer, binaryBuffer.byteOffset, binaryBuffer.byteLength);
-        
-        for (let i = 0; i < count; i++) {
+        for (let i = 0; i < accessorCount; i++) {
             const offset = byteOffset + i * byteStride;
             let index: number;
             if (componentType === 5121) {
@@ -106,61 +192,70 @@ export async function importGLB(path: string) {
         triangleUVs = uvs;
     }
 
-    async function getImageBitmapFromTextureIndex(
-        texIndex: number | undefined,
-        gltf: any,
-        binaryBuffer: Uint8Array,
-        path: string
-    ): Promise<ImageBitmap | undefined> {
-        if (texIndex === undefined) return undefined;
-        const texture = gltf.textures?.[texIndex];
-        if (!texture) return;
+    return { vertices: triangleVertices, normals: triangleVertexNormals, uvs: triangleUVs };
+}
 
-        const image = gltf.images?.[texture.source];
-        if (!image) return;
+async function loadImageBitmap(url: string): Promise<ImageBitmap> {
+    const res = await fetch(url);
+    if (!res.ok) {
+        throw new Error(`Failed to fetch image: ${url}. Status: ${res.status}`);
+    }
+    const blob = await res.blob();
+    return await createImageBitmap(blob);
+}
 
-        if (image.bufferView !== undefined) {
-            const view = gltf.bufferViews[image.bufferView];
-            const mime = image.mimeType || "image/png";
-            const start = view.byteOffset || 0;
-            const end = start + view.byteLength;
-            const imageData = binaryBuffer.slice(start, end);
-            const blob = new Blob([imageData], { type: mime });
-            return await createImageBitmap(blob);
-        }
+async function getImageBitmapFromBufferView(gltf: any, binaryBuffer: Uint8Array, bufferViewIndex: number, mimeType: string): Promise<ImageBitmap> {
+    const view = gltf.bufferViews[bufferViewIndex];
+    const start = view.byteOffset || 0;
+    const end = start + view.byteLength;
+    const imageData = binaryBuffer.slice(start, end);
+    const blob = new Blob([imageData], { type: mimeType });
+    return await createImageBitmap(blob);
+}
 
-        if (image.uri) {
-            let url: string;
-            if (image.uri.startsWith("data:")) {
-                url = image.uri;
-            } else {
-                const base = path.substring(0, path.lastIndexOf("/") + 1);
-                url = base + image.uri;
-            }
-            const img = await fetch(url).then(res => res.blob());
-            return await createImageBitmap(img);
-        }
+async function getImageBitmapFromTextureIndex(texIndex: number | undefined, gltf: any, binaryBuffer: Uint8Array, path: string): Promise<ImageBitmap | undefined> {
+    if (texIndex === undefined) return undefined;
+    const texture = gltf.textures?.[texIndex];
+    if (!texture) return;
+
+    const image = gltf.images?.[texture.source];
+    if (!image) return;
+
+    if (image.bufferView !== undefined) {
+        const mime = image.mimeType || "image/png";
+        return await getImageBitmapFromBufferView(gltf, binaryBuffer, image.bufferView, mime);
     }
 
-    let material = new WebaniMaterial({});
+    if (image.uri) {
+        if (image.uri.startsWith("data:")) {
+            return await createImageBitmap(await fetch(image.uri).then(res => res.blob()));
+        } else {
+            const base = path.substring(0, path.lastIndexOf("/") + 1);
+            const url = base + image.uri;
+            return await loadImageBitmap(url);
+        }
+    }
+    return undefined;
+}
+
+async function extractMaterialProperties(primitive: any, gltf: any, binaryBuffer: Uint8Array, path: string): Promise<WebaniMaterial> {
+    const material = new WebaniMaterial({});
+
     if (primitive.material !== undefined) {
         const mat = gltf.materials[primitive.material];
         const pbr = mat.pbrMetallicRoughness || {};
-    
-        // Colors
+
         if (pbr.baseColorFactor) {
             material.color = VectorUtils.convertPointTo3D(pbr.baseColorFactor);
         }
-    
-        // Factors
+
         if (pbr.metallicFactor !== undefined) {
             material.metallic = pbr.metallicFactor;
         }
         if (pbr.roughnessFactor !== undefined) {
             material.roughness = pbr.roughnessFactor;
         }
-    
-        // Textures
+
         material.baseColorImage = await getImageBitmapFromTextureIndex(
             pbr.baseColorTexture?.index,
             gltf,
@@ -184,10 +279,98 @@ export async function importGLB(path: string) {
         }
     }
 
+    return material;
+}
+
+function extractAnimationTracks(animation: any, gltf: any, binaryBuffer: Uint8Array): Record<string, { times: number[], values: number[][], path: string }> {
+    const tracks: Record<string, { times: number[], values: number[][], path: string }> = {};
+
+    for (const channel of animation.channels) {
+        const sampler = animation.samplers[channel.sampler];
+        const targetNode = gltf.nodes[channel.target.node];
+        const path = channel.target.path;
+
+        const inputAccessor = gltf.accessors[sampler.input];
+        const outputAccessor = gltf.accessors[sampler.output];
+
+        const inputBufferView = gltf.bufferViews[inputAccessor.bufferView];
+        const outputBufferView = gltf.bufferViews[outputAccessor.bufferView];
+
+        const inputByteOffset = (inputBufferView.byteOffset || 0) + (inputAccessor.byteOffset || 0);
+        const outputByteOffset = (outputBufferView.byteOffset || 0) + (outputAccessor.byteOffset || 0);
+
+        const inputCount = inputAccessor.count;
+        const outputCount = outputAccessor.count;
+
+        const inputTimes: number[] = [];
+        const outputValues: number[][] = [];
+
+        const inputView = new DataView(binaryBuffer.buffer, binaryBuffer.byteOffset + inputByteOffset, inputCount * 4);
+        for (let i = 0; i < inputCount; i++) {
+            inputTimes.push(inputView.getFloat32(i * 4, true));
+        }
+
+        const typeSize = { "SCALAR": 1, "VEC3": 3, "VEC4": 4 }[outputAccessor.type];
+        if (!typeSize) continue;
+
+        const outputView = new DataView(binaryBuffer.buffer, binaryBuffer.byteOffset + outputByteOffset, outputCount * 4 * typeSize);
+        for (let i = 0; i < outputCount; i++) {
+            const frame: number[] = [];
+            for (let j = 0; j < typeSize; j++) {
+                frame.push(outputView.getFloat32((i * typeSize + j) * 4, true));
+            }
+            outputValues.push(frame);
+        }
+
+        tracks[`${targetNode.name || "node_" + channel.target.node}_${path}`] = {
+            times: inputTimes,
+            values: outputValues,
+            path: path
+        };
+    }
+    return tracks;
+}
+
+function extractAnimations(gltf: any, binaryBuffer: Uint8Array): any[] {
+    return (gltf.animations || []).map((animation: any, index: number) => ({
+        name: animation.name || index,
+        tracks: extractAnimationTracks(animation, gltf, binaryBuffer)
+    }));
+}
+
+export async function importGLB(path: string) {
+    const arrayBuffer = await fetchGLBData(path);
+    const dataView = new DataView(arrayBuffer);
+
+    validateGLBHeader(dataView);
+
+    const gltf = parseGLBJSON(dataView);
+    const jsonLength = new DataView(arrayBuffer.slice(12, 16)).getUint32(0, true);
+    const binaryBuffer = extractGLBBinary(dataView, jsonLength);
+
+    const primitive = gltf.meshes[0].primitives[0];
+
+    const vertices = extractAttributeData(gltf, binaryBuffer, primitive.attributes?.POSITION) as Vector3[];
+    const normals = extractAttributeData(gltf, binaryBuffer, primitive.attributes?.NORMAL) as Vector3[];
+    const uvs = extractAttributeData(gltf, binaryBuffer, primitive.attributes?.TEXCOORD_0) as Vector2[];
+
+    const { vertices: triangleVertices, normals: triangleVertexNormals, uvs: triangleUVs } = extractIndicesData(
+        gltf,
+        binaryBuffer,
+        primitive.indices,
+        vertices,
+        normals,
+        uvs
+    );
+
+    const material = await extractMaterialProperties(primitive, gltf, binaryBuffer, path);
+    const animations = extractAnimations(gltf, binaryBuffer);
+    
     return {
         triangles: triangleVertices,
         normals: triangleVertexNormals,
         uvs: triangleUVs,
-        material: material
+        material: material,
+        animations: animations,
     };
 }

@@ -13,9 +13,8 @@ export class WebaniMeshAnimation extends WebaniInterpolatedAnimation<WebaniMesh>
     }
 
     setFrame(t: number) {
-        this.currentObject.transform = this.getTransform(t);
-        this.currentObject.extraTransforms = this.getExtraTransforms(t);
-        this.currentObject.material = this.getMaterial(t);
+        this.setTransforms(t);
+        this.setMaterial(t);
         return this.currentObject;
     }
 }

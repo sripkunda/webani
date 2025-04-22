@@ -35,10 +35,9 @@ export class WebaniPolygonAnimation extends WebaniInterpolatedAnimation<WebaniPo
 
     setFrame(t: number): WebaniPolygon {
         if (!(this.unresolvedBefore instanceof WebaniPolygon) || !(this.unresolvedAfter instanceof WebaniPolygon)) return this.before;
-        const transform = this.getTransform(t);
-        this.currentObject.transform = transform;
-        this.currentObject.extraTransforms = this.getExtraTransforms(t);
-        this.currentObject.material = this.getMaterial(t);
+
+        this.setTransforms(t);
+        this.setMaterial(t);
     
         if (this.geometryChanged) {
             this.currentObject._filledPoints = this.getFilledPoints(t);

@@ -7,6 +7,7 @@ import { VectorUtils } from "../../util/vector.utils";
 import { Vector3 } from "../../types/vector3.type";
 import { WorldTransform } from "../../types/world-transform.type";
 import { WebaniTransformable } from "./webani-transformable.class";
+import { Vector2 } from "../../types/vector2.type";
 
 export type WebaniPrimitiveObjectOptions = {
     position?: Vector3;
@@ -22,7 +23,7 @@ export abstract class WebaniPrimitiveObject extends WebaniTransformable {
     material: WebaniMaterial;
     protected _triangulation!: Float32Array;
     protected _normals!: Float32Array;
-    protected _uvs?: Float32Array;
+    protected _UVs!: Float32Array;
     localCenter!: Vector3;
 
     constructor({
@@ -39,12 +40,6 @@ export abstract class WebaniPrimitiveObject extends WebaniTransformable {
 
     abstract animationClass?: new (options: WebaniInterpolatedAnimationOptions<WebaniPrimitiveObject>) => WebaniInterpolatedAnimation<WebaniPrimitiveObject>;
     abstract resolveObjectGeometry(): void;
-
-    get shallowCopy(): this { 
-        const clone = super.shallowCopy as this;
-        clone.material = this.material.shallowCopy;
-        return clone;
-    }
 
     get center(): Vector3 {
         return MatrixUtils.multiplyVector3(
@@ -84,6 +79,14 @@ export abstract class WebaniPrimitiveObject extends WebaniTransformable {
         return this._normals;
     }
 
+    get UVs(): Float32Array { 
+        return this._UVs;
+    }
+
+    get vertexCount(): number {
+        return this._triangulation.length / 3;
+    }
+
     copyCenteredAt(newCenter: Vector3): WebaniPrimitiveObject {
         newCenter = VectorUtils.convertPointTo3D(newCenter) || newCenter;
         const copy = this.shallowCopy;
@@ -93,5 +96,9 @@ export abstract class WebaniPrimitiveObject extends WebaniTransformable {
             VectorUtils.subtract(newCenter, center)
         );
         return copy;
+    }
+
+    protected generateDummyUVs(): Float32Array { 
+        return new Float32Array(this.vertexCount * 2).fill(0);
     }
 }

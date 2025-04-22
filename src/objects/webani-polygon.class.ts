@@ -74,6 +74,7 @@ export class WebaniPolygon extends WebaniPrimitiveObject {
     resolveObjectGeometry() { 
         this._triangulation = this.computeTrianguation();
         this._normals = this.computeNormals();
+        this._UVs = this.generateDummyUVs();
         this.localCenter = VectorUtils.center(this._filledPoints);
     }
 

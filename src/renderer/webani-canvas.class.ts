@@ -283,9 +283,11 @@ export class WebaniCanvas {
 
     private drawObject(object: WebaniPrimitiveObject) {
         object.material.bindToContext(this.gl);
+
         const triangles = object.triangles;
         this.bindAttributeBuffer("position", triangles, 3);
         this.bindAttributeBuffer("normal", object.normals, 3);
+        this.bindAttributeBuffer("uv", object.UVs, 2);
         
         this.gl.uniformMatrix4fv(this.getShaderVariableLocation("uProjectionMatrix"), true, this.camera.projectionMatrix(this.htmlCanvas.width, this.htmlCanvas.height));
         this.gl.uniformMatrix4fv(this.getShaderVariableLocation("uViewMatrix"), true, this.camera.viewMatrix);
@@ -312,11 +314,29 @@ export class WebaniCanvas {
         this.gl.activeTexture(this.gl.TEXTURE2);
         this.gl.bindTexture(this.gl.TEXTURE_2D, WebaniSkybox.brdfLUTTexture);
         this.gl.uniform1i(this.getShaderVariableLocation("uBrdfLUT"), 2);
-
+        
         this.gl.activeTexture(this.gl.TEXTURE3);
         this.gl.bindTexture(this.gl.TEXTURE_2D, object.material.baseColorTexture);
-        this.gl.uniform1i(this.getShaderVariableLocation("uBaseColorTexture"), 2);
+        this.gl.uniform1i(this.getShaderVariableLocation("uBaseColorTexture"), 3);
 
+        if (object.material.baseColorTexture) {
+            this.gl.uniform1i(this.getShaderVariableLocation("uBaseColorTextureSupplied"), 1);
+        }
+
+        this.gl.activeTexture(this.gl.TEXTURE4);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, object.material.metallicRoughnessTexture);
+        this.gl.uniform1i(this.getShaderVariableLocation("uMetallicRoughnessTexture"), 4);
+        if (object.material.metallicRoughnessTexture) {
+            this.gl.uniform1i(this.getShaderVariableLocation("uMetallicRoughnessTextureSupplied"), 1);
+        }
+        
+        this.gl.activeTexture(this.gl.TEXTURE5);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, object.material.normalMap);
+        this.gl.uniform1i(this.getShaderVariableLocation("uNormalMap"), 5);
+        if (object.material.normalMap) {
+            this.gl.uniform1i(this.getShaderVariableLocation("uNormalMapSupplied"), 1);
+        }
+   
         const n = triangles.length / 3;
         this.gl.drawArrays(this.gl.TRIANGLES, 0, n);
     }

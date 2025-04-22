@@ -124,20 +124,24 @@ export abstract class WebaniInterpolatedAnimation<T extends WebaniTransformable>
         };
     }
 
-    protected getMaterial(t: number) { 
-        if (this.resolvedBefore instanceof WebaniPrimitiveObject && this.resolvedAfter instanceof WebaniPrimitiveObject) {
+    protected setTransforms(t: number) { 
+        this.currentObject.transform = this.getTransform(t);
+        this.currentObject.extraTransforms = this.getExtraTransforms(t);
+    }
+
+    protected setMaterial(t: number) { 
+        if (this.currentObject instanceof WebaniPrimitiveObject && this.resolvedBefore instanceof WebaniPrimitiveObject && this.resolvedAfter instanceof WebaniPrimitiveObject) {
             const normalizedT = this.backwards ? 1 - t / this.duration : t / this.duration;
             const color = this.interpolatePoint(this.resolvedBefore.material.color, this.resolvedAfter.material.color, t);
             const opacity = this.interpolationFunction(this.resolvedBefore.material.opacity, this.resolvedAfter.material.opacity, normalizedT);
-            const metalic = this.interpolationFunction(this.resolvedBefore.material.metallic, this.resolvedAfter.material.metallic, normalizedT);
+            const metallic = this.interpolationFunction(this.resolvedBefore.material.metallic, this.resolvedAfter.material.metallic, normalizedT);
             const roughness = this.interpolationFunction(this.resolvedBefore.material.roughness, this.resolvedAfter.material.roughness, normalizedT);
-            return new WebaniMaterial({
-                color, 
-                metallic: metalic, 
-                roughness, 
-                opacity
-            });
-        } else return new WebaniMaterial({});
+            
+            this.currentObject.material.color = color;
+            this.currentObject.material.metallic = metallic; 
+            this.currentObject.material.roughness = roughness;
+            this.currentObject.material.opacity = opacity;
+        }
     }
 
     protected getExtraTransforms(t: number): WorldTransform[] {

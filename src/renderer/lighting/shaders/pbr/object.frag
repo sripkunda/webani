@@ -10,6 +10,14 @@ uniform float uMaterialRoughness;
 uniform float uMaterialMetallic;
 uniform float uMaterialOpacity;
 
+uniform sampler2D uBaseColorTexture;
+uniform sampler2D uMetallicRoughnessTexture;
+uniform sampler2D uNormalMap;
+
+uniform bool uBaseColorTextureSupplied;
+uniform bool uMetallicRoughnessTextureSupplied;
+uniform bool uNormalMapSupplied;
+
 uniform vec3 uLightPosition; 
 uniform vec3 uLightColor;
 uniform float uLightIntensity;
@@ -18,6 +26,7 @@ uniform vec3 uCameraPosition;
 
 in vec3 fragPos; 
 in vec3 fragNormal;
+in vec2 vertexUV;
 
 out vec4 outColor;
 
@@ -60,7 +69,7 @@ vec3 computeDiffuse(vec3 specularContribution, float metallic) {
     return (vec3(1.0) - specularContribution) * (1.0 - metallic); 
 }
 
-vec3 computeLo(vec3 lightPos, vec3 lightColor, float lightIntensity, vec3 worldPos, vec3 N, vec3 V, vec3 F0, float roughness) {
+vec3 computeLo(vec3 lightPos, vec3 lightColor, float lightIntensity, vec3 worldPos, vec3 N, vec3 V, vec3 F0, vec3 albedo, float metallic, float roughness) {
     float distance = length(lightPos - worldPos);
     if (distance <= 0.0) { 
         return vec3(0.0);
@@ -80,8 +89,8 @@ vec3 computeLo(vec3 lightPos, vec3 lightColor, float lightIntensity, vec3 worldP
     vec3 numerator = D * G * F;
     float denominator = 4.0 * NdotV * NdotL + 1e-3; 
     vec3 specular = numerator / denominator; 
-    vec3 kD = computeDiffuse(F, uMaterialMetallic);
-    return (kD * uMaterialColor / PI + specular) * radiance * NdotL;
+    vec3 kD = computeDiffuse(F, metallic);
+    return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
 vec3 computeF0(vec3 albedo, float metallic) { 
@@ -89,25 +98,35 @@ vec3 computeF0(vec3 albedo, float metallic) {
 }
 
 void main() {
+    vec3 albedo = uMaterialColor;
+    if (uBaseColorTextureSupplied) {
+       albedo = texture(uBaseColorTexture, vertexUV).rgb;
+    }
+    float roughness = uMaterialRoughness;
+    float metallic = uMaterialMetallic;
+    if (uMetallicRoughnessTextureSupplied) { 
+        vec2 metallicRoughness = texture(uBaseColorTexture, vertexUV).rg;
+        metallic = metallicRoughness.x;
+        roughness = metallicRoughness.y;
+    }
     vec3 N = normalize(fragNormal);
     vec3 V = normalize(uCameraPosition - fragPos);
     vec3 R = normalize(reflect(-V, N));
 
-    vec3 F0 = computeF0(uMaterialColor, uMaterialMetallic);
-    vec3 Lo = computeLo(uLightPosition, uLightColor, uLightIntensity, fragPos, N, V, F0, uMaterialRoughness);
+    vec3 F0 = computeF0(albedo, metallic);
+    vec3 Lo = computeLo(uLightPosition, uLightColor, uLightIntensity, fragPos, N, V, F0, albedo, metallic, roughness);
 
     vec3 irradiance = texture(uIrradianceMap, N).rgb;
     float NdotV = max(dot(N, V), 0.0);
-    vec3 F = fresnelSchlickRoughness(NdotV, F0, uMaterialRoughness);
-    vec3 kD = computeDiffuse(F, uMaterialMetallic);
-    vec3 diffuse = kD * irradiance * uMaterialColor; 
+    vec3 F = fresnelSchlickRoughness(NdotV, F0, roughness);
+    vec3 kD = computeDiffuse(F, metallic);
+    vec3 diffuse = kD * irradiance * albedo; 
     
-    vec3 prefilteredColor = textureLod(uPrefilteredEnvMap, R, uMaterialRoughness * MAX_REFLECTION_LOD).rgb;
-    vec2 brdf = texture(uBrdfLUT, vec2(NdotV, uMaterialRoughness)).rg;
+    vec3 prefilteredColor = textureLod(uPrefilteredEnvMap, R, roughness * MAX_REFLECTION_LOD).rgb;
+    vec2 brdf = texture(uBrdfLUT, vec2(NdotV, roughness)).rg;
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
     vec3 ambient = (diffuse + specular);
 
     vec3 color = ambient + Lo;
-    color = pow(color, vec3(1.0/2.2)); 
-    outColor = vec4(color * uMaterialOpacity, uMaterialOpacity); 
+    outColor = vec4(color, uMaterialOpacity);
 }

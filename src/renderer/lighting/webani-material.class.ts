@@ -24,14 +24,14 @@ export class WebaniMaterial {
 
     baseColorTexture: WebGLTexture;
     metallicRoughnessTexture: WebGLTexture;
-    normalMapTexture: WebGLTexture;
+    normalMap: WebGLTexture;
 
     private boundGLContexts: Set<WebGL2RenderingContext> = new Set<WebGL2RenderingContext>();
 
     constructor({
         color = Colors.BLACK,
         metallic = 0,
-        roughness = 0,
+        roughness = 0.6,
         opacity = 1,
         baseColorImage,
         metallicRoughnessImage,
@@ -61,21 +61,21 @@ export class WebaniMaterial {
             image.width, image.height, 0,
             gl.RGBA,
             gl.UNSIGNED_BYTE,
-            null
+            image
         );
         gl.bindTexture(gl.TEXTURE_2D, null);
     }
 
     bindToContext(gl: WebGL2RenderingContext) { 
-        if (this.boundGLContexts.has(gl)) { 
+        if (this.boundGLContexts.has(gl)) {
             return;
         } else {
-            this.generateTextures(gl);
+            this.regenerateTextures(gl);
             this.boundGLContexts.add(gl);
         }
     }
 
-    generateTextures(gl: WebGL2RenderingContext) {
+    regenerateTextures(gl: WebGL2RenderingContext) {
         if (this.baseColorTexture) {
             gl.deleteTexture(this.baseColorTexture);
         }
@@ -92,18 +92,17 @@ export class WebaniMaterial {
             this.fillTextureWithImage(gl, this.metallicRoughnessTexture, this.metallicRoughnessImage);
         }
 
-        if (this.normalMapTexture) {
-            gl.deleteTexture(this.normalMapTexture);
+        if (this.normalMap) {
+            gl.deleteTexture(this.normalMap);
         }
         if (this.normalMapImage) { 
-            this.normalMapTexture = gl.createTexture();
-            this.fillTextureWithImage(gl, this.normalMapTexture, this.normalMapImage);
+            this.normalMap = gl.createTexture();
+            this.fillTextureWithImage(gl, this.normalMap, this.normalMapImage);
         }
- 
     }
 
     get shallowCopy() {
-        return new WebaniMaterial({
+        const material = new WebaniMaterial({
             color: this.color,
             metallic: this.metallic,
             roughness: this.roughness,
@@ -113,5 +112,12 @@ export class WebaniMaterial {
             normalMapImage: this.normalMapImage,
             normalScale: this.normalScale
         });
+
+        material.boundGLContexts = new Set(this.boundGLContexts);
+        material.baseColorTexture = this.baseColorTexture;
+        material.metallicRoughnessTexture = this.metallicRoughnessTexture; 
+        material.normalMap = this.normalMap;
+
+        return material;
     }
 }

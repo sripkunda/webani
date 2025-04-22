@@ -5,10 +5,9 @@ import { WebaniMaterial } from "../renderer/lighting/webani-material.class";
 import { BirdMesh } from "./models/models";
 
 export class BirdComponent extends Component {
-    objectConstructor(position: Vector3, scale: Vector3, color = Colors.WHITE, opacity = 1) {
+    objectConstructor(position: Vector3, scale: number) {
         const mesh = BirdMesh.copyCenteredAt(position);
-        mesh.scaleBy(scale);
-        mesh.material = new WebaniMaterial({ color, opacity });
+        mesh.scaleBy([scale, scale, scale]);
         return mesh;
     }
 }

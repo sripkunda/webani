@@ -11,25 +11,25 @@ export type WebaniMeshOptions = {
     position: Vector3, 
     triangleVertices: Vector3[], 
     vertexNormals: Vector3[], 
+    vertexUVs?: Vector2[]
     rotation?: Vector3; 
     scale?: Vector3; 
     rotationalCenter?: Vector3, 
     material?: WebaniMaterial, 
     extraTransforms?: WorldTransform[],
-    vertexUV?: Vector2[]
 };
 
 export class WebaniMesh extends WebaniPrimitiveObject { 
     animationClass = WebaniMeshAnimation;
     private triangleVertices: Vector3[]
     private vertexNormals: Vector3[];
-    private vertexUV: Vector2[];
+    private vertexUVs?: Vector2[];
 
     constructor({
         position, 
         triangleVertices, 
         vertexNormals, 
-        vertexUV,
+        vertexUVs,
         rotation = [0, 0, 0], 
         scale = [1, 1, 1], 
         rotationalCenter, 
@@ -41,13 +41,18 @@ export class WebaniMesh extends WebaniPrimitiveObject {
          });
         this.triangleVertices = triangleVertices;
         this.vertexNormals = vertexNormals;
-        this.vertexUV = vertexUV;
+        this.vertexUVs = vertexUVs;
         this.resolveObjectGeometry();
     }
 
     resolveObjectGeometry() {
         this._triangulation = new Float32Array(this.triangleVertices.flat());
         this._normals = new Float32Array(this.vertexNormals.flat());
+        if (this.vertexUVs) { 
+            this._UVs = new Float32Array(this.vertexUVs.flat());
+        } else {
+            this._UVs = this.generateDummyUVs();
+        }
         this.localCenter = VectorUtils.center(this.triangleVertices);
     }
  
@@ -57,6 +62,8 @@ export class WebaniMesh extends WebaniPrimitiveObject {
             position: [0, 0, 0],
             triangleVertices: model.triangles,
             vertexNormals: model.normals,
+            vertexUVs: model.uvs,
+            material: model.material
         });
     }
 }

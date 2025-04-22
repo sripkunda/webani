@@ -89,8 +89,7 @@ export class WebaniCollectionAnimation extends WebaniInterpolatedAnimation<Weban
     }
 
     setFrame(t: number): WebaniCollection {
-        this.currentObject.transform = this.getTransform(t);
-        this.currentObject.extraTransforms = this.getExtraTransforms(t);
+        this.setTransforms(t);
         for (let i = 0; i < this.currentObject.unresolvedObjects.length; i++) { 
             this.currentObject.unresolvedObjects[i] = this.animations[i].frame(t);
         }
