@@ -20,10 +20,8 @@ export class RenderedGroupNode extends WebaniAnimation {
         if (collection) { 
             if (collection instanceof RenderedGroupNode) return collection;
             this._collection = new WebaniCollection(collection);
-        } else { 
-            this._collection = new WebaniCollection([]);
+            this.animationSet.setDefaultObject(this._collection);
         }
-        this.animationSet.setDefaultObject(this._collection);
     }
 
     static CreateGroup(object: object) { 

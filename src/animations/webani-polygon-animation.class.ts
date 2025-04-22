@@ -40,7 +40,7 @@ export class WebaniPolygonAnimation extends WebaniInterpolatedAnimation<WebaniPo
         this.currentObject.extraTransforms = this.getExtraTransforms(t);
         this.currentObject.material = this.getMaterial(t);
     
-        if (this.geometryChanged) { 
+        if (this.geometryChanged) {
             this.currentObject._filledPoints = this.getFilledPoints(t);
             this.currentObject._holes = this.getHoles(t);
             this.currentObject.resolveObjectGeometry();

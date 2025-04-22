@@ -81,6 +81,7 @@ export class WebaniMaterial {
         }
         if (this.baseColorImage) { 
             this.baseColorTexture = gl.createTexture();
+            this.fillTextureWithImage(gl, this.baseColorTexture, this.baseColorImage);
         }
 
         if (this.metallicRoughnessTexture) {
@@ -88,6 +89,7 @@ export class WebaniMaterial {
         }
         if (this.metallicRoughnessImage) { 
             this.metallicRoughnessTexture = gl.createTexture();
+            this.fillTextureWithImage(gl, this.metallicRoughnessTexture, this.metallicRoughnessImage);
         }
 
         if (this.normalMapTexture) {
@@ -95,11 +97,9 @@ export class WebaniMaterial {
         }
         if (this.normalMapImage) { 
             this.normalMapTexture = gl.createTexture();
+            this.fillTextureWithImage(gl, this.normalMapTexture, this.normalMapImage);
         }
-
-        this.fillTextureWithImage(gl, this.baseColorTexture, this.baseColorImage);
-        this.fillTextureWithImage(gl, this.metallicRoughnessTexture, this.metallicRoughnessImage);
-        this.fillTextureWithImage(gl, this.normalMapTexture, this.normalMapImage);
+ 
     }
 
     get shallowCopy() {

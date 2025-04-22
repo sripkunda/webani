@@ -56,6 +56,13 @@ export class WebaniPolygon extends WebaniPrimitiveObject {
         return indices;
     }
 
+    get shallowCopy() {
+        const clone = super.shallowCopy;
+        clone._filledPoints = [...this._filledPoints];
+        clone._holes = [...this._holes];
+        return clone;
+    }
+
     get pointArray() { 
         const p = [...this._filledPoints];
         for (const holePoints of this._holes) {

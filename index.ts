@@ -1,8 +1,10 @@
 import { Play } from "./src/webani";
-import { Text } from "./src/components/text.component";
 import { Colors } from "./src/renderer/lighting/colors";
+import { Square } from "./src/components/square.component";
+import { Circle } from "./src/components/circle.component";
 
-const cube = Text("hello", [0, 0], 200, Colors.WHITE);
+const cube = Square([0, 0], 200, Colors.WHITE);
 cube.Rotate([0, 45, 0]);
-cube.TransformInto(Text("world", [0, 0], 200, Colors.WHITE));
+cube.TransformInto(Circle([0, 0], 200, Colors.WHITE));
+cube.FadeOut();
 Play(cube);
