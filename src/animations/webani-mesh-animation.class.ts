@@ -1,11 +1,11 @@
-import { WebaniInterpolatedAnimation } from "../animations/webani-interpolated-animation.class";
+import { WebaniInterpolatedAnimation } from "../renderer/animation/webani-interpolated-animation.class";
 import { WebaniMesh } from "../objects/webani-mesh.class";
 
 export class WebaniMeshAnimation extends WebaniInterpolatedAnimation<WebaniMesh> {
     resolveAnimation(): void {
-        this.resolvedBefore = this.unresolvedBefore.copy;
-        this.resolvedAfter = this.unresolvedAfter.copy;
-        this.currentObject = this.resolvedBefore.copy;
+        this.resolvedBefore = this.unresolvedBefore.shallowCopy;
+        this.resolvedAfter = this.unresolvedAfter.shallowCopy;
+        this.currentObject = this.resolvedBefore.shallowCopy;
     }
 
     done(t: number): boolean {

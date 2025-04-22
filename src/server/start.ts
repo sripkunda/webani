@@ -1,5 +1,5 @@
-import { WebaniFPSDisplay } from "../rendering/webani-fps-display.class";
-import { LoadCanvas } from "../api/animate";
+import { WebaniFPSDisplay } from "../renderer/webani-fps-display.class";
+import { LoadCanvas } from "../webani";
 
 const __canvas__ = document.querySelector("canvas");
 __canvas__.width = window.innerWidth;

@@ -1,9 +1,9 @@
-import { WebaniMaterial } from "../lighting/webani-material.class";
+import { WebaniMaterial } from "../renderer/lighting/webani-material.class";
 import { WebaniPolygon } from "../objects/webani-polygon.class";
 import { executeInParallel, windingOrderClockwise } from "../util/polygon.utils";
 import { VectorUtils } from "../util/vector.utils";
 import { Vector3 } from "../types/vector3.type";
-import { WebaniInterpolatedAnimation } from "./webani-interpolated-animation.class";
+import { WebaniInterpolatedAnimation } from "../renderer/animation/webani-interpolated-animation.class";
 
 export type WebaniPolygonAnimationOptions = {
     before: WebaniPolygon | null;
@@ -39,9 +39,11 @@ export class WebaniPolygonAnimation extends WebaniInterpolatedAnimation<WebaniPo
         this.currentObject.transform = transform;
         this.currentObject.extraTransforms = this.getExtraTransforms(t);
         this.currentObject.material = this.getMaterial(t);
+    
         if (this.geometryChanged) { 
-            this.currentObject.setFilledPoints(this.getFilledPoints(t));
-            this.currentObject.setHoles(this.getHoles(t));
+            this.currentObject._filledPoints = this.getFilledPoints(t);
+            this.currentObject._holes = this.getHoles(t);
+            this.currentObject.resolveObjectGeometry();
         }
         return this.currentObject;
     }
@@ -115,9 +117,9 @@ export class WebaniPolygonAnimation extends WebaniInterpolatedAnimation<WebaniPo
 
     resolveAnimation() {
         if (!(this.unresolvedBefore instanceof WebaniPolygon) || !(this.unresolvedAfter instanceof WebaniPolygon)) return;
-        this.resolvedBefore = this.unresolvedBefore.copy;
-        this.resolvedAfter = this.unresolvedAfter.copy;
-        this.currentObject = this.resolvedBefore.copy;
+        this.resolvedBefore = this.unresolvedBefore.shallowCopy;
+        this.resolvedAfter = this.unresolvedAfter.shallowCopy;
+        this.currentObject = this.resolvedBefore.shallowCopy;
         this.geometryChanged = !VectorUtils.arraysEqual(this.resolvedBefore.pointArray, this.resolvedAfter.pointArray);
         if (this.geometryChanged) {
             this.resolvePointArray(this.resolvedBefore._filledPoints, this.resolvedAfter._filledPoints);

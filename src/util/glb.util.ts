@@ -1,4 +1,4 @@
-import { WebaniMaterial } from "../lighting/webani-material.class";
+import { WebaniMaterial } from "../renderer/lighting/webani-material.class";
 import { Vector2 } from "../types/vector2.type";
 import { Vector3 } from "../types/vector3.type";
 import { VectorUtils } from "./vector.utils";
@@ -184,7 +184,6 @@ export async function importGLB(path: string) {
         }
     }
 
-    console.log(material);
     return {
         triangles: triangleVertices,
         normals: triangleVertexNormals,

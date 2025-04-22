@@ -1,10 +1,9 @@
 import { WebaniPolygonAnimation } from "../animations/webani-polygon-animation.class";
-import { WebaniMaterial } from "../lighting/webani-material.class";
-import { WebaniPrimitiveObject } from "./webani-primitive-object.class";
+import { WebaniMaterial } from "../renderer/lighting/webani-material.class";
+import { WebaniPrimitiveObject } from "../renderer/scene/webani-primitive-object.class";
 import { triangulate } from "../util/polygon.utils";
 import { VectorUtils } from "../util/vector.utils";
 import { Vector3 } from "../types/vector3.type";
-import { Webani2DObjectCache as WebaniPolygonCache } from "../types/webani-polygon-cache.type" 
 import { WorldTransform } from "../types/world-transform.type";
 
 export type WebaniPolygonOptions = {
@@ -57,34 +56,12 @@ export class WebaniPolygon extends WebaniPrimitiveObject {
         return indices;
     }
 
-    
-    setFilledPoints(value: Vector3[]) { 
-        this._filledPoints = value;
-    }
-
-    setHoles(value: Vector3[][]) { 
-        this._holes = value;   
-    }
-
     get pointArray() { 
         const p = [...this._filledPoints];
         for (const holePoints of this._holes) {
             p.push(...holePoints);
         }
         return p;   
-    }
-
-    get copy() {
-        return new WebaniPolygon({
-            position: this.transform.position, 
-            filledPoints: this._filledPoints, 
-            holes: this._holes, 
-            rotation: this.transform.rotation, 
-            scale: this.transform.scale, 
-            rotationalCenter: this.transform.rotationalCenter, 
-            material: this.material.copy, 
-            extraTransforms: this.extraTransformsCopy
-        });
     }
 
     resolveObjectGeometry() { 

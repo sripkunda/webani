@@ -1,10 +1,10 @@
 import { WebaniMeshAnimation } from "../animations/webani-mesh-animation.class";
-import { WebaniMaterial } from "../lighting/webani-material.class";
+import { WebaniMaterial } from "../renderer/lighting/webani-material.class";
 import { Vector3 } from "../types/vector3.type";
 import { WorldTransform } from "../types/world-transform.type";
 import { importGLB } from "../util/glb.util";
 import { VectorUtils } from "../util/vector.utils";
-import { WebaniPrimitiveObject } from "./webani-primitive-object.class";
+import { WebaniPrimitiveObject } from "../renderer/scene/webani-primitive-object.class";
 
 export type WebaniMeshOptions = {
     position: Vector3, 
@@ -38,19 +38,6 @@ export class WebaniMesh extends WebaniPrimitiveObject {
         this.triangleVertices = triangleVertices;
         this.vertexNormals = vertexNormals;
         this.resolveObjectGeometry();
-    }
-
-    get copy() { 
-        return new WebaniMesh({
-            position: this.transform.position, 
-            triangleVertices: this.triangleVertices, 
-            vertexNormals: this.vertexNormals, 
-            rotation: this.transform.rotation, 
-            scale: this.transform.scale, 
-            rotationalCenter: this.transform.rotationalCenter, 
-            material: this.material.copy, 
-            extraTransforms: [...this.extraTransforms]
-        });
     }
 
     resolveObjectGeometry() {

@@ -1,10 +1,10 @@
-import { WebaniInterpolatedAnimation } from "../animations/webani-interpolated-animation.class";
-import { WebaniPerspectiveCamera } from "../camera/webani-perspective-camera.class";
+import { WebaniInterpolatedAnimation } from "../renderer/animation/webani-interpolated-animation.class";
+import { WebaniPerspectiveCamera } from "../renderer/scene/webani-perspective-camera.class";
 
 export class WebaniPerspectiveCameraAnimation extends WebaniInterpolatedAnimation<WebaniPerspectiveCamera> {
     resolveAnimation(): void {
-        this.resolvedBefore = this.unresolvedBefore.copy;
-        this.resolvedAfter = this.unresolvedAfter.copy;
+        this.resolvedBefore = this.unresolvedBefore.shallowCopy;
+        this.resolvedAfter = this.unresolvedAfter.shallowCopy;
     }
 
     done(t: number): boolean {
