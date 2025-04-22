@@ -22,6 +22,7 @@ export abstract class WebaniPrimitiveObject extends WebaniTransformable {
     material: WebaniMaterial;
     protected _triangulation!: Float32Array;
     protected _normals!: Float32Array;
+    protected _uvs?: Float32Array;
     localCenter!: Vector3;
 
     constructor({

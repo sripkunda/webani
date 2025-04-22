@@ -5,6 +5,7 @@ import { WorldTransform } from "../types/world-transform.type";
 import { importGLB } from "../util/glb.util";
 import { VectorUtils } from "../util/vector.utils";
 import { WebaniPrimitiveObject } from "../renderer/scene/webani-primitive-object.class";
+import { Vector2 } from "../types/vector2.type";
 
 export type WebaniMeshOptions = {
     position: Vector3, 
@@ -14,29 +15,33 @@ export type WebaniMeshOptions = {
     scale?: Vector3; 
     rotationalCenter?: Vector3, 
     material?: WebaniMaterial, 
-    extraTransforms?: WorldTransform[];
+    extraTransforms?: WorldTransform[],
+    vertexUV?: Vector2[]
 };
 
 export class WebaniMesh extends WebaniPrimitiveObject { 
     animationClass = WebaniMeshAnimation;
     private triangleVertices: Vector3[]
     private vertexNormals: Vector3[];
+    private vertexUV: Vector2[];
 
     constructor({
         position, 
         triangleVertices, 
         vertexNormals, 
+        vertexUV,
         rotation = [0, 0, 0], 
         scale = [1, 1, 1], 
         rotationalCenter, 
         material, 
-        extraTransforms = []
+        extraTransforms = [],
     }: WebaniMeshOptions) { 
         super({ 
             position, rotation, scale, rotationalCenter, material, extraTransforms
          });
         this.triangleVertices = triangleVertices;
         this.vertexNormals = vertexNormals;
+        this.vertexUV = vertexUV;
         this.resolveObjectGeometry();
     }
 
