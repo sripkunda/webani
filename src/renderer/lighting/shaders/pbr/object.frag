@@ -105,9 +105,9 @@ void main() {
     float roughness = uMaterialRoughness;
     float metallic = uMaterialMetallic;
     if (uMetallicRoughnessTextureSupplied) { 
-        vec2 metallicRoughness = texture(uBaseColorTexture, vertexUV).rg;
-        metallic = metallicRoughness.x;
-        roughness = metallicRoughness.y;
+        vec2 metallicRoughness = texture(uBaseColorTexture, vertexUV).gb;
+        roughness = metallicRoughness.x;
+        metallic = metallicRoughness.y;
     }
     vec3 N = normalize(fragNormal);
     vec3 V = normalize(uCameraPosition - fragPos);

@@ -60,9 +60,9 @@ export class WebaniMesh extends WebaniPrimitiveObject {
         const model = await importGLB(path); 
         return new WebaniMesh({
             position: [0, 0, 0],
-            triangleVertices: model.triangles,
-            vertexNormals: model.normals,
-            vertexUVs: model.uvs,
+            triangleVertices: model.vertexData.triangles,
+            vertexNormals: model.vertexData.normals,
+            vertexUVs: model.vertexData.uvs,
             material: model.material
         });
     }

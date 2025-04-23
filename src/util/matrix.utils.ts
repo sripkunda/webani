@@ -1,6 +1,7 @@
 import { VectorUtils } from "./vector.utils";
 import { Vector3 } from "../types/vector3.type";
 import { Matrix4 } from "../types/matrix4.type";
+import { Vector4 } from "../types/vector4.type";
 
 export const MatrixUtils = {
     multiply(a: Matrix4, b: Matrix4): Matrix4 {
@@ -94,6 +95,57 @@ export const MatrixUtils = {
         return MatrixUtils.multiply(
             MatrixUtils.multiply(translateBack, rotate),
             translateToOrigin
+        );
+    },
+
+    rotationMatrixAboutPointQuaternion(rotation: Vector4, point: Vector3): Matrix4 {
+        const translateToOrigin = MatrixUtils.translationMatrix(VectorUtils.multiply(point, -1));
+        const rotate = MatrixUtils.rotationMatrixQuaternion(rotation);
+        const translateBack = MatrixUtils.translationMatrix(point);
+    
+        return MatrixUtils.multiply(
+            MatrixUtils.multiply(translateBack, rotate),
+            translateToOrigin
+        );
+    },
+
+    rotationMatrixQuaternion([x, y, z, w]: Vector4): Matrix4 { 
+        const xx = x * x, yy = y * y, zz = z * z;
+        const xy = x * y, xz = x * z, yz = y * z;
+        const wx = w * x, wy = w * y, wz = w * z;
+
+        const m = new Float32Array(16);
+        m[0] = 1 - 2 * (yy + zz);
+        m[1] = 2 * (xy + wz);
+        m[2] = 2 * (xz - wy);
+        m[3] = 0;
+
+        m[4] = 2 * (xy - wz);
+        m[5] = 1 - 2 * (xx + zz);
+        m[6] = 2 * (yz + wx);
+        m[7] = 0;
+
+        m[8] = 2 * (xz + wy);
+        m[9] = 2 * (yz - wx);
+        m[10] = 1 - 2 * (xx + yy);
+        m[11] = 0;
+
+        m[12] = 0;
+        m[13] = 0;
+        m[14] = 0;
+        m[15] = 1;
+
+        return m as Matrix4;
+    },
+
+    fromTRSQuaternion(translation: Vector3, rotation: Vector4, scale: Vector3, rotationalCenter?: Vector3): Matrix4 { 
+        const T = MatrixUtils.translationMatrix(translation);
+        const R = rotationalCenter ? MatrixUtils.rotationMatrixAboutPointQuaternion(rotation, rotationalCenter) : MatrixUtils.rotationMatrixQuaternion(rotation);
+        const S = MatrixUtils.scaleMatrix(scale);
+
+        return MatrixUtils.multiply(
+            MatrixUtils.multiply(T, R),
+            S
         );
     },
 
