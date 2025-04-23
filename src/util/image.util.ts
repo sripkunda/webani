@@ -1,4 +1,4 @@
-export async function loadImage(...paths: string[]) {
+export async function loadImages(...paths: string[]) {
     const images = [];
     for (let path of paths) { 
         try {

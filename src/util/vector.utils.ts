@@ -100,5 +100,41 @@ export const VectorUtils = {
     arraysEqual(a: number[][], b: number[][]) { 
         if (a.length != b.length) return false;
         a.every((x, i) => VectorUtils.equal(x, b[i]));
+    },
+    
+    quaternionToEulerAngles(q: Vector4): Vector3 {
+        const [x, y, z, w] = q;
+    
+        const sinr_cosp = 2 * (w * x + y * z);
+        const cosr_cosp = 1 - 2 * (x * x + y * y);
+        const roll = Math.atan2(sinr_cosp, cosr_cosp);
+    
+        const sinp = 2 * (w * y - z * x);
+        let pitch: number;
+        if (Math.abs(sinp) >= 1) {
+            pitch = Math.sign(sinp) * Math.PI / 2;
+        } else {
+            pitch = Math.asin(sinp);
+        }
+    
+        const siny_cosp = 2 * (w * z + x * y) * 180 / Math.PI;
+        const cosy_cosp = 1 - 2 * (y * y + z * z) * 180 / Math.PI;
+        const yaw = Math.atan2(siny_cosp, cosy_cosp) * 180 / Math.PI;
+    
+        return [roll, pitch, yaw];
+    },
+
+    addFlat(array: Float32Array, dim: number, vectorIndex: number, b: number[]): Float32Array {
+        for (let i = 0; i < dim; i++) {
+            array[dim * vectorIndex + i] += b[i];
+        }
+        return array;
+    },
+
+    setFlat(array: Float32Array, dim: number, vectorIndex: number, b: number[]): Float32Array {
+        for (let i = 0; i < dim; i++) {
+            array[dim * vectorIndex + i] = b[i];
+        }
+        return array;
     }
 };

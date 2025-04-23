@@ -1,4 +1,4 @@
-type GLBParserMaterial = {
+export type GLBParserMaterial = {
     pbrMetallicRoughness?: {
       baseColorFactor?: number[];
       baseColorTexture?: { index: number };
@@ -11,4 +11,3 @@ type GLBParserMaterial = {
       scale?: number;
     };
 };
-  

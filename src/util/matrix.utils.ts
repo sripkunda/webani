@@ -18,6 +18,15 @@ export const MatrixUtils = {
         return result;
     },
 
+    identity(): Matrix4 { 
+        return new Float32Array([
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        ]) as Matrix4;
+    },
+
     multiplyVector3(matrix: Matrix4, point: Vector3): Vector3 {
         const [x, y, z] = point;
         const resultX =
@@ -159,4 +168,15 @@ export const MatrixUtils = {
             S
         );
     },
+
+    transpose(matrix: Matrix4): Matrix4 {
+        const result = new Float32Array(16) as Matrix4;
+        for (let row = 0; row < 4; row++) {
+            for (let col = 0; col < 4; col++) {
+                result[row * 4 + col] = matrix[col * 4 + row];
+            }
+        }
+        return result;
+    }
+    
 };

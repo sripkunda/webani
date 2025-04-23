@@ -25,6 +25,7 @@ export abstract class WebaniPrimitiveObject extends WebaniTransformable {
     protected _normals!: Float32Array;
     protected _UVs!: Float32Array;
     localCenter!: Vector3;
+    performSkinningTransformation: boolean = false;
 
     constructor({
         position = [0, 0, 0],
@@ -96,9 +97,5 @@ export abstract class WebaniPrimitiveObject extends WebaniTransformable {
             VectorUtils.subtract(newCenter, center)
         );
         return copy;
-    }
-
-    protected generateDummyUVs(): Float32Array { 
-        return new Float32Array(this.vertexCount * 2).fill(0);
     }
 }

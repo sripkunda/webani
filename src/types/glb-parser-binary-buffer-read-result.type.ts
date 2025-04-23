@@ -10,5 +10,6 @@ export type GLBParserBinaryBufferReadResult = {
     type: string,
     typeSize: number, 
     componentSize: number,
-    byteStride: number
+    byteStride: number,
+    readFunction: (byteOffset: number, littleEndian?: boolean) => number
 }
