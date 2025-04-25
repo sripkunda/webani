@@ -1,10 +1,10 @@
-import { Colors } from "../renderer/lighting/colors";
+import { Colors } from "../renderer/scene/lighting/colors";
 import { textToPoints } from "../util/svg.utils";
 import { Component } from "./component.class";
-import { WebaniCollection } from "../objects/webani-collection.class";
-import { WebaniPolygon } from "../objects/webani-polygon.class";
+import { WebaniCollection } from "../renderer/scene/collections/webani-collection.class";
+import { WebaniPolygon } from "../renderer/scene/polygons/webani-polygon.class";
 import { Vector2 } from "../types/vector2.type";
-import { WebaniMaterial } from "../renderer/lighting/webani-material.class";
+import { WebaniMaterial } from "../renderer/scene/lighting/webani-material.class";
 
 export class TextComponent extends Component {
     objectConstructor(string: string, position: Vector2, fontSize = 72, color = Colors.WHITE, opacity = 1): WebaniCollection {

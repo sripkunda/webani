@@ -1,13 +1,12 @@
 import { WebaniInterpolatedAnimation, WebaniInterpolatedAnimationOptions } from "../animation/webani-interpolated-animation.class";
-import { Colors } from "../lighting/colors";
-import { WebaniMaterial } from "../lighting/webani-material.class";
+import { Colors } from "../scene/lighting/colors";
+import { WebaniMaterial } from "../scene/lighting/webani-material.class";
 import { Matrix4 } from "../../types/matrix4.type";
 import { MatrixUtils } from "../../util/matrix.utils";
 import { VectorUtils } from "../../util/vector.utils";
 import { Vector3 } from "../../types/vector3.type";
 import { WorldTransform } from "../../types/world-transform.type";
 import { WebaniTransformable } from "./webani-transformable.class";
-import { Vector2 } from "../../types/vector2.type";
 
 export type WebaniPrimitiveObjectOptions = {
     position?: Vector3;
@@ -24,6 +23,11 @@ export abstract class WebaniPrimitiveObject extends WebaniTransformable {
     protected _triangulation!: Float32Array;
     protected _normals!: Float32Array;
     protected _UVs!: Float32Array;
+    protected _jointWeights?: Float32Array;
+    protected _jointIndices?: Float32Array;
+    protected _jointMatrices?: Float32Array;
+    protected _inverseBindMatrices?: Float32Array;
+
     localCenter!: Vector3;
     performSkinningTransformation: boolean = false;
 
@@ -84,9 +88,26 @@ export abstract class WebaniPrimitiveObject extends WebaniTransformable {
         return this._UVs;
     }
 
+    get jointMatrices(): Float32Array { 
+        return this._jointMatrices;
+    }
+
+    get inverseBindMatrices(): Float32Array { 
+        return this._inverseBindMatrices;
+    }
+
+    get jointIndices(): Float32Array { 
+        return this._jointIndices;
+    }
+
+    get weights(): Float32Array  { 
+        return this._jointWeights;
+    }
+
     get vertexCount(): number {
         return this._triangulation.length / 3;
     }
+
 
     copyCenteredAt(newCenter: Vector3): WebaniPrimitiveObject {
         newCenter = VectorUtils.convertPointTo3D(newCenter) || newCenter;

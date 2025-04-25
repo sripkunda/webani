@@ -1,6 +1,6 @@
 import { WebaniTransformable } from "../scene/webani-transformable.class";
 import { WebaniAnimation } from "./webani-animation.class";
-import { WebaniCollectionAnimation } from "./webani-collection-animation.class";
+import { WebaniCollectionAnimation } from "../scene/collections/webani-collection-animation.class";
 import { WebaniInterpolatedAnimation } from "./webani-interpolated-animation.class";
 
 export class AnimationSet extends WebaniAnimation {

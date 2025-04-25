@@ -1,7 +1,7 @@
 import spherePath from "./sphere.glb";
 import birdPath from "./bird.glb"; 
 import conePath from "./cone.glb"; 
-import { WebaniMesh } from "../../objects/webani-mesh.class";
+import { WebaniMesh } from "../../renderer/scene/meshes/webani-mesh.class";
 
 export const SphereMesh = await WebaniMesh.import(spherePath);
 export const BirdMesh = await WebaniMesh.import(birdPath);

@@ -1,6 +1,6 @@
+import { Vector3 } from "../../../types/vector3.type";
+import { WebaniTransformable } from "../webani-transformable.class";
 import { Colors } from "./colors";
-import { Vector3 } from "../../types/vector3.type";
-import { WebaniTransformable } from "../scene/webani-transformable.class";
 
 export type WebaniLightOptions = {
     position?: Vector3;

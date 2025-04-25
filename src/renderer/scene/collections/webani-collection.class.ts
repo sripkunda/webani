@@ -1,11 +1,11 @@
-import { RenderedGroupNode } from "../renderer/animation/rendered-group-node.class";
-import { VectorUtils } from "../util/vector.utils";
-import { Vector3 } from "../types/vector3.type";
-import { RenderableObject } from "../types/renderable-object.type";
-import { WebaniPolygon } from "./webani-polygon.class";
-import { WebaniPrimitiveObject } from "../renderer/scene/webani-primitive-object.class";
-import { WebaniCollectionAnimation } from "../renderer/animation/webani-collection-animation.class";
-import { WebaniTransformable } from "../renderer/scene/webani-transformable.class";
+import { RenderableObject } from "../../../types/renderable-object.type";
+import { Vector3 } from "../../../types/vector3.type";
+import { VectorUtils } from "../../../util/vector.utils";
+import { RenderedGroupNode } from "../../animation/rendered-group-node.class";
+import { WebaniPolygon } from "../polygons/webani-polygon.class";
+import { WebaniPrimitiveObject } from "../webani-primitive-object.class";
+import { WebaniTransformable } from "../webani-transformable.class";
+import { WebaniCollectionAnimation } from "./webani-collection-animation.class";
 
 export class WebaniCollection extends WebaniTransformable {
     unresolvedObjects: WebaniPrimitiveObject[];

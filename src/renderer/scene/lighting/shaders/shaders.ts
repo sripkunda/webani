@@ -1,4 +1,3 @@
-import { ShaderSet } from '../../../types/shader-set.type';
 import objectVert from './pbr/object.vert';
 import objectFrag from './pbr/object.frag';
 import skyboxVert from './skybox/skybox.vert';
@@ -9,6 +8,7 @@ import prefilterComputeVert from './pbr/prefilter-compute.vert';
 import prefilterComputeFrag from './pbr/prefilter-compute.frag';
 import brdfLUTComputeVert from './pbr/brdf-lut-compute.vert';
 import brdfLUTComputeFrag from './pbr/brdf-lut-compute.frag';
+import { ShaderSet } from '../../../../types/shader-set.type';
 
 export const objectShaderSet: ShaderSet = {
     fragment: objectFrag,

@@ -1,4 +1,4 @@
-import { Vector3 } from "../../types/vector3.type";
+import { Vector3 } from "../../../types/vector3.type";
 import { Colors } from "./colors";
 
 export type WebaniMaterialOptions = {

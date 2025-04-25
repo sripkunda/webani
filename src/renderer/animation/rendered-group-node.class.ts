@@ -1,9 +1,9 @@
 import { RenderableObject } from "../../types/renderable-object.type";
-import { WebaniCollection } from "../../objects/webani-collection.class";
+import { WebaniCollection } from "../scene/collections/webani-collection.class";
 import { VectorUtils } from "../../util/vector.utils";
 import { Vector3 } from "../../types/vector3.type";
 import { AnimationSet } from "./animation-set.class";
-import { WebaniCollectionAnimation } from "./webani-collection-animation.class";
+import { WebaniCollectionAnimation } from "../scene/collections/webani-collection-animation.class";
 import { WebaniInterpolatedAnimation } from "./webani-interpolated-animation.class";
 import { WebaniAnimation } from "./webani-animation.class";
 

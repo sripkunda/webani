@@ -1,4 +1,4 @@
-import { Colors } from "../renderer/lighting/colors";
+import { Colors } from "../renderer/scene/lighting/colors";
 import { RenderableObject } from "../types/renderable-object.type";
 import { Component } from "./component.class";
 import { Rectangle } from "./rectangle.component";

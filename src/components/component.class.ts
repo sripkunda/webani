@@ -1,7 +1,7 @@
 import { RenderedGroupNode } from "../renderer/animation/rendered-group-node.class";
+import { WebaniCollection } from "../renderer/scene/collections/webani-collection.class";
 import { RenderableObject } from "../types/renderable-object.type";
-import { WebaniCollection } from "../objects/webani-collection.class";
-import { ExecuteWhenSetFromParent, ExecuteWhenSetFromSelf, ResolveWebaniVariables } from "../variables/resolvers";
+import { ExecuteWhenSetFromParent, ExecuteWhenSetFromSelf, ResolveWebaniVariables } from "../renderer/variables/resolvers";
 
 export abstract class Component extends RenderedGroupNode {
     

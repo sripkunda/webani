@@ -117,23 +117,23 @@ export const VectorUtils = {
             pitch = Math.asin(sinp);
         }
     
-        const siny_cosp = 2 * (w * z + x * y) * 180 / Math.PI;
-        const cosy_cosp = 1 - 2 * (y * y + z * z) * 180 / Math.PI;
-        const yaw = Math.atan2(siny_cosp, cosy_cosp) * 180 / Math.PI;
+        const siny_cosp = 2 * (w * z + x * y);
+        const cosy_cosp = 1 - 2 * (y * y + z * z);
+        const yaw = Math.atan2(siny_cosp, cosy_cosp);
     
-        return [roll, pitch, yaw];
+        return [roll * 180 / Math.PI, pitch * 180 / Math.PI, yaw * 180 / Math.PI];
     },
 
-    addFlat(array: Float32Array, dim: number, vectorIndex: number, b: number[]): Float32Array {
+    addFlat<T, U>(array: T, dim: number, vectorIndex: number, b: U, factor = 1): T {
         for (let i = 0; i < dim; i++) {
-            array[dim * vectorIndex + i] += b[i];
+            array[dim * vectorIndex + i] += factor * b[i];
         }
         return array;
     },
 
-    setFlat(array: Float32Array, dim: number, vectorIndex: number, b: number[]): Float32Array {
+    setFlat<T, U>(array: T, dim: number, vectorIndex: number, b: U, factor = 1): T {
         for (let i = 0; i < dim; i++) {
-            array[dim * vectorIndex + i] = b[i];
+            array[dim * vectorIndex + i] = factor * b[i];
         }
         return array;
     }

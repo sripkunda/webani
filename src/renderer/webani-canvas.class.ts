@@ -1,17 +1,17 @@
-import { WebaniAnimation } from "./animation/webani-animation.class";
-import { Colors } from "./lighting/colors";
-import { Vector3 } from "../types/vector3.type";
-import { WebaniScene } from "./scene/webani-scene.class";
-import { brdfLUTComputeShaderSet, irradianceComputeShaderSet, objectShaderSet, prefilterComputeShaderSet, skyboxShaderSet } from "./lighting/shaders/shaders"
-import { Playable } from "../types/playable.type";
-import { RenderableObject } from "../types/renderable-object.type";
-import { WebaniPointLight } from "./lighting/webani-point-light.class";
-import { WebaniPrimitiveObject } from "./scene/webani-primitive-object.class";
-import { ShaderSet } from "../types/shader-set.type";
-import { WebaniSkybox } from "./webani-skybox.class";
 import { CanvasAnimationState } from "../types/canvas-animation-state.type";
 import { CanvasUpdateLoop } from "../types/canvas-update-loop.type";
-import { WebaniPerspectiveCamera } from "./scene/webani-perspective-camera.class";
+import { Playable } from "../types/playable.type";
+import { RenderableObject } from "../types/renderable-object.type";
+import { ShaderSet } from "../types/shader-set.type";
+import { Vector3 } from "../types/vector3.type";
+import { WebaniAnimation } from "./animation/webani-animation.class";
+import { brdfLUTComputeShaderSet, irradianceComputeShaderSet, objectShaderSet, prefilterComputeShaderSet, skyboxShaderSet } from "./scene/lighting/shaders/shaders";
+import { WebaniPerspectiveCamera } from "./scene/camera/webani-perspective-camera.class";
+import { Colors } from "./scene/lighting/colors";
+import { WebaniPointLight } from "./scene/lighting/webani-point-light.class";
+import { WebaniPrimitiveObject } from "./scene/webani-primitive-object.class";
+import { WebaniScene } from "./scene/webani-scene.class";
+import { WebaniSkybox } from "./webani-skybox.class";
 
 export type WebaniRendererOptions = {
     canvas: HTMLCanvasElement,
@@ -288,7 +288,13 @@ export class WebaniCanvas {
         this.bindAttributeBuffer("position", triangles, 3);
         this.bindAttributeBuffer("normal", object.normals, 3);
         this.bindAttributeBuffer("uv", object.UVs, 2);
+        this.bindAttributeBuffer("jointIndices", object.jointIndices, 4);
+        this.bindAttributeBuffer("weights", object.weights, 4);
         
+        this.gl.uniform1i(this.getShaderVariableLocation("performSkinningTransformation"), object.performSkinningTransformation ? 1 : 0);
+        this.gl.uniformMatrix4fv(this.getShaderVariableLocation("inverseBindMatrices[0]"), false, object.inverseBindMatrices);
+        this.gl.uniformMatrix4fv(this.getShaderVariableLocation("jointMatrices[0]"), true, object.jointMatrices);
+
         this.gl.uniformMatrix4fv(this.getShaderVariableLocation("uProjectionMatrix"), true, this.camera.projectionMatrix(this.htmlCanvas.width, this.htmlCanvas.height));
         this.gl.uniformMatrix4fv(this.getShaderVariableLocation("uViewMatrix"), true, this.camera.viewMatrix);
         this.gl.uniformMatrix4fv(this.getShaderVariableLocation("uModelMatrix"), true, object.modelMatrix);
@@ -379,7 +385,7 @@ export class WebaniCanvas {
         }
     }
 
-    bindAttributeBuffer(attribName: string, data: Float32Array, size: number): void {
+    bindAttributeBuffer(attribName: string, data: AllowSharedBufferSource, size: number): void {
         const buffer = this.attributeBuffers[attribName];
         const loc = this.attributeLocations[attribName];
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);

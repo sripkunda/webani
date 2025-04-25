@@ -1,19 +1,19 @@
-import { WebaniMaterial } from "../renderer/lighting/webani-material.class";
-import { GLBParserResultAnimation } from "../types/glb-parser-result-animation.type";
+import { WebaniMaterial } from "../renderer/scene/lighting/webani-material.class";
+import { GLBParserAccessor } from "../types/glb-parser-accessor.type";
+import { GLBParserAnimationData } from "../types/glb-parser-animation-data.type";
+import { GLBParserAnimationTrack } from "../types/glb-parser-animation-track.type";
+import { GLBParserBinaryBufferReadResult } from "../types/glb-parser-binary-buffer-read-result.type";
 import { GLBParserJSON } from "../types/glb-parser-json.type";
+import { GLBParserNode } from "../types/glb-parser-node.type";
+import { GLBParserPrimitive } from "../types/glb-parser-primitive.type";
+import { GLBParserResultAnimation } from "../types/glb-parser-result-animation.type";
+import { GLBParserResultSkinData } from "../types/glb-parser-result-skin-data.type";
+import { GLBParserResult } from "../types/glb-parser-result.type";
 import { Matrix4 } from "../types/matrix4.type";
 import { Vector2 } from "../types/vector2.type";
 import { Vector3 } from "../types/vector3.type";
-import { VectorUtils } from "./vector.utils";
-import { GLBParserAnimationData } from "../types/glb-parser-animation-data.type";
-import { GLBParserResult } from "../types/glb-parser-result.type";
-import { GLBParserNode } from "../types/glb-parser-node.type";
-import { GLBParserResultSkinData } from "../types/glb-parser-result-skin-data.type";
-import { GLBParserAccessor } from "../types/glb-parser-accessor.type";
-import { GLBParserBinaryBufferReadResult } from "../types/glb-parser-binary-buffer-read-result.type";
-import { GLBParserPrimitive } from "../types/glb-parser-primitive.type";
-import { GLBParserAnimationTrack } from "../types/glb-parser-animation-track.type";
 import { Vector4 } from "../types/vector4.type";
+import { VectorUtils } from "./vector.utils";
 
 async function fetchGLBData(path: string): Promise<ArrayBuffer> {
     const res = await fetch(path);
@@ -69,7 +69,6 @@ function extractInverseBindMatrices(gltf: GLBParserJSON, binaryBuffer: Uint8Arra
 
     const { accessorCount: count, dataView, byteOffset, byteStride, readFunction, componentSize } = readBinaryBuffer(gltf, binaryBuffer, skin.inverseBindMatrices);
     const inverseBindMatrices: Matrix4[] = [];
-
     for (let i = 0; i < count; i++) {
         const offset = byteOffset + i * byteStride;
         const matrix: Matrix4 = new Float32Array([
@@ -80,7 +79,6 @@ function extractInverseBindMatrices(gltf: GLBParserJSON, binaryBuffer: Uint8Arra
         ]) as Matrix4;
         inverseBindMatrices.push(matrix);
     }
-
     return inverseBindMatrices;
 }
 

@@ -147,22 +147,11 @@ export const MatrixUtils = {
         return m as Matrix4;
     },
 
-    fromTRSQuaternion(translation: Vector3, rotation: Vector4, scale: Vector3, rotationalCenter?: Vector3): Matrix4 { 
-        const T = MatrixUtils.translationMatrix(translation);
-        const R = rotationalCenter ? MatrixUtils.rotationMatrixAboutPointQuaternion(rotation, rotationalCenter) : MatrixUtils.rotationMatrixQuaternion(rotation);
-        const S = MatrixUtils.scaleMatrix(scale);
-
-        return MatrixUtils.multiply(
-            MatrixUtils.multiply(T, R),
-            S
-        );
-    },
-
     fromTRS(translation: Vector3, rotation: Vector3, scale: Vector3, rotationalCenter?: Vector3): Matrix4 {
         const T = MatrixUtils.translationMatrix(translation);
         const R = rotationalCenter ? MatrixUtils.rotationMatrixAboutPoint(rotation, rotationalCenter) : MatrixUtils.rotationMatrix(rotation);
         const S = MatrixUtils.scaleMatrix(scale);
-
+        
         return MatrixUtils.multiply(
             MatrixUtils.multiply(T, R),
             S
@@ -177,6 +166,18 @@ export const MatrixUtils = {
             }
         }
         return result;
+    },
+
+    toString(matrix: Matrix4): string {
+        let result = '';
+        for (let row = 0; row < 4; row++) {
+            let rowString = '';
+            for (let col = 0; col < 4; col++) {
+                rowString += matrix[row * 4 + col].toFixed(4) + ' ';
+            }
+            result += rowString.trim() + '\n';
+        }
+        return result.trim();
     }
     
 };

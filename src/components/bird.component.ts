@@ -1,7 +1,5 @@
-import { Colors } from "../renderer/lighting/colors";
 import { Vector3 } from "../types/vector3.type";
 import { Component } from "./component.class";
-import { WebaniMaterial } from "../renderer/lighting/webani-material.class";
 import { BirdMesh } from "./models/models";
 
 export class BirdComponent extends Component {

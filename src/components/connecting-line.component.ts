@@ -1,8 +1,8 @@
-import { Colors } from "../renderer/lighting/colors";
 import { RenderableObject } from "../types/renderable-object.type";
 import { Component } from "./component.class";
 import { Line } from "./line.component";
 import { Vector2 } from "../types/vector2.type";
+import { Colors } from "../renderer/scene/lighting/colors";
 
 export class ConnectingLineComponent extends Component {
     objectConstructor(start: Vector2, end: Vector2, thickness = 5, color = Colors.WHITE, opacity = 1): RenderableObject {

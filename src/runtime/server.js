@@ -80,14 +80,14 @@ function isPortAvailable(port, callback) {
     .listen(port);
 }
 
-function findAvailablePort(startingPort) {
+function startServerOnAvailablePortStartingAt(startingPort) {
   let portToTry = startingPort;
   isPortAvailable(portToTry, (available) => {
     if (available) {
       startServerOnPort(portToTry);
     } else {
       portToTry++; // Increment port and check again
-      findAvailablePort(portToTry); // Fix: pass new value
+      startServerOnAvailablePortStartingAt(portToTry); // Fix: pass new value
     }
   });
 }
@@ -111,4 +111,4 @@ function startServerOnPort(port) {
   });
 }
 
-findAvailablePort(3000);
+startServerOnAvailablePortStartingAt(3000);

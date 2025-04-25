@@ -1,7 +1,7 @@
-import { WebaniCollection } from "../../objects/webani-collection.class";
-import { WebaniPolygon } from "../../objects/webani-polygon.class";
-import { WebaniInterpolatedAnimation } from "./webani-interpolated-animation.class";
-import { WebaniPrimitiveObject } from "../scene/webani-primitive-object.class";
+import { WebaniCollection } from "./webani-collection.class";
+import { WebaniPolygon } from "../polygons/webani-polygon.class";
+import { WebaniInterpolatedAnimation } from "../../animation/webani-interpolated-animation.class";
+import { WebaniPrimitiveObject } from "../webani-primitive-object.class";
 
 export type WebaniCollectionAnimationOptions = {
     before: WebaniCollection | WebaniPolygon;

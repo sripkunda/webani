@@ -1,5 +1,5 @@
-import { WebaniInterpolatedAnimation } from "../renderer/animation/webani-interpolated-animation.class";
-import { WebaniPerspectiveCamera } from "../renderer/scene/webani-perspective-camera.class";
+import { WebaniInterpolatedAnimation } from "./webani-interpolated-animation.class";
+import { WebaniPerspectiveCamera } from "../scene/camera/webani-perspective-camera.class";
 
 export class WebaniPerspectiveCameraAnimation extends WebaniInterpolatedAnimation<WebaniPerspectiveCamera> {
     resolveAnimation(): void {

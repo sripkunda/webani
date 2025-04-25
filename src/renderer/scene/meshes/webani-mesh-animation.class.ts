@@ -1,5 +1,5 @@
-import { WebaniInterpolatedAnimation } from "../renderer/animation/webani-interpolated-animation.class";
-import { WebaniMesh } from "../objects/webani-mesh.class";
+import { WebaniInterpolatedAnimation } from "../../animation/webani-interpolated-animation.class";
+import { WebaniMesh } from "./webani-mesh.class";
 
 export class WebaniMeshAnimation extends WebaniInterpolatedAnimation<WebaniMesh> {
     resolveAnimation(): void {

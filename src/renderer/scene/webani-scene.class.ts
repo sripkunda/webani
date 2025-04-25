@@ -1,6 +1,6 @@
 import { RenderedGroupNode } from "../animation/rendered-group-node.class";
 import { RenderableObject } from "../../types/renderable-object.type";
-import { WebaniCollection } from "../../objects/webani-collection.class";
+import { WebaniCollection } from "./collections/webani-collection.class";
 import { WebaniPrimitiveObject } from "./webani-primitive-object.class";
 
 export class WebaniScene {
