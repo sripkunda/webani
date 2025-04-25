@@ -1,4 +1,4 @@
-import { WebaniInterpolatedAnimation } from "../renderer/animation/webani-interpolated-animation.class";
+import { WebaniInterpolatedAnimation } from "../animation/webani-interpolated-animation.class";
 import { SVGCommandList } from "../types/svg-command-list.type";
 import { SVGOutput } from "../types/svg-output.type";
 import { SVGPath } from "../types/svg-path.type";

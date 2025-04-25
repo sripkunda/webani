@@ -1,6 +1,6 @@
 import { Colors } from "../renderer/scene/lighting/colors";
-import { Component } from "./component.class";
-import { Vector3 } from "../types/vector3.type";
+import { Component } from "../renderer/scene/component.class";
+import { Vector3 } from "../renderer/types/vector3.type";
 import { WebaniMaterial } from "../renderer/scene/lighting/webani-material.class";
 import { SphereMesh } from "./models/models";
 

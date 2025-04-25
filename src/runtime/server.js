@@ -14,7 +14,7 @@ if (args.length > 0) {
 
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
-
+console.log(_dirname);
 const publicDir = join(_dirname, 'dist');
 
 const mimeTypes = {

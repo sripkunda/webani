@@ -1,7 +1,7 @@
 import { Colors } from "../renderer/scene/lighting/colors";
-import { Component } from "./component.class";
+import { Component } from "../renderer/scene/component.class";
 import { WebaniMesh } from "../renderer/scene/meshes/webani-mesh.class";
-import { Vector3 } from "../types/vector3.type";
+import { Vector3 } from "../renderer/types/vector3.type";
 import { WebaniMaterial } from "../renderer/scene/lighting/webani-material.class";
 
 export class CubeComponent extends Component {

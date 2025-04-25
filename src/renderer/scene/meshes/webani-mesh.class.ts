@@ -1,14 +1,14 @@
 import { WebaniMeshAnimation } from "./webani-mesh-animation.class";
-import { Vector3 } from "../../../types/vector3.type";
-import { WorldTransform } from "../../../types/world-transform.type";
-import { importGLB } from "../../../util/glb.util";
-import { VectorUtils } from "../../../util/vector.utils";
+import { Vector3 } from "../../types/vector3.type";
+import { WorldTransform } from "../../types/world-transform.type";
+import { importGLB } from "../../util/glb.util";
+import { VectorUtils } from "../../util/vector.utils";
 import { WebaniPrimitiveObject } from "../webani-primitive-object.class";
-import { Vector2 } from "../../../types/vector2.type";
+import { Vector2 } from "../../types/vector2.type";
 import { WebaniMeshJoint } from "./webani-mesh-joint.class";
 import { AnimationSet } from "../../animation/animation-set.class";
-import { Vector4 } from "../../../types/vector4.type";
-import { MatrixUtils } from "../../../util/matrix.utils";
+import { Vector4 } from "../../types/vector4.type";
+import { MatrixUtils } from "../../util/matrix.utils";
 import { WebaniMaterial } from "../lighting/webani-material.class";
 
 export type WebaniMeshOptions = {

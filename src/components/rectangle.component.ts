@@ -1,7 +1,7 @@
 import { Colors } from "../renderer/scene/lighting/colors";
 import { WebaniPolygon } from "../renderer/scene/polygons/webani-polygon.class";
-import { Component } from "./component.class";
-import { Vector2 } from "../types/vector2.type";
+import { Component } from "../renderer/scene/component.class";
+import { Vector2 } from "../renderer/types/vector2.type";
 import { WebaniMaterial } from "../renderer/scene/lighting/webani-material.class";
 
 export class RectangleComponent extends Component {

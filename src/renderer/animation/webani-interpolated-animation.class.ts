@@ -1,9 +1,9 @@
 import { WebaniTransformable } from "../scene/webani-transformable.class";
-import { WorldTransform } from "../../types/world-transform.type";
-import { Vector3 } from "../../types/vector3.type";
+import { WorldTransform } from "../types/world-transform.type";
+import { Vector3 } from "../types/vector3.type";
 import { WebaniAnimation } from "./webani-animation.class";
 import { WebaniPrimitiveObject } from "../scene/webani-primitive-object.class";
-import { CompleteWorldTransform } from "../../types/complete-world-transform.type";
+import { CompleteWorldTransform } from "../types/complete-world-transform.type";
 
 export interface WebaniInterpolatedAnimationOptions<T extends WebaniTransformable> {
     before: T;

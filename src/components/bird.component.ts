@@ -1,5 +1,5 @@
-import { Vector3 } from "../types/vector3.type";
-import { Component } from "./component.class";
+import { Vector3 } from "../renderer/types/vector3.type";
+import { Component } from "../renderer/scene/component.class";
 import { BirdMesh } from "./models/models";
 
 export class BirdComponent extends Component {

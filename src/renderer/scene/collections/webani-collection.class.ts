@@ -1,6 +1,6 @@
-import { RenderableObject } from "../../../types/renderable-object.type";
-import { Vector3 } from "../../../types/vector3.type";
-import { VectorUtils } from "../../../util/vector.utils";
+import { RenderableObject } from "../../types/renderable-object.type";
+import { Vector3 } from "../../types/vector3.type";
+import { VectorUtils } from "../../util/vector.utils";
 import { RenderedGroupNode } from "../../animation/rendered-group-node.class";
 import { WebaniPolygon } from "../polygons/webani-polygon.class";
 import { WebaniPrimitiveObject } from "../webani-primitive-object.class";

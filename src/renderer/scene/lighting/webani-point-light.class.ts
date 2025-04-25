@@ -1,4 +1,4 @@
-import { Vector3 } from "../../../types/vector3.type";
+import { Vector3 } from "../../types/vector3.type";
 import { WebaniTransformable } from "../webani-transformable.class";
 import { Colors } from "./colors";
 

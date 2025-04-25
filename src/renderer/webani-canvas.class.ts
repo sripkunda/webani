@@ -1,9 +1,9 @@
-import { CanvasAnimationState } from "../types/canvas-animation-state.type";
-import { CanvasUpdateLoop } from "../types/canvas-update-loop.type";
-import { Playable } from "../types/playable.type";
-import { RenderableObject } from "../types/renderable-object.type";
-import { ShaderSet } from "../types/shader-set.type";
-import { Vector3 } from "../types/vector3.type";
+import { CanvasAnimationState } from "./types/canvas-animation-state.type";
+import { CanvasUpdateLoop } from "./types/canvas-update-loop.type";
+import { Playable } from "./types/playable.type";
+import { RenderableObject } from "./types/renderable-object.type";
+import { ShaderSet } from "./types/shader-set.type";
+import { Vector3 } from "./types/vector3.type";
 import { WebaniAnimation } from "./animation/webani-animation.class";
 import { brdfLUTComputeShaderSet, irradianceComputeShaderSet, objectShaderSet, prefilterComputeShaderSet, skyboxShaderSet } from "./scene/lighting/shaders/shaders";
 import { WebaniPerspectiveCamera } from "./scene/camera/webani-perspective-camera.class";

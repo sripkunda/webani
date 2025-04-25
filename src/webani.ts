@@ -1,4 +1,4 @@
-import { Playable } from "./types/playable.type";
+import { Playable } from "./renderer/types/playable.type";
 import { WebaniCanvas, WebaniRendererOptions } from "./renderer/webani-canvas.class";
 import { WebaniVariable } from "./renderer/variables/webani-variable.class";
 import { RenderedGroupNode } from "./renderer/animation/rendered-group-node.class";

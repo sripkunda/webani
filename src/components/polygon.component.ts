@@ -1,6 +1,6 @@
 import { Colors } from "../renderer/scene/lighting/colors";
-import { Vector3 } from "../types/vector3.type";
-import { Component } from "./component.class";
+import { Vector3 } from "../renderer/types/vector3.type";
+import { Component } from "../renderer/scene/component.class";
 import { WebaniPolygon } from "../renderer/scene/polygons/webani-polygon.class";
 import { WebaniMaterial } from "../renderer/scene/lighting/webani-material.class";
 

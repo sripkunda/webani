@@ -1,8 +1,8 @@
 import { WebaniTransformable } from "../webani-transformable.class";
-import { Matrix4 } from "../../../types/matrix4.type";
-import { Vector3 } from "../../../types/vector3.type";
-import { WorldTransform } from "../../../types/world-transform.type";
-import { MatrixUtils } from "../../../util/matrix.utils";
+import { Matrix4 } from "../../types/matrix4.type";
+import { Vector3 } from "../../types/vector3.type";
+import { WorldTransform } from "../../types/world-transform.type";
+import { MatrixUtils } from "../../util/matrix.utils";
 
 export type WebaniMeshJointOptions = { 
     name: string;

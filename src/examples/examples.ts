@@ -1,4 +1,4 @@
-import { loadImages } from '../util/image.util';
+import { loadImages } from '../renderer/util/image.util';
 import face0 from './example-skybox/skybox_face_0.jpg';
 import face1 from './example-skybox/skybox_face_1.jpg';
 import face2 from './example-skybox/skybox_face_2.jpg';

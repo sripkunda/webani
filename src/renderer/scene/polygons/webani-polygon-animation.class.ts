@@ -1,7 +1,7 @@
 import { WebaniPolygon } from "./webani-polygon.class";
-import { executeInParallel, windingOrderClockwise } from "../../../util/polygon.utils";
-import { VectorUtils } from "../../../util/vector.utils";
-import { Vector3 } from "../../../types/vector3.type";
+import { executeInParallel, windingOrderClockwise } from "../../util/polygon.utils";
+import { VectorUtils } from "../../util/vector.utils";
+import { Vector3 } from "../../types/vector3.type";
 import { WebaniInterpolatedAnimation } from "../../animation/webani-interpolated-animation.class";
 
 export type WebaniPolygonAnimationOptions = {

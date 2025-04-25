@@ -1,4 +1,4 @@
-import { WebaniMaterial } from "../renderer/scene/lighting/webani-material.class";
+import { WebaniMaterial } from "../scene/lighting/webani-material.class";
 import { GLBParserAccessor } from "../types/glb-parser-accessor.type";
 import { GLBParserAnimationData } from "../types/glb-parser-animation-data.type";
 import { GLBParserAnimationTrack } from "../types/glb-parser-animation-track.type";

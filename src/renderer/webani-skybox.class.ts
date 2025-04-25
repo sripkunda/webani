@@ -1,4 +1,4 @@
-import { Matrix4 } from "../types/matrix4.type";
+import { Matrix4 } from "./types/matrix4.type";
 import { WebaniPerspectiveCamera } from "./scene/camera/webani-perspective-camera.class";
 import { WebaniCanvas } from "./webani-canvas.class";
 

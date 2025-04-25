@@ -1,7 +1,7 @@
-import { WorldTransform } from "../../types/world-transform.type";
-import { Vector3 } from "../../types/vector3.type";
-import { VectorUtils } from "../../util/vector.utils";
-import { CompleteWorldTransform } from "../../types/complete-world-transform.type";
+import { WorldTransform } from "../types/world-transform.type";
+import { Vector3 } from "../types/vector3.type";
+import { VectorUtils } from "../util/vector.utils";
+import { CompleteWorldTransform } from "../types/complete-world-transform.type";
 
 export type WebaniTransformableOptions = {
     position?: Vector3;

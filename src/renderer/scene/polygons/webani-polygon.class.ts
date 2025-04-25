@@ -1,9 +1,9 @@
 import { WebaniPolygonAnimation } from "./webani-polygon-animation.class";
 import { WebaniPrimitiveObject } from "../webani-primitive-object.class";
-import { triangulate } from "../../../util/polygon.utils";
-import { VectorUtils } from "../../../util/vector.utils";
-import { Vector3 } from "../../../types/vector3.type";
-import { WorldTransform } from "../../../types/world-transform.type";
+import { triangulate } from "../../util/polygon.utils";
+import { VectorUtils } from "../../util/vector.utils";
+import { Vector3 } from "../../types/vector3.type";
+import { WorldTransform } from "../../types/world-transform.type";
 import { WebaniMaterial } from "../lighting/webani-material.class";
 
 export type WebaniPolygonOptions = {

@@ -1,4 +1,4 @@
-import { WebaniMaterial } from "../renderer/scene/lighting/webani-material.class";
+import { WebaniMaterial } from "../scene/lighting/webani-material.class";
 import { GLBParserResultAnimationData } from "./glb-parser-result-animation-datatype";
 import { GLBParserResultVertexData } from "./glb-parser-vertex-data.type";
 

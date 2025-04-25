@@ -1,7 +1,7 @@
-import { Matrix4 } from "../../../types/matrix4.type";
-import { MatrixUtils } from "../../../util/matrix.utils";
-import { VectorUtils } from "../../../util/vector.utils";
-import { Vector3 } from "../../../types/vector3.type";
+import { Matrix4 } from "../../types/matrix4.type";
+import { MatrixUtils } from "../../util/matrix.utils";
+import { VectorUtils } from "../../util/vector.utils";
+import { Vector3 } from "../../types/vector3.type";
 import { WebaniTransformable } from "../webani-transformable.class";
 
 export type WebaniPerspectiveCameraOptions = {

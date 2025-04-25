@@ -1,8 +1,8 @@
 import { Colors } from "../renderer/scene/lighting/colors";
-import { RenderableObject } from "../types/renderable-object.type";
-import { Component } from "./component.class";
+import { RenderableObject } from "../renderer/types/renderable-object.type";
+import { Component } from "../renderer/scene/component.class";
 import { Rectangle } from "./rectangle.component";
-import { Vector2 } from "../types/vector2.type";
+import { Vector2 } from "../renderer/types/vector2.type";
 
 export class LineComponent extends Component {
     objectConstructor(position: Vector2, length: number, angle = 0, thickness = 2, color = Colors.WHITE, opacity = 1): RenderableObject {

@@ -1,7 +1,7 @@
-import { RenderableObject } from "../types/renderable-object.type";
-import { Component } from "./component.class";
+import { RenderableObject } from "../renderer/types/renderable-object.type";
+import { Component } from "../renderer/scene/component.class";
 import { Line } from "./line.component";
-import { Vector2 } from "../types/vector2.type";
+import { Vector2 } from "../renderer/types/vector2.type";
 import { Colors } from "../renderer/scene/lighting/colors";
 
 export class ConnectingLineComponent extends Component {

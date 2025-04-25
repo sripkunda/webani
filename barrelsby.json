@@ -1,0 +1,7 @@
+{
+    "directory": "src",
+    "delete": true,
+    "barrelName": "index",
+    "barrels": ["filesystem", "flat"],
+    "exclude": ["runtime", "dist", "global.d.ts"]
+}

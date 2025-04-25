@@ -1,7 +1,7 @@
 import { Colors } from "../renderer/scene/lighting/colors";
 import { WebaniMaterial } from "../renderer/scene/lighting/webani-material.class";
-import { Vector3 } from "../types/vector3.type";
-import { Component } from "./component.class";
+import { Vector3 } from "../renderer/types/vector3.type";
+import { Component } from "../renderer/scene/component.class";
 import { BirdMesh, ConeMesh } from "./models/models";
 
 export class ConeComponent extends Component {
