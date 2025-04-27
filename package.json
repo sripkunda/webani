@@ -20,7 +20,7 @@
     "ws": "^8.18.1"
   },
   "bin": {
-    "start": "node ./src/runtime/server.js"
+    "webani": "node ./src/runtime/server.js"
   },
   "scripts": {
     "start": "node ./src/runtime/server.js",

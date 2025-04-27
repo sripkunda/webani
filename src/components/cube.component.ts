@@ -2,12 +2,22 @@ import { Colors } from "../renderer/scene/lighting/colors";
 import { Component } from "../renderer/scene/component.class";
 import { WebaniMesh } from "../renderer/scene/meshes/webani-mesh.class";
 import { Vector3 } from "../renderer/types/vector3.type";
-import { WebaniMaterial } from "../renderer/scene/lighting/webani-material.class";
+import { WebaniMaterial, WebaniMaterialOptions } from "../renderer/scene/lighting/webani-material.class";
+
+type CubeComponentOptions = {
+    position: Vector3;
+    length: number;
+    material?: WebaniMaterialOptions;  // Added to allow material customization
+};
 
 export class CubeComponent extends Component {
-    objectConstructor(position: Vector3, length: number, color = Colors.BLACK, opacity = 1) {
+    objectConstructor({ 
+        position, 
+        length, 
+        material = { color: Colors.BLACK, opacity: 1 } 
+    }: CubeComponentOptions) {
         return new WebaniMesh({
-            position, 
+            position,
             triangleVertices: [
                 // +X face
                 [ length,  length, -length], [ length, -length, -length], [ length, -length,  length],
@@ -58,8 +68,8 @@ export class CubeComponent extends Component {
                 [0, 0, -1], [0, 0, -1], [0, 0, -1],
                 [0, 0, -1], [0, 0, -1], [0, 0, -1]
             ],
-            material: new WebaniMaterial({ color, opacity })
-        }).copyCenteredAt([0, 0, 0]);
+            material: new WebaniMaterial(material)
+        });
     }
 }
 

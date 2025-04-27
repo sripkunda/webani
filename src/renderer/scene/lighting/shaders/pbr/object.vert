@@ -24,15 +24,19 @@ out vec2 vertexUV;
 
 void main() {
     vec4 transformedPos = position;
+    vec3 transformedNormal = normal;
     if (performSkinningTransformation) {
         transformedPos = vec4(0.0);
+        transformedNormal = vec3(0.0);
         for (int i = 0; i < 4; i++) { 
             int jointIndex = int(jointIndices[i]);
-            transformedPos += weights[i] * jointMatrices[jointIndex] * inverseBindMatrices[jointIndex] * position;
+            mat4 matrix = jointMatrices[jointIndex] * inverseBindMatrices[jointIndex];
+            transformedPos += weights[i] * matrix * position;
+            transformedNormal += weights[i] * mat3(transpose(inverse(matrix))) * normal;
         }
     }
     fragPos = (uModelMatrix * transformedPos).xyz;
-    fragNormal = normalize(mat3(transpose(inverse(uModelMatrix))) * normal);
+    fragNormal = normalize(mat3(transpose(inverse(uModelMatrix))) * transformedNormal);
     vertexUV = uv;
     gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * transformedPos;
     gl_PointSize = 2.0;

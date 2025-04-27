@@ -1,14 +1,16 @@
 import { WebaniMaterial } from "../scene/lighting/webani-material.class";
+import { WebaniMesh } from "../scene/meshes/webani-mesh.class";
 import { GLBParserAccessor } from "../types/glb-parser-accessor.type";
 import { GLBParserAnimationData } from "../types/glb-parser-animation-data.type";
 import { GLBParserAnimationTrack } from "../types/glb-parser-animation-track.type";
 import { GLBParserBinaryBufferReadResult } from "../types/glb-parser-binary-buffer-read-result.type";
 import { GLBParserJSON } from "../types/glb-parser-json.type";
+import { GLBParserResultMeshData } from "../types/glb-parser-result-mesh-data.type";
 import { GLBParserNode } from "../types/glb-parser-node.type";
 import { GLBParserPrimitive } from "../types/glb-parser-primitive.type";
 import { GLBParserResultAnimation } from "../types/glb-parser-result-animation.type";
 import { GLBParserResultSkinData } from "../types/glb-parser-result-skin-data.type";
-import { GLBParserResult } from "../types/glb-parser-result.type";
+import { GLBParserPrimitiveParseResult } from "../types/glb-parser-result.type";
 import { Matrix4 } from "../types/matrix4.type";
 import { Vector2 } from "../types/vector2.type";
 import { Vector3 } from "../types/vector3.type";
@@ -364,7 +366,7 @@ function extractAnimations(gltf: GLBParserJSON, binaryBuffer: Uint8Array): GLBPa
     }));
 }
 
-export async function importGLB(path: string): Promise<GLBParserResult> {
+export async function importGLB(path: string): Promise<GLBParserPrimitiveParseResult> {
     const arrayBuffer = await fetchGLBData(path);
     const dataView = new DataView(arrayBuffer);
 
@@ -374,39 +376,45 @@ export async function importGLB(path: string): Promise<GLBParserResult> {
     const jsonLength = new DataView(arrayBuffer.slice(12, 16)).getUint32(0, true);
     const binaryBuffer = extractGLBBinary(dataView, jsonLength);
 
-    const primitive = gltf.meshes[0].primitives[0];
-
-    const vertices = extractAttributeData(gltf, binaryBuffer, primitive.attributes?.POSITION) as Vector3[];
-    const normals = extractAttributeData(gltf, binaryBuffer, primitive.attributes?.NORMAL) as Vector3[];
-    const uvs = extractAttributeData(gltf, binaryBuffer, primitive.attributes?.TEXCOORD_0) as Vector2[];
-    const joints = extractAttributeData(gltf, binaryBuffer, primitive.attributes?.JOINTS_0) as Vector4[];
-    const weights = extractAttributeData(gltf, binaryBuffer, primitive.attributes?.WEIGHTS_0) as Vector4[];
-    
-    const { vertices: triangleVertices, normals: triangleVertexNormals, uvs: triangleUVs, joints: triangleJoints, weights: triangleWeights } = extractIndicesData(
-        gltf,
-        binaryBuffer,
-        primitive.indices,
-        { vertices, normals, uvs, joints, weights }
-    );
-    
-    const material = await extractMaterialProperties(primitive, gltf, binaryBuffer, path);
     const animations = extractAnimations(gltf, binaryBuffer);
     const nodes = extractNodes(gltf);
     const skin = extractSkin(gltf, binaryBuffer);
     
+    const meshes: GLBParserResultMeshData[] = [];
+    for (const i in gltf.meshes) {
+        const primitive = gltf.meshes[i].primitives[0];
+        const vertices = extractAttributeData(gltf, binaryBuffer, primitive.attributes?.POSITION) as Vector3[];
+        const normals = extractAttributeData(gltf, binaryBuffer, primitive.attributes?.NORMAL) as Vector3[];
+        const uvs = extractAttributeData(gltf, binaryBuffer, primitive.attributes?.TEXCOORD_0) as Vector2[];
+        const joints = extractAttributeData(gltf, binaryBuffer, primitive.attributes?.JOINTS_0) as Vector4[];
+        const weights = extractAttributeData(gltf, binaryBuffer, primitive.attributes?.WEIGHTS_0) as Vector4[];
+        
+        const { vertices: triangleVertices, normals: triangleVertexNormals, uvs: triangleUVs, joints: triangleJoints, weights: triangleWeights } = extractIndicesData(
+            gltf,
+            binaryBuffer,
+            primitive.indices,
+            { vertices, normals, uvs, joints, weights }
+        );
+        
+        const material = await extractMaterialProperties(primitive, gltf, binaryBuffer, path);
+        
+        meshes.push({
+            vertexData: {
+                triangles: triangleVertices,
+                normals: triangleVertexNormals,
+                uvs: triangleUVs,
+                joints: triangleJoints, 
+                weights: triangleWeights,
+            },
+            material: material,
+        });
+    }
     return {
-        vertexData: {
-            triangles: triangleVertices,
-            normals: triangleVertexNormals,
-            uvs: triangleUVs,
-            joints: triangleJoints, 
-            weights: triangleWeights,
-        },
         animationData: {
             skin: skin,
             nodes: nodes,
             animations: animations,
         },
-        material: material,
+        meshes: meshes
     };
 }

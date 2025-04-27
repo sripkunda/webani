@@ -2,17 +2,19 @@ import { WebaniCollection } from "./webani-collection.class";
 import { WebaniPolygon } from "../polygons/webani-polygon.class";
 import { WebaniInterpolatedAnimation } from "../../animation/webani-interpolated-animation.class";
 import { WebaniPrimitiveObject } from "../webani-primitive-object.class";
+import { WebaniTransformable } from "../webani-transformable.class";
+import { WebaniTransformableAnimation } from "../../animation/webani-transformable-animation.class";
 
 export type WebaniCollectionAnimationOptions = {
-    before: WebaniCollection | WebaniPolygon;
-    after: WebaniCollection | WebaniPolygon;
+    before: WebaniCollection<WebaniTransformable> | WebaniPolygon;
+    after: WebaniCollection<WebaniTransformable> | WebaniPolygon;
     duration?: number;
     backwards?: boolean;
     interpolationFunction?: (before: number, after: number, t: number) => number;
 };
 
-export class WebaniCollectionAnimation extends WebaniInterpolatedAnimation<WebaniCollection> {
-    animations!: WebaniInterpolatedAnimation<WebaniPrimitiveObject>[];
+export class WebaniCollectionAnimation extends WebaniInterpolatedAnimation<WebaniCollection<WebaniTransformable>> {
+    animations!: WebaniInterpolatedAnimation<WebaniTransformable>[];
 
     constructor({
         before,
@@ -32,20 +34,20 @@ export class WebaniCollectionAnimation extends WebaniInterpolatedAnimation<Weban
         });
     }
 
-    get before(): WebaniCollection {
+    get before(): WebaniCollection<WebaniTransformable> {
         return this.resolvedBefore;
     }
 
-    get after(): WebaniCollection {
+    get after(): WebaniCollection<WebaniTransformable> {
         return this.resolvedAfter;
     }
 
-    set before(value: WebaniCollection) { 
+    set before(value: WebaniCollection<WebaniTransformable>) { 
         this.unresolvedBefore = value;
         this.resolveAnimation();
     }
 
-    set after(value: WebaniCollection) { 
+    set after(value: WebaniCollection<WebaniTransformable>) { 
         this.unresolvedAfter = value;
         this.resolveAnimation();
     }
@@ -56,42 +58,40 @@ export class WebaniCollectionAnimation extends WebaniInterpolatedAnimation<Weban
         this.resolvedBefore = this.unresolvedBefore.shallowCopy;
         this.resolvedAfter = this.unresolvedAfter.shallowCopy;
         this.currentObject = this.unresolvedBefore.shallowCopy;
-        if (this.resolvedBefore.unresolvedObjects.length === 0 || this.resolvedAfter.unresolvedObjects.length === 0) return;
+        if (this.resolvedBefore.objectArray.length === 0 || this.resolvedAfter.objectArray.length === 0) return;
 
-        while (this.resolvedBefore.unresolvedObjects.length !== this.resolvedAfter.unresolvedObjects.length) {
-            if (this.resolvedBefore.unresolvedObjects.length < this.resolvedAfter.unresolvedObjects.length) {
+        while (this.resolvedBefore.objectArray.length !== this.resolvedAfter.objectArray.length) {
+            if (this.resolvedBefore.objectArray.length < this.resolvedAfter.objectArray.length) {
                 this.resolvedBefore.add(
-                    this.resolvedBefore.unresolvedObjects[this.resolvedBefore.unresolvedObjects.length - 1]
+                    this.resolvedBefore.objectArray[this.resolvedBefore.objectArray.length - 1]
                 );
             } else {
                 this.resolvedAfter.add(
-                    this.resolvedAfter.unresolvedObjects[this.resolvedAfter.unresolvedObjects.length - 1]
+                    this.resolvedAfter.objectArray[this.resolvedAfter.objectArray.length - 1]
                 );
             }
         }
 
-        this.animations = this.resolvedBefore.unresolvedObjects.map(
+        this.animations = this.resolvedBefore.objectArray.map(
             (before, i) => {
-                if (before.animationClass) { 
-                    return new before.animationClass(
-                        {
-                            before,
-                            after: this.resolvedAfter.unresolvedObjects[i],
-                            duration: this.duration,
-                            backwards: this.backwards,
-                            interpolationFunction: this.interpolationFunction
-                        }
-                    );
-                }
-                throw Error(`Cannot generate an animation for object ${before} because there is no compatible animation class.`);
+                const animationClass = before.animationClass || WebaniTransformableAnimation; 
+                return new animationClass(
+                    {
+                        before,
+                        after: this.resolvedAfter.objectArray[i],
+                        duration: this.duration,
+                        backwards: this.backwards,
+                        interpolationFunction: this.interpolationFunction
+                    }
+                );
             }
         );
     }
 
-    setFrame(t: number): WebaniCollection {
+    setFrame(t: number): WebaniCollection<WebaniTransformable> {
         this.setTransforms(t);
-        for (let i = 0; i < this.currentObject.unresolvedObjects.length; i++) { 
-            this.currentObject.unresolvedObjects[i] = this.animations[i].frame(t);
+        for (let i = 0; i < this.currentObject.objectArray.length; i++) { 
+            this.currentObject.objectArray[i] = this.animations[i].frame(t);
         }
         return this.currentObject;
     }

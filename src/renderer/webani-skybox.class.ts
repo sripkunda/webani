@@ -12,7 +12,7 @@ export class WebaniSkybox {
     irradianceTexture!: WebGLTexture;
     prefilteredTexture!: WebGLTexture;
     faces!: number[];
-    viewMatrices!: Matrix4[];
+    cameraModelMatrices!: Matrix4[];
     projectionMatrix!: Matrix4;
     roughness: number;
     
@@ -54,8 +54,7 @@ export class WebaniSkybox {
         this.reloadSkybox(canvas);
     }
 
-    static async fallback(canvas: WebaniCanvas) {
-        if (canvas.skybox) return canvas.skybox;
+    static async solidColor(canvas: WebaniCanvas) {
         const image = new ImageData(256, 256);
         for (let i = 0; i < image.data.length; i += 4) {
             image.data[i] = Math.ceil(canvas.backgroundColor[0] * 255);
@@ -64,7 +63,7 @@ export class WebaniSkybox {
             image.data[i + 3] = 255;
         }           
         const ibm = await createImageBitmap(image);
-        return canvas.skybox || new WebaniSkybox(canvas, [ibm, ibm, ibm, ibm, ibm, ibm]);
+        return new WebaniSkybox(canvas, [ibm, ibm, ibm, ibm, ibm, ibm]);
     }
 
     reloadSkybox(canvas: WebaniCanvas) {
@@ -97,25 +96,25 @@ export class WebaniSkybox {
             far: 10
         });
         this.projectionMatrix = camera.projectionMatrix(this.textureSize, this.textureSize);
-        this.viewMatrices = this.faces.map((face) => {
+        this.cameraModelMatrices = this.faces.map((face) => {
             switch (face) {
                 case canvas.gl.TEXTURE_CUBE_MAP_POSITIVE_X:
-                    camera.transform.rotation = [0, -90, 0];
-                    break;
-                case canvas.gl.TEXTURE_CUBE_MAP_NEGATIVE_X:
                     camera.transform.rotation = [0, 90, 0];
                     break;
+                case canvas.gl.TEXTURE_CUBE_MAP_NEGATIVE_X:
+                    camera.transform.rotation = [0, -90, 0];
+                    break;
                 case canvas.gl.TEXTURE_CUBE_MAP_POSITIVE_Y:
-                    camera.transform.rotation = [-90, 0, 0];
+                    camera.transform.rotation = [-90, 180, 0];
                     break;
                 case canvas.gl.TEXTURE_CUBE_MAP_NEGATIVE_Y:
-                    camera.transform.rotation = [90, 0, 0];
+                    camera.transform.rotation = [90, 180, 0];
                     break;
                 case canvas.gl.TEXTURE_CUBE_MAP_POSITIVE_Z:
-                    camera.transform.rotation = [0, 0, 0];
+                    camera.transform.rotation = [0, 180, 0];
                     break;
                 case canvas.gl.TEXTURE_CUBE_MAP_NEGATIVE_Z:
-                    camera.transform.rotation = [0, 180, 0];
+                    camera.transform.rotation = [0, 0, 0];
                     break;
             }
             return camera.viewMatrix;
@@ -193,7 +192,7 @@ export class WebaniSkybox {
         
         this.faces.forEach((face, i) => {
             gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, face, texture, 0);
-            gl.uniformMatrix4fv(canvas.getShaderVariableLocation("uViewMatrix"), true, this.viewMatrices[i]);
+            gl.uniformMatrix4fv(canvas.getShaderVariableLocation("uViewMatrix"), true, this.cameraModelMatrices[i]);
             canvas.glClear();
             gl.viewport(0, 0, irradianceSize, irradianceSize);
             gl.drawArrays(gl.TRIANGLES, 0, this.cubeVertices.length / 3);
@@ -211,7 +210,7 @@ export class WebaniSkybox {
         canvas.changeShaderProgram("prefilterCompute");
         const gl = canvas.gl;
         const texture = gl.createTexture();
-        const size = 256;
+        const size = 512;
 
         const maxMipLevels = Math.floor(Math.log2(size)) + 1;
     
@@ -262,7 +261,7 @@ export class WebaniSkybox {
             gl.uniform1f(canvas.getShaderVariableLocation("uResolution"), mipWidth);
     
             this.faces.forEach((face, i) => {
-                gl.uniformMatrix4fv(canvas.getShaderVariableLocation("uViewMatrix"), true, this.viewMatrices[i]);
+                gl.uniformMatrix4fv(canvas.getShaderVariableLocation("uViewMatrix"), true, this.cameraModelMatrices[i]);
                 gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, face, texture, mip);
                 canvas.glClear();
                 gl.viewport(0, 0, mipWidth, mipHeight);

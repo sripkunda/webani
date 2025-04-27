@@ -23,12 +23,11 @@ export abstract class WebaniPrimitiveObject extends WebaniTransformable {
     protected _triangulation!: Float32Array;
     protected _normals!: Float32Array;
     protected _UVs!: Float32Array;
-    protected _jointWeights?: Float32Array;
-    protected _jointIndices?: Float32Array;
-    protected _jointMatrices?: Float32Array;
-    protected _inverseBindMatrices?: Float32Array;
-
-    localCenter!: Vector3;
+    protected _jointWeights!: Float32Array;
+    protected _jointIndices!: Float32Array;
+    protected _jointObjectMatrices!: Float32Array;
+    protected _inverseBindMatrices!: Float32Array;
+    protected _localCenter!: Vector3;
     performSkinningTransformation: boolean = false;
 
     constructor({
@@ -43,37 +42,41 @@ export abstract class WebaniPrimitiveObject extends WebaniTransformable {
         this.material = material;
     }
 
-    abstract animationClass?: new (options: WebaniInterpolatedAnimationOptions<WebaniPrimitiveObject>) => WebaniInterpolatedAnimation<WebaniPrimitiveObject>;
     abstract resolveObjectGeometry(): void;
+
+    fillArrays(vertexCount: number = 0, jointCount: number = 0) { 
+        if (!this._triangulation || this._triangulation.length < this.vertexCount * 3) {
+            this._triangulation = new Float32Array(vertexCount * 3);
+        }
+        if (!this._normals || this._normals.length < vertexCount * 3) { 
+            this._normals = new Float32Array(vertexCount * 3);
+        } 
+        if (!this._UVs || this._UVs.length < vertexCount * 2) {
+            this._UVs = new Float32Array(vertexCount * 2);
+        }
+        if (!this._jointWeights || this._jointWeights.length < vertexCount * 4) {
+            this._jointWeights = new Float32Array(vertexCount * 4);
+        }
+        if (!this._jointIndices || this._jointIndices.length < vertexCount * 4) {
+            this._jointIndices = new Float32Array(vertexCount * 4);
+        }
+        if (!this._jointObjectMatrices || this._jointObjectMatrices.length < jointCount * 16) {
+            this._jointObjectMatrices = new Float32Array(jointCount * 4);
+        }
+        if (!this._inverseBindMatrices || this._inverseBindMatrices.length < jointCount * 16) {
+            this._inverseBindMatrices = new Float32Array(jointCount * 4);
+        }
+    }
+
+    get localCenter(): Vector3 { 
+        return this._localCenter;
+    }
 
     get center(): Vector3 {
         return MatrixUtils.multiplyVector3(
             MatrixUtils.fromTRS(this.transform.position, [0, 0, 0], this.transform.scale),
             this.localCenter
         );
-    }
-
-    get modelMatrix(): Matrix4 {
-        const transform = this.completeTransform;
-        let matrix = MatrixUtils.fromTRS(
-            transform.position,
-            transform.rotation,
-            transform.scale,
-            transform.rotationalCenter
-        );
-
-        for (let transform of this.completeExtraTransforms) {
-            matrix = MatrixUtils.multiply(
-                MatrixUtils.fromTRS(
-                    transform.position,
-                    transform.rotation,
-                    transform.scale,
-                    transform.rotationalCenter
-                ),
-                matrix
-            );
-        }
-        return matrix;
     }
 
     get triangles(): Float32Array {
@@ -88,8 +91,8 @@ export abstract class WebaniPrimitiveObject extends WebaniTransformable {
         return this._UVs;
     }
 
-    get jointMatrices(): Float32Array { 
-        return this._jointMatrices;
+    get jointObjectMatrices(): Float32Array { 
+        return this._jointObjectMatrices;
     }
 
     get inverseBindMatrices(): Float32Array { 
@@ -106,17 +109,5 @@ export abstract class WebaniPrimitiveObject extends WebaniTransformable {
 
     get vertexCount(): number {
         return this._triangulation.length / 3;
-    }
-
-
-    copyCenteredAt(newCenter: Vector3): WebaniPrimitiveObject {
-        newCenter = VectorUtils.convertPointTo3D(newCenter) || newCenter;
-        const copy = this.shallowCopy;
-        const center = this.center;
-        copy.transform.position = VectorUtils.add(
-            copy.transform.position,
-            VectorUtils.subtract(newCenter, center)
-        );
-        return copy;
     }
 }

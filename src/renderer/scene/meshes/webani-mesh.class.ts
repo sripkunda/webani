@@ -8,8 +8,10 @@ import { Vector2 } from "../../types/vector2.type";
 import { WebaniMeshJoint } from "./webani-mesh-joint.class";
 import { AnimationSet } from "../../animation/animation-set.class";
 import { Vector4 } from "../../types/vector4.type";
-import { MatrixUtils } from "../../util/matrix.utils";
 import { WebaniMaterial } from "../lighting/webani-material.class";
+import { WebaniTransformable } from "../webani-transformable.class";
+import { WebaniCollection } from "../collections/webani-collection.class";
+import { MatrixUtils } from "../../util/matrix.utils";
 
 export type WebaniMeshOptions = {
     position: Vector3, 
@@ -31,14 +33,14 @@ export type WebaniMeshOptions = {
 
 export class WebaniMesh extends WebaniPrimitiveObject { 
     animationClass = WebaniMeshAnimation;
-    private triangleVertices: Vector3[]
-    private vertexNormals: Vector3[];
-    private vertexUVs?: Vector2[];
-    private vertexJointIndices?: Vector4[];
-    private vertexWeights?: Vector4[];
-    private joints?: WebaniMeshJoint[];
+    private triangleVertices!: Vector3[]
+    private vertexNormals!: Vector3[];
+    private vertexUVs!: Vector2[];
+    private vertexJointIndices!: Vector4[];
+    private vertexWeights!: Vector4[];
+    private joints!: WebaniMeshJoint[];
 
-    animations: {
+    animations!: {
         [key: string]: AnimationSet
     };
 
@@ -62,61 +64,52 @@ export class WebaniMesh extends WebaniPrimitiveObject {
          });
         this.triangleVertices = triangleVertices;
         this.vertexNormals = vertexNormals;
-        this.vertexUVs = vertexUVs;
-        this.vertexJointIndices = vertexJoints;
-        this.vertexWeights = vertexWeights;
-        this.joints = joints;
-        this.animations = animations;
+        this.vertexUVs = vertexUVs || [];
+        this.vertexJointIndices = vertexJoints || [];
+        this.vertexWeights = vertexWeights || [];
+        this.joints = joints || [];
+        this.animations = animations || {};
         this.resolveObjectGeometry();
-        if (this.joints.length > 0) { 
+        if (this.joints.length > 0) {
             this.performSkinningTransformation = true;
         }
     }
 
     resolveObjectGeometry() {
-        if (!this._triangulation) {
-            this._triangulation = new Float32Array(this.triangleVertices.length * 3);
-        }
-        if (!this._normals) { 
-            this._normals = new Float32Array(this.triangleVertices.length * 3);
-        } 
-        if (!this._UVs) {
-            this._UVs = new Float32Array(this.triangleVertices.length * 2);
-        }
-        if (!this._jointWeights) {
-            this._jointWeights = new Float32Array(this.triangleVertices.length * 4);
-        }
-        if (!this._jointIndices) {
-            this._jointIndices = new Float32Array(this.triangleVertices.length * 4);
-        }
+        this.fillArrays(this.triangleVertices.length, this.joints.length);
+        this.updateVertexData();
+        this.updateJoints();
+        this._localCenter = VectorUtils.center(this.triangleVertices);
+    }
 
+    updateVertexData(normals = true, trianglePositions = true, uvs = true, jointIndices = true, weights = true) { 
         for (let i = 0; i < this.triangleVertices.length; i++) {
-            VectorUtils.setFlat(this._normals, 3, i, this.vertexNormals[i]);
-            VectorUtils.setFlat(this._triangulation, 3, i, this.triangleVertices[i]);
-            if (this.vertexUVs[i]) {
+            if (trianglePositions) { 
+                VectorUtils.setFlat(this._triangulation, 3, i, this.triangleVertices[i]);
+            }
+            if (normals) {
+                VectorUtils.setFlat(this._normals, 3, i, this.vertexNormals[i]);
+            }
+            if (uvs && this.vertexUVs[i]) {
                 VectorUtils.setFlat(this._UVs, 2, i, this.vertexUVs[i]);
             }
-            if (this.vertexJointIndices[i]) { 
+            if (jointIndices && this.vertexJointIndices[i]) { 
                 VectorUtils.setFlat(this._jointIndices, 4, i, this.vertexJointIndices[i]);
             }
-            if (this.vertexWeights[i]) { 
+            if (weights && this.vertexWeights[i]) { 
                 VectorUtils.setFlat(this._jointWeights, 4, i, this.vertexWeights[i]);
             }
         }
-        this.resolveJoints();
-        this.localCenter = VectorUtils.center(this.triangleVertices);
     }
 
-    resolveJoints() {
-        if (!this._jointMatrices) {
-            this._jointMatrices = new Float32Array(this.joints.length * 16);
-        }
-        if (!this._inverseBindMatrices) {
-            this._inverseBindMatrices = new Float32Array(this.joints.length * 16);
-        }
-        for (let i = 0; i < this.joints.length; i++) { 
-            VectorUtils.setFlat(this._jointMatrices, 16, i, this.joints[i].jointMatrix);
-            VectorUtils.setFlat(this._inverseBindMatrices, 16, i, this.joints[i].inverseBindMatrix);
+    updateJoints(inverseBindMatrices = true, jointObjectMatrices = true) {
+        for (let i = 0; i < this.joints.length; i++) {
+            if (jointObjectMatrices) {
+                VectorUtils.setFlat(this._jointObjectMatrices, 16, i, this.joints[i].modelMatrix);
+            } 
+            if (inverseBindMatrices) { 
+                VectorUtils.setFlat(this._inverseBindMatrices, 16, i, this.joints[i].inverseBindMatrix);
+            }
         }
     }
 
@@ -126,53 +119,70 @@ export class WebaniMesh extends WebaniPrimitiveObject {
         return clone;
     }
  
-    static async import(path: string) {
-        const model = await importGLB(path);
-        const joints: WebaniMeshJoint[] = [];
-        const nodeIndices = new Int8Array(model.animationData.skin.inverseBindMatrices.length);
-        for (let i = 0; i < model.animationData.skin.inverseBindMatrices.length; i++) { 
-            const inverseBindMatrix = model.animationData.skin.inverseBindMatrices[i];
-            const joint = model.animationData.nodes[model.animationData.skin.joints[i]];
-            nodeIndices[model.animationData.skin.joints[i]] = i;
-            if (joint.translation || joint.rotation || joint.scale) {
-                const meshJoint = new WebaniMeshJoint({
-                    name: joint.name,
-                    position: joint.translation,
-                    rotation: VectorUtils.quaternionToEulerAngles(joint.rotation),
-                    scale: joint.scale,
+    static async import(path: string): Promise<WebaniCollection<WebaniMesh>> {
+        const result = await importGLB(path);
+        const meshes = result.meshes.map(meshData => new WebaniMesh({
+            position: [0, 0, 0],
+            triangleVertices: meshData.vertexData.triangles,
+            vertexNormals: meshData.vertexData.normals,
+            vertexUVs: meshData.vertexData.uvs,
+            vertexJoints: meshData.vertexData.joints,
+            vertexWeights: meshData.vertexData.weights,
+            material: meshData.material
+        }));
+
+        const nodes: WebaniTransformable[] = new Array<WebaniTransformable>(result.animationData.nodes.length);
+        const joints: WebaniMeshJoint[] = new Array<WebaniMeshJoint>(result.animationData.skin.inverseBindMatrices.length);
+        for (let i = 0; i < result.animationData.nodes.length; i++) {
+            const jointIndex = result.animationData.skin.joints.indexOf(i);
+            let position: Vector3 = [0, 0, 0];
+            let rotation: Vector3 = [0, 0, 0];
+            let scale: Vector3 = [1, 1, 1];
+            const node = result.animationData.nodes[i];
+            let nodeObject: WebaniTransformable;
+            if (node.matrix) { 
+                const transform = MatrixUtils.matrixToTransformColumnMajor(node.matrix); 
+                position = transform.position;
+                rotation = transform.rotation;
+                scale = transform.scale;
+            } else {
+                position = node.translation ?? position;
+                rotation = node.rotation ? VectorUtils.quaternionToEulerAngles(node.rotation) : rotation;
+                scale = node.scale ?? scale;
+            }
+            if (jointIndex > -1) {
+                const inverseBindMatrix = result.animationData.skin.inverseBindMatrices[jointIndex];
+                nodeObject = new WebaniMeshJoint({
+                    name: node.name,
+                    position,
+                    rotation,
+                    scale,
                     inverseBindMatrix: inverseBindMatrix
                 });
-                joints[i] = meshJoint;
+                joints[jointIndex] = nodeObject as WebaniMeshJoint;
+            } else if (node.mesh !== undefined) {
+                nodeObject = meshes[node.mesh];
+            } else { 
+                nodeObject = new WebaniTransformable({
+                    position,
+                    rotation,
+                    scale,
+                });
             }
+            if (node.extras?.scaleCompensation == "scaleCompensation") { 
+                nodeObject.scaleCompensation = true;
+            }
+            nodes[i] = nodeObject;
         }
 
-        for (let i = 0; i < model.animationData.skin.inverseBindMatrices.length; i++) { 
-            const joint = model.animationData.nodes[model.animationData.skin.joints[i]];
-            for (let j = 0; j < joint.children?.length; j++) {
-                const childIndex = joint.children[j];
-                joints[nodeIndices[childIndex]].parent = joints[i];
+        for (let i = 0; i < result.animationData.nodes.length; i++) { 
+            const node = result.animationData.nodes[i];
+            for (let j = 0; j < node.children?.length; j++) {
+                const childIndex = node.children[j];
+                nodes[childIndex].parent = nodes[i];
             }
         }
-
-        const animations: AnimationSet[] = [];
         
-        for (let i = 0; i < model.animationData.animations.length; i++) { 
-            const tracks = model.animationData.animations[i].tracks;
-            for (const trackName in tracks) { 
-                console.log(tracks[trackName]);
-                
-            }
-        }
-
-        return new WebaniMesh({
-            position: [0, 0, 0],
-            triangleVertices: model.vertexData.triangles,
-            vertexNormals: model.vertexData.normals,
-            vertexUVs: model.vertexData.uvs,
-            joints: joints,
-            vertexJoints: model.vertexData.joints,
-            vertexWeights: model.vertexData.weights,
-            material: model.material
-        });
+        return new WebaniCollection(meshes);
     }
 }

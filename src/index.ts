@@ -3,12 +3,12 @@
  */
 
 export * from "./webani";
-export * from "./components/bird.component";
 export * from "./components/circle.component";
 export * from "./components/cone.component";
 export * from "./components/connecting-line.component";
 export * from "./components/cube.component";
 export * from "./components/line.component";
+export * from "./components/perspective-camera.component";
 export * from "./components/polygon.component";
 export * from "./components/rectangle.component";
 export * from "./components/sphere.component";
@@ -24,6 +24,7 @@ export * from "./renderer/animation/rendered-group-node.class";
 export * from "./renderer/animation/webani-animation.class";
 export * from "./renderer/animation/webani-interpolated-animation.class";
 export * from "./renderer/animation/webani-perspective-camera-animation.class";
+export * from "./renderer/animation/webani-transformable-animation.class";
 export * from "./renderer/scene/component.class";
 export * from "./renderer/scene/webani-primitive-object.class";
 export * from "./renderer/scene/webani-scene.class";
@@ -58,6 +59,7 @@ export * from "./renderer/types/glb-parser-node.type";
 export * from "./renderer/types/glb-parser-primitive.type";
 export * from "./renderer/types/glb-parser-result-animation-datatype";
 export * from "./renderer/types/glb-parser-result-animation.type";
+export * from "./renderer/types/glb-parser-result-mesh-data.type";
 export * from "./renderer/types/glb-parser-result-skin-data.type";
 export * from "./renderer/types/glb-parser-result.type";
 export * from "./renderer/types/glb-parser-skin.type";
@@ -66,6 +68,7 @@ export * from "./renderer/types/glb-parser-vertex-data.type";
 export * from "./renderer/types/matrix4.type";
 export * from "./renderer/types/playable.type";
 export * from "./renderer/types/renderable-object.type";
+export * from "./renderer/types/rendered-group.type";
 export * from "./renderer/types/shader-set.type";
 export * from "./renderer/types/svg-command-list.type";
 export * from "./renderer/types/svg-output.type";

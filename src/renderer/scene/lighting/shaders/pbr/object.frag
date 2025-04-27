@@ -1,6 +1,10 @@
 #version 300 es
 precision mediump float;
 
+const int MAX_LIGHT_COUNT = 256;
+const float PI = 3.14159265359;
+const float MAX_REFLECTION_LOD = 4.0;
+
 uniform samplerCube uIrradianceMap;
 uniform samplerCube uPrefilteredEnvMap;
 uniform sampler2D uBrdfLUT;
@@ -18,9 +22,11 @@ uniform bool uBaseColorTextureSupplied;
 uniform bool uMetallicRoughnessTextureSupplied;
 uniform bool uNormalMapSupplied;
 
-uniform vec3 uLightPosition; 
-uniform vec3 uLightColor;
-uniform float uLightIntensity;
+uniform vec3 uLightPositions[MAX_LIGHT_COUNT]; 
+uniform vec3 uLightColors[MAX_LIGHT_COUNT];
+uniform float uLightIntensities[MAX_LIGHT_COUNT];
+uniform int uNumLights; 
+
 
 uniform vec3 uCameraPosition;
 
@@ -29,9 +35,6 @@ in vec3 fragNormal;
 in vec2 vertexUV;
 
 out vec4 outColor;
-
-const float PI = 3.14159265359;
-const float MAX_REFLECTION_LOD = 4.0;
 
 float geometrySchlickGGX(float NdotX, float roughness) {
     float r = (roughness + 1.0);
@@ -75,7 +78,7 @@ vec3 computeLo(vec3 lightPos, vec3 lightColor, float lightIntensity, vec3 worldP
         return vec3(0.0);
     }
     vec3 L = normalize(lightPos - worldPos);
-    vec3 H = normalize(V + L); 
+    vec3 H = normalize(V + L);
     float attenuation = 1.0 / (distance * distance);
     vec3 radiance = lightColor * attenuation * lightIntensity;
     
@@ -105,7 +108,7 @@ void main() {
     float roughness = uMaterialRoughness;
     float metallic = uMaterialMetallic;
     if (uMetallicRoughnessTextureSupplied) { 
-        vec2 metallicRoughness = texture(uBaseColorTexture, vertexUV).gb;
+        vec2 metallicRoughness = texture(uMetallicRoughnessTexture, vertexUV).gb;
         roughness = metallicRoughness.x;
         metallic = metallicRoughness.y;
     }
@@ -114,7 +117,10 @@ void main() {
     vec3 R = normalize(reflect(-V, N));
 
     vec3 F0 = computeF0(albedo, metallic);
-    vec3 Lo = computeLo(uLightPosition, uLightColor, uLightIntensity, fragPos, N, V, F0, albedo, metallic, roughness);
+    vec3 Lo = vec3(0.0);
+    for (int i = 0; i < uNumLights; i++) {
+        Lo += computeLo(uLightPositions[i], uLightColors[i], uLightIntensities[i], fragPos, N, V, F0, albedo, metallic, roughness);
+    }
 
     vec3 irradiance = texture(uIrradianceMap, N).rgb;
     float NdotV = max(dot(N, V), 0.0);
@@ -129,4 +135,4 @@ void main() {
 
     vec3 color = ambient + Lo;
     outColor = vec4(color, uMaterialOpacity);
-}
+} 

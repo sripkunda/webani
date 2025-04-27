@@ -6,61 +6,56 @@ import { AnimationSet } from "./animation-set.class";
 import { WebaniCollectionAnimation } from "../scene/collections/webani-collection-animation.class";
 import { WebaniInterpolatedAnimation } from "./webani-interpolated-animation.class";
 import { WebaniAnimation } from "./webani-animation.class";
+import { WebaniPrimitiveObject } from "../scene/webani-primitive-object.class";
+import { WebaniTransformable } from "../scene/webani-transformable.class";
+import { RenderedGroup } from "../types/rendered-group.type";
 
 export class RenderedGroupNode extends WebaniAnimation {
-    private _collection?: WebaniCollection;
+    private _collection: WebaniCollection<WebaniTransformable>;
     private childKeys: (string | number | symbol)[] = [];
+    private parent?: RenderedGroupNode;
+
     animationSet: AnimationSet;
     
     [key: (string | number | symbol)]: any;
 
     constructor(collection?: RenderableObject) {
-        super();
+        super();        
         this.animationSet = new AnimationSet();
-        if (collection) { 
-            if (collection instanceof RenderedGroupNode) return collection;
+        if (collection instanceof RenderedGroupNode) return collection;
+        if (collection instanceof WebaniTransformable) { 
             this._collection = new WebaniCollection(collection);
-            this.animationSet.setDefaultObject(this._collection);
-        }
+        } else {
+            this._collection = collection || new WebaniCollection([]);
+        } 
+        this.animationSet.setDefaultObject(this._collection);
     }
 
-    static CreateGroup(object: object) { 
+    static CreateGroup<T extends Object>(object: T): RenderedGroup<T> { 
         const root = new RenderedGroupNode();
         for (let key in object) { 
             if (object[key] instanceof Object) {
                 root[key] = object[key] instanceof RenderedGroupNode ? object[key] : this.CreateGroup(object[key]);
+                root._collection.add(root[key]._collection);
+                root[key].parent = root;
                 root.childKeys.push(key);
             } else {
                 console.warn("Your group contains leaf nodes which are not objects.");
             }
         }
-        return root;
+        return root as RenderedGroup<T>;
     }
 
     done(t: number) {
-        if (this.isLeaf) { 
-            return this.animationSet.done(t);
-        }
-        return this.leaves.every(x => x.animationSet.done(t)); 
+        return this.animationSet.done(t); 
     };
 
     frame(t: number) {
-        if (this.isLeaf) {
-            return this.animationSet.frame(t);
-        } else {
-            return new WebaniCollection(this.leaves.flatMap(x => x.frame(t)));
-        }
+        return this.animationSet.frame(t);
     };
 
-    get collection() {
-        if (!this.isLeaf || !this._collection) {
-            throw Error("Attempted to call collection() on RenderedGroupNode which is not a leaf node.");
-        }
+    get collection(): WebaniCollection<WebaniTransformable> {
         return this._collection;
-    }
-
-    get center() { 
-        return VectorUtils.center(this.leaves.map(obj => obj.collection.center));
     }
 
     get leaves(): RenderedGroupNode[] {
@@ -96,84 +91,67 @@ export class RenderedGroupNode extends WebaniAnimation {
         return this;
     }
 
-    protected constructAnimation(animationConstructor: (parent: RenderedGroupNode) => void, parent?: RenderedGroupNode) { 
-        if (this.isLeaf) { 
-            if (!animationConstructor.prototype) {
-                throw Error("Animation constructors cannot be arrow functions.")
-            }
-            animationConstructor = animationConstructor.bind(this);
-            animationConstructor(parent || this);
-        } else {
-            for (let key of this.childKeys) {    
-                this[key].constructAnimation(animationConstructor, parent || this);
-            }
-        }
-        return this;
-    }
-
     Hide(): void {
         this.FadeOut(0);
     }
 
-    SetRotation(angle: Vector3, center?: Vector3) { 
-        return this.Rotate(angle, 0, center);
+    ChangeRotation(rotation: Vector3, center?: Vector3) { 
+        return this.SetRotation(rotation, 0, center);
     }
 
-    SetCenterPosition(position: Vector3) {
-        return this.MoveCenterTo(position, 0);
+    ChangePosition(position: Vector3) {
+        return this.SetPosition(position, 0);
     }
 
     FadeIn(duration: number = 1000, keepInitialOpacity: boolean = false, asynchronous: boolean = false) {
-        return this.constructAnimation(function(this: RenderedGroupNode) {
-            const before = this.collection.shallowCopy; 
-            const after = this.collection.shallowCopy;
-            before.unresolvedObjects = this.collection.unresolvedObjects.map((object) => {
-                const b = object.shallowCopy;
-                if (!keepInitialOpacity) {
-                    b.material.opacity = 0;
-                }
-                return b;
-            });
-            after.unresolvedObjects = this.collection.unresolvedObjects.map((object) => {
-                const b = object.shallowCopy;
-                b.material.opacity = 1;
-                return b;
-            });
-            return this.addAnimation(new WebaniCollectionAnimation({before, after, duration}), asynchronous);
+        const before = this.collection.shallowCopy; 
+        const after = this.collection.shallowCopy;
+        before.objectArray = this.collection.objectArray.map((object) => {
+            const b = object.shallowCopy;
+            if (!keepInitialOpacity && b instanceof WebaniPrimitiveObject) {
+                b.material.opacity = 0;
+            }
+            return b;
         });
+        after.objectArray = this.collection.objectArray.map((object) => {
+            const b = object.shallowCopy;
+            if (b instanceof WebaniPrimitiveObject) {
+                b.material.opacity = 1;
+            }
+            return b;
+        });
+        return this.addAnimation(new WebaniCollectionAnimation({before, after, duration}), asynchronous);
     }
 
     FadeOut(duration: number = 1000, asynchronous: boolean = false) {
-        return this.constructAnimation(function(this: RenderedGroupNode) {
-            const after = this.collection.shallowCopy;
-            after.unresolvedObjects = this.collection.unresolvedObjects.map((object) => {
-                const a = object.shallowCopy;
+        const after = this.collection.shallowCopy;
+        after.objectArray = this.collection.objectArray.map((object) => {
+            const a = object.shallowCopy;
+            if (a instanceof WebaniPrimitiveObject) {
                 a.material.opacity = 0;
-                return a;
-            });
-            return this.addAnimation(new WebaniCollectionAnimation({
-                before: this.collection, 
-                after, 
-                duration
-            }), asynchronous);
+            }
+            return a;
         });
+        return this.addAnimation(new WebaniCollectionAnimation({
+            before: this.collection, 
+            after, 
+            duration
+        }), asynchronous);
     }
 
     Scale(factor: Vector3, duration: number = 1000, asynchronous: boolean = false, backwards: boolean = false) {
-        return this.constructAnimation(function(this: RenderedGroupNode) { 
-            const after = this.collection.shallowCopy;
-            after.unresolvedObjects = this.collection.unresolvedObjects.map((object) => {
-                const after = object.shallowCopy;
-                after.scaleBy(factor);
-                return after;
-            });
-            return this.addAnimation(new WebaniCollectionAnimation({
-                before: this.collection, 
-                after, 
-                duration, 
-                backwards
-            }), asynchronous);
+        const after = this.collection.shallowCopy;
+        after.objectArray = this.collection.objectArray.map((object) => {
+            const after = object.shallowCopy;
+            after.scaleBy(factor);
+            return after;
         });
+        return this.addAnimation(new WebaniCollectionAnimation({
+            before: this.collection, 
+            after, 
+            duration, 
+            backwards
+        }), asynchronous);
     }
 
     ZoomIn(duration: number = 1000, asynchronous: boolean = false) {
@@ -185,67 +163,71 @@ export class RenderedGroupNode extends WebaniAnimation {
         return this.FadeOut(duration, asynchronous);
     }
 
-    ChangeColor(newColor: Vector3, duration: number = 1000, asynchronous: boolean = false) {
-        return this.constructAnimation(function(this: RenderedGroupNode) {
-            const after = this.collection.shallowCopy;
-            after.unresolvedObjects = this.collection.unresolvedObjects.map(obj => {
-                const copy = obj.shallowCopy;
+    SetColor(newColor: Vector3, duration: number = 1000, asynchronous: boolean = false) {
+        const after = this.collection.shallowCopy;
+        after.objectArray = this.collection.objectArray.map(obj => {
+            const copy = obj.shallowCopy;
+            if (copy instanceof WebaniPrimitiveObject) {
                 copy.material.color = newColor;
-                return copy;
-            });
-            return this.addAnimation(new WebaniCollectionAnimation({
-                before: this.collection, 
-                after, 
-                duration
-            }), asynchronous);
+            }
+            return copy;
         });
+        return this.addAnimation(new WebaniCollectionAnimation({
+            before: this.collection, 
+            after, 
+            duration
+        }), asynchronous);
     }
 
     TransformInto(after: RenderableObject, duration: number = 800, asynchronous: boolean = false) {
-        return this.constructAnimation(function(this: RenderedGroupNode) {
-            after = new RenderedGroupNode(after);
-            return this.addAnimation(new WebaniCollectionAnimation({
-                before: this.collection, 
-                after: after.collection, 
-                duration: duration
-            }), asynchronous);
-        });
+        after = new RenderedGroupNode(after);
+        return this.addAnimation(new WebaniCollectionAnimation({
+            before: this.collection, 
+            after: after.collection, 
+            duration: duration
+        }), asynchronous);
     }
 
-    MoveCenterTo(position: Vector3, duration: number = 1000, asynchronous: boolean = false) {
-        return this.constructAnimation(function(this: RenderedGroupNode) {
-            return this.addAnimation(new WebaniCollectionAnimation({
-                before: this.collection, 
-                after: this.collection.copyCenteredAt(position), 
-                duration
-            }), asynchronous);
-        });
+    SetRotation(rotation: Vector3, duration: number = 1000, center?: Vector3, asynchronous: boolean = false) { 
+        const after = this.collection.shallowCopy;
+        after.overrideRotation(rotation, center);
+        return this.addAnimation(new WebaniCollectionAnimation({
+            before: this.collection, 
+            after, 
+            duration
+        }), asynchronous);
+    }
+
+    SetPosition(position: Vector3, duration: number = 1000, asynchronous: boolean = false) {
+        const after = this.collection.shallowCopy;
+        after.overridePosition(position)
+        return this.addAnimation(new WebaniCollectionAnimation({
+            before: this.collection, 
+            after: after, 
+            duration
+        }), asynchronous);
     }
 
     Move(offset: Vector3, duration: number = 1000, asynchronous: boolean = false) {
         const newCenter = VectorUtils.add(this.collection.center, offset)
-        return this.MoveCenterTo(newCenter, duration, asynchronous);
+        return this.SetPosition(newCenter, duration, asynchronous);
     }
 
     Rotate(rotation: Vector3, duration: number = 1000, center?: Vector3, asynchronous: boolean = false) {
-        return this.constructAnimation(function(this: RenderedGroupNode, parent: RenderedGroupNode) {
-            const after = this.collection.shallowCopy;
-            after.rotate(rotation, center || parent?.center);
-            return this.addAnimation(new WebaniCollectionAnimation({
-                before: this.collection, 
-                after, 
-                duration
-            }), asynchronous);
-        });
+        const after = this.collection.shallowCopy;
+        after.rotate(rotation, center);
+        return this.addAnimation(new WebaniCollectionAnimation({
+            before: this.collection, 
+            after, 
+            duration
+        }), asynchronous);
     }
 
     Wait(duration: number) {
-        return this.constructAnimation(function(this: RenderedGroupNode) {
-            return this.addAnimation(new WebaniCollectionAnimation({
-                before: this.collection, 
-                after: this.collection, 
-                duration: duration
-            }));
-        });
+        return this.addAnimation(new WebaniCollectionAnimation({
+            before: this.collection, 
+            after: this.collection, 
+            duration: duration
+        }));
     }
 }

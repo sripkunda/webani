@@ -4,6 +4,7 @@ import { GLBParserImage } from "./glb-parser-image.type";
 import { GLBParserMaterial } from "./glb-parser-material.type";
 import { GLBParserMesh } from "./glb-parser-mesh.type";
 import { GLBParserNode } from "./glb-parser-node.type";
+import { GLBParserSkin } from "./glb-parser-skin.type";
 import { GLBParserTexture } from "./glb-parser-texture.type";
 
 export type GLBParserJSON = {

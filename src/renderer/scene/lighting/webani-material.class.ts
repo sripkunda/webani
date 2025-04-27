@@ -31,7 +31,7 @@ export class WebaniMaterial {
     constructor({
         color = Colors.BLACK,
         metallic = 0,
-        roughness = 1.0,
+        roughness = 1,
         opacity = 1,
         baseColorImage,
         metallicRoughnessImage,

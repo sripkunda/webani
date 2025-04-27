@@ -14,8 +14,8 @@ export const LoadCanvas = async function (options: WebaniRendererOptions) {
     });
 }
 
-export const Play = (...animations: Playable[]): void => {
-    WebaniCanvas.defaultCanvas?.play(...animations);
+export const Render = (...animations: Playable[]): void => {
+    WebaniCanvas.defaultCanvas?.render(...animations);
 };
 
 export const Variable = (value: unknown): WebaniVariable<unknown> => {
@@ -38,7 +38,7 @@ export const TopRight = (webaniCanvas: WebaniCanvas = WebaniCanvas.defaultCanvas
     return [webaniCanvas.htmlCanvas.width, webaniCanvas.htmlCanvas.height];
 };
 
-export const Group = (object: object) => { 
+export function Group<T>(object: T) { 
     return RenderedGroupNode.CreateGroup(object);
 }
 

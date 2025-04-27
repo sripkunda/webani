@@ -1,9 +1,8 @@
-import { WebaniMaterial } from "../scene/lighting/webani-material.class";
+import { GLBParserResultMeshData } from "./glb-parser-result-mesh-data.type";
 import { GLBParserResultAnimationData } from "./glb-parser-result-animation-datatype";
 import { GLBParserResultVertexData } from "./glb-parser-vertex-data.type";
 
-export type GLBParserResult = {
-    vertexData: GLBParserResultVertexData;
+export type GLBParserPrimitiveParseResult = {
+    meshes: GLBParserResultMeshData[];
     animationData: GLBParserResultAnimationData;
-    material: WebaniMaterial;
 };

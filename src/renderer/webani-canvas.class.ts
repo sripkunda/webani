@@ -12,6 +12,7 @@ import { WebaniPointLight } from "./scene/lighting/webani-point-light.class";
 import { WebaniPrimitiveObject } from "./scene/webani-primitive-object.class";
 import { WebaniScene } from "./scene/webani-scene.class";
 import { WebaniSkybox } from "./webani-skybox.class";
+import { WebaniTransformable } from "./scene/webani-transformable.class";
 
 export type WebaniRendererOptions = {
     canvas: HTMLCanvasElement,
@@ -35,9 +36,7 @@ export class WebaniCanvas {
         mediaRecorder?: MediaRecorder;
     };
 
-    private scene!: WebaniScene;
-    private camera!: WebaniPerspectiveCamera;
-    private light!: WebaniPointLight;
+    scene!: WebaniScene;
     private paused = false;
     
     skybox?: WebaniSkybox;
@@ -91,6 +90,13 @@ export class WebaniCanvas {
     setSkybox(images: ImageBitmap[]) {
         this.pause();
         this.skybox = new WebaniSkybox(this, images);
+        this.resume();
+    }
+
+    async setSolidBackground(color: Vector3) { 
+        this.pause();
+        this.backgroundColor = color;
+        this.skybox = await WebaniSkybox.solidColor(this);
         this.resume();
     }
 
@@ -151,10 +157,6 @@ export class WebaniCanvas {
         this.glClear();
     }
 
-    remove(object: RenderableObject): void {
-        this.scene.remove(object);
-    }
-
     pause() { 
         this.paused = true;
     }
@@ -163,7 +165,7 @@ export class WebaniCanvas {
         this.paused = false;
     }
 
-    play(...animations: Playable[]): void {
+    render(...animations: Playable[]): void {
         for (const animation of animations) {
             if (animation instanceof WebaniAnimation) {
                 this.addAnimation(animation);
@@ -219,21 +221,17 @@ export class WebaniCanvas {
     }
 
     private defaultUpdateLoop(deltaTime: number, animationState: CanvasAnimationState) {
-        if (this.animationQueue.length < 1) { 
+        if (this.animationQueue.length < 1) {
             return;
         }
         animationState.animationTime += deltaTime;
         const animation = this.animationQueue[this.animationQueue.length - 1];
         const frame = animation.frame(animationState.animationTime);
-        if (frame instanceof WebaniPerspectiveCamera) { 
-            this.camera = frame;
-        } else {
-            if (animationState.objectIndex === undefined) { 
-                animationState.objectIndex = this.scene.add(frame as RenderableObject);
-            }
-            this.scene._members[animationState.objectIndex] = frame as RenderableObject;
+        if (animationState.objectIndex === undefined) { 
+            animationState.objectIndex = this.scene.add(frame);
         }
-        if (animation.done(animationState.animationTime)) { 
+        this.scene._members[animationState.objectIndex] = frame;
+        if (animation.done(animationState.animationTime)) {
             this.animationQueue.pop();
             animationState.animationTime = 0;
             this.finishedAnimation();
@@ -245,12 +243,10 @@ export class WebaniCanvas {
 
     private async initializeScene() {
         this.scene = new WebaniScene();
-        this.camera = new WebaniPerspectiveCamera();
-        this.light = new WebaniPointLight();
-        const z = this.htmlCanvas.width / (2 * Math.tan(this.camera.fov));
-        this.camera.far = 10000 + z;
-        this.camera.transform.position[2] = z;
-        this.skybox ??= await WebaniSkybox.fallback(this);
+        const z = this.htmlCanvas.width / (2 * Math.tan(this.scene.camera.fov));
+        this.scene.camera.far = 10000 + z;
+        this.scene.camera.transform.position[2] = z;
+        this.skybox ??= await WebaniSkybox.solidColor(this);
     }
 
     private drawSkybox() {
@@ -262,8 +258,10 @@ export class WebaniCanvas {
         this.gl.depthMask(false);
         this.gl.depthFunc(this.gl.LEQUAL);
 
-        this.gl.uniformMatrix4fv(this.getShaderVariableLocation("uProjectionMatrix"), true, this.camera.projectionMatrix(this.htmlCanvas.width, this.htmlCanvas.height));
-        this.gl.uniformMatrix4fv(this.getShaderVariableLocation("uViewMatrix"), true, this.camera.viewMatrix);
+        const camera = this.scene.camera;
+
+        this.gl.uniformMatrix4fv(this.getShaderVariableLocation("uProjectionMatrix"), true, camera.projectionMatrix(this.htmlCanvas.width, this.htmlCanvas.height));
+        this.gl.uniformMatrix4fv(this.getShaderVariableLocation("uViewMatrix"), true, camera.viewMatrix);
 
         this.gl.uniform1i(this.getShaderVariableLocation("uHDRTexture"), 0);
 
@@ -276,34 +274,37 @@ export class WebaniCanvas {
 
     private drawObjects() { 
         this.changeShaderProgram("object");
-        for (const object of this.scene.objects) {
-            this.drawObject(object);
+        for (const object of this.scene.getObjectsForRender) {
+            if (object instanceof WebaniPrimitiveObject) {
+                this.drawObject(object);
+            }
         }
     }
 
     private drawObject(object: WebaniPrimitiveObject) {
         object.material.bindToContext(this.gl);
-
         const triangles = object.triangles;
         this.bindAttributeBuffer("position", triangles, 3);
         this.bindAttributeBuffer("normal", object.normals, 3);
         this.bindAttributeBuffer("uv", object.UVs, 2);
         this.bindAttributeBuffer("jointIndices", object.jointIndices, 4);
         this.bindAttributeBuffer("weights", object.weights, 4);
-        
-        this.gl.uniform1i(this.getShaderVariableLocation("performSkinningTransformation"), object.performSkinningTransformation ? 1 : 0);
-        this.gl.uniformMatrix4fv(this.getShaderVariableLocation("inverseBindMatrices[0]"), false, object.inverseBindMatrices);
-        this.gl.uniformMatrix4fv(this.getShaderVariableLocation("jointMatrices[0]"), true, object.jointMatrices);
+        if (object.performSkinningTransformation) {
+            this.gl.uniform1i(this.getShaderVariableLocation("performSkinningTransformation"), 1);
+            this.gl.uniformMatrix4fv(this.getShaderVariableLocation("inverseBindMatrices[0]"), false, object.inverseBindMatrices);
+            this.gl.uniformMatrix4fv(this.getShaderVariableLocation("jointMatrices[0]"), true, object.jointObjectMatrices);
+        }
 
-        this.gl.uniformMatrix4fv(this.getShaderVariableLocation("uProjectionMatrix"), true, this.camera.projectionMatrix(this.htmlCanvas.width, this.htmlCanvas.height));
-        this.gl.uniformMatrix4fv(this.getShaderVariableLocation("uViewMatrix"), true, this.camera.viewMatrix);
-        this.gl.uniformMatrix4fv(this.getShaderVariableLocation("uModelMatrix"), true, object.modelMatrix);
-        this.gl.uniform3fv(this.getShaderVariableLocation("uCameraPosition"), this.camera.transform.position);
-        
-        this.gl.uniform3fv(this.getShaderVariableLocation("uLightPosition"), this.light.transform.position);
-        this.gl.uniform3fv(this.getShaderVariableLocation("uLightColor"), this.light.color);
-        this.gl.uniform1f(this.getShaderVariableLocation("uLightIntensity"), this.light.intensity);
-        
+        const camera = this.scene.camera; 
+        this.gl.uniformMatrix4fv(this.getShaderVariableLocation("uProjectionMatrix"), true, camera.projectionMatrix(this.htmlCanvas.width, this.htmlCanvas.height));
+        this.gl.uniformMatrix4fv(this.getShaderVariableLocation("uViewMatrix"), true, camera.viewMatrix);
+        this.gl.uniformMatrix4fv(this.getShaderVariableLocation("uModelMatrix"), true, object.modelMatrix)
+        this.gl.uniform3fv(this.getShaderVariableLocation("uCameraPosition"), camera.position);
+        this.gl.uniform3fv(this.getShaderVariableLocation("uLightPositions[0]"), this.scene.lightPositions);
+        this.gl.uniform3fv(this.getShaderVariableLocation("uLightColors[0]"), this.scene.lightColors);
+        this.gl.uniform1fv(this.getShaderVariableLocation("uLightIntensities[0]"), this.scene.lightIntensities);
+        this.gl.uniform1i(this.getShaderVariableLocation("uNumLights"), this.scene.numLights);
+
         this.gl.uniform1f(this.getShaderVariableLocation("uMaterialMetallic"), object.material.metallic);
         this.gl.uniform3fv(this.getShaderVariableLocation("uMaterialColor"), object.material.color);
         this.gl.uniform1f(this.getShaderVariableLocation("uMaterialRoughness"), object.material.roughness);
@@ -423,7 +424,7 @@ export class WebaniCanvas {
         }
     }
 
-    private addToScene(object: RenderableObject): void {
+    private addToScene(object: WebaniTransformable): void {
         this.scene.add(object);
         this.finishedAnimation();
     }

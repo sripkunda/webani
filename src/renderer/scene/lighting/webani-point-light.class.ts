@@ -15,10 +15,10 @@ export class WebaniPointLight extends WebaniTransformable {
     intensity: number;
 
     constructor({
-        position = [0, 1000, 1500],
+        position = [0, 0, 1],
         rotation = [0, 0, 0],
         color = Colors.WHITE,
-        intensity = 2e+6,
+        intensity = 2e+10,
 }: WebaniLightOptions = {}) {
         super({
             position,

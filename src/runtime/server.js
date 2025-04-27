@@ -96,7 +96,9 @@ function startServerOnPort(port) {
   server.listen(port, () => {
     console.log('\x1b[36m', `[Log: Server Started at http://localhost:${port}]`, '\x1b[0m');
 
-    compiler.watch({}, (err, stats) => {
+    compiler.watch({
+      ignored: /dist/,
+    }, (err, stats) => {
       if (err || stats.hasErrors()) {
         console.error('\x1b[31m', 'A webpack error occurred:', err || stats.toJson().errors, '\x1b[0m');
         return;

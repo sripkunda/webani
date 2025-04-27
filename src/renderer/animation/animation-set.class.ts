@@ -2,6 +2,7 @@ import { WebaniTransformable } from "../scene/webani-transformable.class";
 import { WebaniAnimation } from "./webani-animation.class";
 import { WebaniCollectionAnimation } from "../scene/collections/webani-collection-animation.class";
 import { WebaniInterpolatedAnimation } from "./webani-interpolated-animation.class";
+import { WebaniCollection } from "../scene/collections/webani-collection.class";
 
 export class AnimationSet extends WebaniAnimation {
     animations: WebaniCollectionAnimation[];
@@ -58,10 +59,7 @@ export class AnimationSet extends WebaniAnimation {
 
     frame(t: number) {
         if (this.animations.length < 1) {
-            if (this.defaultObject)
-                return this.defaultObject; 
-            else 
-                throw Error("Animation set does not have animations or a default object, but it is still attempting to be played.");
+            return this.defaultObject || new WebaniCollection([]); 
         }
         let durations = 0;
         for (const animation of this.animations) {

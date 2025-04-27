@@ -2,6 +2,7 @@ import { VectorUtils } from "./vector.utils";
 import { Vector3 } from "../types/vector3.type";
 import { Matrix4 } from "../types/matrix4.type";
 import { Vector4 } from "../types/vector4.type";
+import { WorldTransform } from "../types/world-transform.type";
 
 export const MatrixUtils = {
     multiply(a: Matrix4, b: Matrix4): Matrix4 {
@@ -178,6 +179,34 @@ export const MatrixUtils = {
             result += rowString.trim() + '\n';
         }
         return result.trim();
-    }
+    },
+
+    matrixToTransformColumnMajor(matrix: Matrix4): WorldTransform {
+        const translation: Vector3 = [matrix[12], matrix[13], matrix[14]];
     
+        const sx = Math.hypot(matrix[0], matrix[1], matrix[2]);
+        const sy = Math.hypot(matrix[4], matrix[5], matrix[6]);
+        const sz = Math.hypot(matrix[8], matrix[9], matrix[10]);
+    
+        const scale: Vector3 = [sx, sy, sz];
+    
+        const r00 = matrix[0] / sx, r01 = matrix[4] / sy, r02 = matrix[8] / sz;
+        const r10 = matrix[1] / sx, r11 = matrix[5] / sy, r12 = matrix[9] / sz;
+        const r20 = matrix[2] / sx, r21 = matrix[6] / sy, r22 = matrix[10] / sz;
+    
+        let ry = Math.asin(-r20);
+        let rx: number, rz: number;
+    
+        if (Math.abs(r20) < 0.99999) {
+            rx = Math.atan2(r21, r22);
+            rz = Math.atan2(r10, r00);
+        } else {
+            rx = 0;
+            rz = Math.atan2(-r01, r11);
+        }
+    
+        const rotation: Vector3 = [rx * 180 / Math.PI, ry * 180 / Math.PI, rz * 180 / Math.PI];
+    
+        return { position: translation, rotation, scale };
+    },
 };
