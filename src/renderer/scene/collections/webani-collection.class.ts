@@ -1,4 +1,5 @@
 import { VectorUtils } from "../../util/vector.utils";
+import { WebaniPrimitiveObject } from "../webani-primitive-object.class";
 import { WebaniTransformable } from "../webani-transformable.class";
 import { WebaniCollectionAnimation } from "./webani-collection-animation.class";
 
@@ -68,5 +69,19 @@ export class WebaniCollection<T extends WebaniTransformable> extends WebaniTrans
     removeIndex(index: number): this {
         this._objectArray.splice(index, 1);
         return this;
+    }
+
+    mapObjects(mapFunction: (object: T) => T) { 
+        const copy = this.shallowCopy; 
+        copy.objectArray = copy.objectArray.map(object => {
+            if (object instanceof WebaniPrimitiveObject) {
+                return mapFunction(object);
+            } else if (object instanceof WebaniCollection) {
+                return object.mapObjects(mapFunction);
+            } else {
+                return object;
+            }
+        })
+        return copy;
     }
 }

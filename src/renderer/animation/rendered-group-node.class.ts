@@ -117,6 +117,8 @@ export class RenderedGroupNode extends WebaniAnimation {
             const b = object.shallowCopy;
             if (b instanceof WebaniPrimitiveObject) {
                 b.material.opacity = 1;
+            } else { 
+                
             }
             return b;
         });
@@ -124,8 +126,7 @@ export class RenderedGroupNode extends WebaniAnimation {
     }
 
     FadeOut(duration: number = 1000, asynchronous: boolean = false) {
-        const after = this.collection.shallowCopy;
-        after.objectArray = this.collection.objectArray.map((object) => {
+        const after = this.collection.mapObjects((object) => {
             const a = object.shallowCopy;
             if (a instanceof WebaniPrimitiveObject) {
                 a.material.opacity = 0;

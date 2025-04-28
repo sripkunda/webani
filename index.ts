@@ -37,7 +37,7 @@ function LabeledLine(position: Vector3, labels: string[], length = 1500, labelFo
     return Group(object).ChangePosition(position);
 }
 
-const axis = LabeledLine([0, 100, 0], ["Heterosexual", "Bisexual", "Homosexual"]);
+const axis = LabeledLine([0, 100, 0], ["A ", "B", "C"]);
 axis.FadeOut();
 console.log(axis);
 Render(axis);
