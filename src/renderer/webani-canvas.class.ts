@@ -56,7 +56,7 @@ export class WebaniCanvas {
             throw Error("A canvas object must be provided to create a Webani canvas element.");
 
         this.htmlCanvas = canvas;
-        this.gl = canvas.getContext("webgl2", { antialias });
+        this.gl = canvas.getContext("webgl2", { antialias, alpha: true });
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
         this.backgroundColor = backgroundColor;
@@ -147,7 +147,7 @@ export class WebaniCanvas {
         this.gl.depthFunc(this.gl.LESS);
         this.gl.clearDepth(1.0);
         this.gl.viewport(0, 0, this.htmlCanvas.width, this.htmlCanvas.height);
-        this.gl.clearColor(0, 0, 0, 1);
+        this.gl.clearColor(0, 0, 0, 0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
 
@@ -309,7 +309,7 @@ export class WebaniCanvas {
         this.gl.uniform3fv(this.getShaderVariableLocation("uMaterialColor"), object.material.color);
         this.gl.uniform1f(this.getShaderVariableLocation("uMaterialRoughness"), object.material.roughness);
         this.gl.uniform1f(this.getShaderVariableLocation("uMaterialOpacity"), object.material.opacity);
-
+        
         this.gl.activeTexture(this.gl.TEXTURE0);
         this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.skybox.irradianceTexture);
         this.gl.uniform1i(this.getShaderVariableLocation("uIrradianceMap"), 0);

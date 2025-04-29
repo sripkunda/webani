@@ -67,6 +67,12 @@ export abstract class WebaniPrimitiveObject extends WebaniTransformable {
             this._inverseBindMatrices = new Float32Array(jointCount * 4);
         }
     }
+    
+    get shallowCopy() { 
+        const clone = super.shallowCopy; 
+        clone.material = clone.material.shallowCopy;
+        return clone;
+    }
 
     get localCenter(): Vector3 { 
         return this._localCenter;

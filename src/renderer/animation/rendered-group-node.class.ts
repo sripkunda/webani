@@ -85,6 +85,17 @@ export class RenderedGroupNode extends WebaniAnimation {
     private addAnimation(animation: WebaniCollectionAnimation, asynchronous: boolean = false) {
         if (animation.duration > 0) {
             this.animationSet.addAnimation(animation, asynchronous);
+            if (this.parent) { 
+                const copy = this.parent.collection.shallowCopy;
+                copy.objectArray = copy.objectArray.map(object => {
+                    return object == this._collection ? animation.after : object;
+                });
+                this.parent.addAnimation(new WebaniCollectionAnimation({
+                    before: this.parent._collection,
+                    after: copy,
+                    duration: animation.duration,
+                }));
+            }
         }
         this._collection = animation.after;
         this.animationSet.setDefaultObject(animation.after);
@@ -95,13 +106,14 @@ export class RenderedGroupNode extends WebaniAnimation {
         this.FadeOut(0);
     }
 
-    ChangeRotation(rotation: Vector3, center?: Vector3) { 
+    OverridePosition(position: Vector3) {
+        return this.SetPosition(position, 0);
+    }
+
+    OverrideRotation(rotation: Vector3, center?: Vector3) { 
         return this.SetRotation(rotation, 0, center);
     }
 
-    ChangePosition(position: Vector3) {
-        return this.SetPosition(position, 0);
-    }
 
     FadeIn(duration: number = 1000, keepInitialOpacity: boolean = false, asynchronous: boolean = false) {
         const before = this.collection.shallowCopy; 

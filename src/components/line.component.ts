@@ -26,7 +26,7 @@ export class LineComponent extends Component {
             length_x: length,
             length_y: Math.max(2, thickness),
             material: material
-        }).ChangeRotation([0, 0, angle], [position[0], position[1], 0]);
+        }).OverrideRotation([0, 0, angle], [position[0], position[1], 0]);
     }
 }
 
