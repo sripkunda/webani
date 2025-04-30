@@ -22,7 +22,10 @@
     "webani": "./src/runtime/server.js"
   },
   "exports": {
-    "./*": "./src/"
+    ".": {
+      "import": "./src/index.ts", 
+      "require": "./src/index.ts"
+    }
   },
   "scripts": {
     "start": "node ./src/runtime/server.js"
