@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { readFile } from 'fs';
 import { fileURLToPath } from 'url';
 import { join, extname, dirname } from 'path';

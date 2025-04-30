@@ -19,11 +19,13 @@
     "ws": "^8.18.1"
   },
   "bin": {
-    "webani": "node ./src/runtime/server.js"
+    "webani": "./src/runtime/server.js"
+  },
+  "exports": {
+    "./*": "./src/"
   },
   "scripts": {
-    "start": "node ./src/runtime/server.js",
-    "generate-barrels": "barrelsby --config ./barrelsby.json"
+    "start": "node ./src/runtime/server.js"
   },
   "name": "webani",
   "version": "1.0.0",
