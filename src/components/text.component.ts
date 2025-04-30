@@ -33,7 +33,7 @@ export class TextComponent extends Component {
                 return polygon;
             })
         );
-        collection.overridePosition(VectorUtils.subtract(position, collection.localCenter));
+        collection.setPosition(VectorUtils.subtract(position, collection.localCenter));
         return collection;
     }
 }

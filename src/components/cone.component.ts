@@ -19,7 +19,7 @@ export class ConeComponent extends Component {
         material = { color: Colors.WHITE, opacity: 1 }
     }: ConeComponentOptions) {
         const mesh = ConeMesh.shallowCopy;
-        mesh.overridePosition(position);
+        mesh.setPosition(position);
         mesh.scaleBy([radius, height, radius]);
         mesh.objectArray[0].material = new WebaniMaterial(material);
         return mesh;

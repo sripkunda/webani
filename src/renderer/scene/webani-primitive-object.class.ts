@@ -68,6 +68,12 @@ export abstract class WebaniPrimitiveObject extends WebaniTransformable {
         }
     }
 
+    get shallowCopy() { 
+        const clone = super.shallowCopy;
+        clone.material = clone.material.shallowCopy; 
+        return clone;
+    }
+
     get localCenter(): Vector3 { 
         return this._localCenter;
     }

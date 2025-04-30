@@ -161,11 +161,11 @@ export class WebaniTransformable {
         ];
     }
 
-    overridePosition(position: Vector3): void {
-        this.transform.position = VectorUtils.add(position, VectorUtils.subtract(position, MatrixUtils.multiplyVector3(this.modelMatrix, position)));
+    setPosition(position: Vector3): void {
+        this.transform.position = position;
     }
 
-    overrideRotation(rotation: Vector3, center: Vector3): void {
+    setRotation(rotation: Vector3, center: Vector3): void {
         if (!center) {
             this.transform.rotation = rotation;
         } else {
@@ -184,7 +184,7 @@ export class WebaniTransformable {
         }
     }
     
-    overrideScale(scale: Vector3): void {
+    setScale(scale: Vector3): void {
         this.transform.scale = scale;
     }
 

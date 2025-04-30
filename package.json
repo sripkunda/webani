@@ -3,7 +3,6 @@
     "@eslint/js": "^9.23.0",
     "@types/earcut": "^3.0.0",
     "@types/ws": "^8.18.1",
-    "barrelsby": "^2.8.1",
     "eslint": "^9.23.0",
     "ts-loader": "^9.5.2",
     "typescript": "^5.8.2",
@@ -24,13 +23,7 @@
   },
   "scripts": {
     "start": "node ./src/runtime/server.js",
-    "generate-barrels": "barrelsby --config ./barrelsby.json"    
-  },
-  "exports": {
-    ".": {
-      "import": "./src/index.ts", 
-      "require": "./src/index.ts"
-    }
+    "generate-barrels": "barrelsby --config ./barrelsby.json"
   },
   "name": "webani",
   "version": "1.0.0",

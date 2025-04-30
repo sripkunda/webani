@@ -135,7 +135,6 @@ export abstract class WebaniInterpolatedAnimation<T extends WebaniTransformable>
             const opacity = this.interpolationFunction(this.resolvedBefore.material.opacity, this.resolvedAfter.material.opacity, normalizedT);
             const metallic = this.interpolationFunction(this.resolvedBefore.material.metallic, this.resolvedAfter.material.metallic, normalizedT);
             const roughness = this.interpolationFunction(this.resolvedBefore.material.roughness, this.resolvedAfter.material.roughness, normalizedT);
-            
             this.currentObject.material.color = color;
             this.currentObject.material.metallic = metallic; 
             this.currentObject.material.roughness = roughness;

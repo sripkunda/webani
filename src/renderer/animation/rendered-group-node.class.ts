@@ -38,6 +38,7 @@ export class RenderedGroupNode extends WebaniAnimation {
                 root[key] = object[key] instanceof RenderedGroupNode ? object[key] : this.CreateGroup(object[key]);
                 root._collection.add(root[key]._collection);
                 root[key].parent = root;
+                root[key]._collection.parent = root._collection;
                 root.childKeys.push(key);
             } else {
                 console.warn("Your group contains leaf nodes which are not objects.");
@@ -85,6 +86,18 @@ export class RenderedGroupNode extends WebaniAnimation {
     private addAnimation(animation: WebaniCollectionAnimation, asynchronous: boolean = false) {
         if (animation.duration > 0) {
             this.animationSet.addAnimation(animation, asynchronous);
+            if (this.parent) { 
+                const after = this.parent.collection.shallowCopy; 
+                const collection = this.collection;
+                after.objectArray = after.objectArray.map(object => {
+                    return object == collection ? animation.after : object;
+                });
+                this.parent.addAnimation(new WebaniCollectionAnimation({
+                    before: this.parent.collection,
+                    after: after,
+                    duration: animation.duration
+                }));
+            }
         }
         this._collection = animation.after;
         this.animationSet.setDefaultObject(animation.after);
@@ -95,11 +108,11 @@ export class RenderedGroupNode extends WebaniAnimation {
         this.FadeOut(0);
     }
 
-    ChangeRotation(rotation: Vector3, center?: Vector3) { 
+    OverrideRotation(rotation: Vector3, center?: Vector3) { 
         return this.SetRotation(rotation, 0, center);
     }
 
-    ChangePosition(position: Vector3) {
+    OverridePosition(position: Vector3) {
         return this.SetPosition(position, 0);
     }
 
@@ -191,7 +204,7 @@ export class RenderedGroupNode extends WebaniAnimation {
 
     SetRotation(rotation: Vector3, duration: number = 1000, center?: Vector3, asynchronous: boolean = false) { 
         const after = this.collection.shallowCopy;
-        after.overrideRotation(rotation, center);
+        after.setRotation(rotation, center);
         return this.addAnimation(new WebaniCollectionAnimation({
             before: this.collection, 
             after, 
@@ -201,7 +214,7 @@ export class RenderedGroupNode extends WebaniAnimation {
 
     SetPosition(position: Vector3, duration: number = 1000, asynchronous: boolean = false) {
         const after = this.collection.shallowCopy;
-        after.overridePosition(position)
+        after.setPosition(position)
         return this.addAnimation(new WebaniCollectionAnimation({
             before: this.collection, 
             after: after, 

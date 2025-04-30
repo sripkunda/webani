@@ -134,5 +134,5 @@ void main() {
     vec3 ambient = (diffuse + specular);
 
     vec3 color = ambient + Lo;
-    outColor = vec4(color, uMaterialOpacity);
+    outColor = vec4(uMaterialOpacity * color, uMaterialOpacity);
 } 

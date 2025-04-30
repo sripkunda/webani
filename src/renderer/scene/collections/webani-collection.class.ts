@@ -4,11 +4,11 @@ import { WebaniTransformable } from "../webani-transformable.class";
 import { WebaniCollectionAnimation } from "./webani-collection-animation.class";
 
 export class WebaniCollection<T extends WebaniTransformable> extends WebaniTransformable {
-    protected _objectArray: T[];
+    objectArray: T[];
     
     constructor(objects: T[] | T) {
         super();
-        this._objectArray = [];
+        this.objectArray = [];
         if (objects instanceof WebaniCollection) { 
             return objects;
         }
@@ -23,16 +23,8 @@ export class WebaniCollection<T extends WebaniTransformable> extends WebaniTrans
 
     get shallowCopy(): this { 
         const clone = super.shallowCopy as this;
-        clone._objectArray = this._objectArray.map(x => x.shallowCopy); 
+        clone.objectArray = this.objectArray.map(x => x.shallowCopy); 
         return clone;
-    }
-
-    get objectArray(): T[] {
-        return [...this._objectArray];
-    }
-    
-    set objectArray(value: T[]) { 
-        this._objectArray = value;
     }
 
     get localCenter()  {
@@ -45,11 +37,9 @@ export class WebaniCollection<T extends WebaniTransformable> extends WebaniTrans
 
     get flatObjects(): T[] { 
         const flatObjectList: T[] = [];
-        this._objectArray.forEach(obj => {
+        this.objectArray.forEach(obj => {
             const copy = obj.shallowCopy;
-            if (!copy.parent) { 
-                copy.parent = this;
-            } else {
+            if (copy.parent != this) {
                 copy.extraTransforms.push(this.transform, ...this.extraTransforms);
             }
             if (copy instanceof WebaniCollection) {
@@ -62,12 +52,12 @@ export class WebaniCollection<T extends WebaniTransformable> extends WebaniTrans
     }
 
     add(...newObjects: T[]): number {
-        this._objectArray.push(...newObjects);
-        return this._objectArray.length - 1;
+        this.objectArray.push(...newObjects);
+        return this.objectArray.length - 1;
     }
 
     removeIndex(index: number): this {
-        this._objectArray.splice(index, 1);
+        this.objectArray.splice(index, 1);
         return this;
     }
 

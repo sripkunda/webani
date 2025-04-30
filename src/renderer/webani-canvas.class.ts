@@ -147,7 +147,7 @@ export class WebaniCanvas {
         this.gl.depthFunc(this.gl.LESS);
         this.gl.clearDepth(1.0);
         this.gl.viewport(0, 0, this.htmlCanvas.width, this.htmlCanvas.height);
-        this.gl.clearColor(0, 0, 0, 1);
+        this.gl.clearColor(0, 0, 0, 0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
 
