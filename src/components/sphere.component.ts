@@ -38,7 +38,7 @@ export class SphereComponent extends Component {
         material = { color: Colors.BLACK, opacity: 1 } 
     }: SphereComponentOptions) {
         const mesh = SphereMesh.shallowCopy;
-        mesh.overridePosition(position);
+        mesh.setPosition(position);
         mesh.scaleBy([radius, radius, radius]);
         
         (mesh.objectArray[0] as WebaniMesh).material = new WebaniMaterial(material);

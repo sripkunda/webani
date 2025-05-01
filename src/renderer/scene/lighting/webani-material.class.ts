@@ -113,7 +113,7 @@ export class WebaniMaterial {
             normalScale: this.normalScale
         });
 
-        material.boundGLContexts = new Set(this.boundGLContexts);
+        material.boundGLContexts = this.boundGLContexts;
         material.baseColorTexture = this.baseColorTexture;
         material.metallicRoughnessTexture = this.metallicRoughnessTexture; 
         material.normalMap = this.normalMap;

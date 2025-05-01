@@ -14,23 +14,11 @@ import { WebaniCollectionAnimation } from "./webani-collection-animation.class";
  * @template T The type of transformable objects contained in the collection.
  */
 export class WebaniCollection<T extends WebaniTransformable> extends WebaniTransformable {
-    /**
-     * The internal array of objects that belong to this collection.
-     * 
-     * @protected
-     * @type {T[]}
-     */
-    protected _objectArray: T[];
-
-    /**
-     * Creates a new `WebaniCollection` instance containing one or more transformable objects.
-     * If a `WebaniCollection` is passed, it simply returns that collection.
-     * 
-     * @param {T[] | T} objects - A single transformable object or an array of transformable objects to be included in the collection.
-     */
+    objectArray: T[];
+    
     constructor(objects: T[] | T) {
         super();
-        this._objectArray = [];
+        this.objectArray = [];
         if (objects instanceof WebaniCollection) { 
             return objects;
         }
@@ -55,33 +43,10 @@ export class WebaniCollection<T extends WebaniTransformable> extends WebaniTrans
      */
     get shallowCopy(): this { 
         const clone = super.shallowCopy as this;
-        clone._objectArray = this._objectArray.map(x => x.shallowCopy); 
+        clone.objectArray = this.objectArray.map(x => x.shallowCopy); 
         return clone;
     }
 
-    /**
-     * Gets the array of objects contained in the collection.
-     * 
-     * @returns {T[]} The array of objects in the collection.
-     */
-    get objectArray(): T[] {
-        return [...this._objectArray];
-    }
-    
-    /**
-     * Sets the array of objects contained in the collection.
-     * 
-     * @param {T[]} value - The array of objects to set in the collection.
-     */
-    set objectArray(value: T[]) { 
-        this._objectArray = value;
-    }
-
-    /**
-     * Calculates the local center of the collection by averaging the local centers of the contained objects.
-     * 
-     * @returns {Vector} The local center of the collection.
-     */
     get localCenter()  {
         return VectorUtils.center(this.flatObjects.map(x => x.localCenter));
     }
@@ -102,11 +67,9 @@ export class WebaniCollection<T extends WebaniTransformable> extends WebaniTrans
      */
     get flatObjects(): T[] { 
         const flatObjectList: T[] = [];
-        this._objectArray.forEach(obj => {
+        this.objectArray.forEach(obj => {
             const copy = obj.shallowCopy;
-            if (!copy.parent) { 
-                copy.parent = this;
-            } else {
+            if (copy.parent != this) {
                 copy.extraTransforms.push(this.transform, ...this.extraTransforms);
             }
             if (copy instanceof WebaniCollection) {
@@ -125,8 +88,8 @@ export class WebaniCollection<T extends WebaniTransformable> extends WebaniTrans
      * @returns {number} The index of the last object added.
      */
     add(...newObjects: T[]): number {
-        this._objectArray.push(...newObjects);
-        return this._objectArray.length - 1;
+        this.objectArray.push(...newObjects);
+        return this.objectArray.length - 1;
     }
 
     /**
@@ -136,7 +99,7 @@ export class WebaniCollection<T extends WebaniTransformable> extends WebaniTrans
      * @returns {this} The collection instance after removing the object.
      */
     removeIndex(index: number): this {
-        this._objectArray.splice(index, 1);
+        this.objectArray.splice(index, 1);
         return this;
     }
 

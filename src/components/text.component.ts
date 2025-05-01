@@ -61,10 +61,7 @@ export class TextComponent extends Component {
                 return polygon;
             })
         );
-
-        // Adjust the position of the collection based on its local center
-        collection.overridePosition(VectorUtils.subtract(position, collection.localCenter));
-        
+        collection.setPosition(VectorUtils.subtract(position, collection.localCenter));
         return collection;
     }
 }
