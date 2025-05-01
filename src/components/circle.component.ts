@@ -5,13 +5,33 @@ import { Vector2 } from "../renderer/types/vector2.type";
 import { WebaniMaterial, WebaniMaterialOptions } from "../renderer/scene/lighting/webani-material.class";
 import { Colors } from "../renderer/scene/lighting/colors";
 
+/**
+ * Options for creating a circle component.
+ */
 type CircleComponentOptions = {
+    /** The center of the circle in 2D space. */
     center: Vector2;
+
+    /** The radius of the circle. */
     radius: number;
-    material?: WebaniMaterialOptions
+
+    /** Optional material properties to style the circle. */
+    material?: WebaniMaterialOptions;
 };
 
+/**
+ * A component that generates a circular polygon in the scene.
+ * 
+ * Extends the base `Component` class and creates a `WebaniPolygon`
+ * that approximates a circle using 1000 points.
+ */
 export class CircleComponent extends Component {
+    /**
+     * Constructs a circular `WebaniPolygon` from the provided options.
+     *
+     * @param options - Configuration for center, radius, and optional material.
+     * @returns A `WebaniPolygon` representing the circle.
+     */
     objectConstructor({
         center,
         radius,
@@ -39,4 +59,7 @@ export class CircleComponent extends Component {
     }
 }
 
+/**
+ * A reusable generator instance for creating circle components.
+ */
 export const Circle = CircleComponent.GetGenerator();

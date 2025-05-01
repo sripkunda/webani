@@ -6,6 +6,7 @@
     "barrelsby": "^2.8.1",
     "eslint": "^9.23.0",
     "ts-loader": "^9.5.2",
+    "typedoc": "^0.28.3",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.28.0",
     "webpack": "^5.98.0",
@@ -24,11 +25,11 @@
   },
   "scripts": {
     "start": "node ./src/runtime/server.js",
-    "generate-barrels": "barrelsby --config ./barrelsby.json"    
+    "generate-barrels": "barrelsby --config ./barrelsby.json"
   },
   "exports": {
     ".": {
-      "import": "./src/index.ts", 
+      "import": "./src/index.ts",
       "require": "./src/index.ts"
     }
   },

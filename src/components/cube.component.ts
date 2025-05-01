@@ -4,13 +4,33 @@ import { WebaniMesh } from "../renderer/scene/meshes/webani-mesh.class";
 import { Vector3 } from "../renderer/types/vector3.type";
 import { WebaniMaterial, WebaniMaterialOptions } from "../renderer/scene/lighting/webani-material.class";
 
+/**
+ * Options for creating a cube component.
+ */
 type CubeComponentOptions = {
+    /** The center position of the cube in 3D space. */
     position: Vector3;
+
+    /** Half the edge length of the cube (defines its scale). */
     length: number;
-    material?: WebaniMaterialOptions;  // Added to allow material customization
+
+    /** Optional material to style the cube's surface. */
+    material?: WebaniMaterialOptions;
 };
 
+/**
+ * A component that creates a 3D cube mesh using 12 triangles (2 per face).
+ *
+ * Extends `Component` and returns a `WebaniMesh` with hardcoded triangle geometry
+ * and normals for all six cube faces.
+ */
 export class CubeComponent extends Component {
+    /**
+     * Constructs a cube mesh based on the provided position, size, and material.
+     *
+     * @param options - Configuration object with position, length, and optional material.
+     * @returns A `WebaniMesh` representing the cube geometry.
+     */
     objectConstructor({ 
         position, 
         length, 
@@ -73,4 +93,7 @@ export class CubeComponent extends Component {
     }
 }
 
+/**
+ * A reusable generator instance for creating cube components.
+ */
 export const Cube = CubeComponent.GetGenerator();

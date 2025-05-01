@@ -4,14 +4,36 @@ import { WebaniMaterialOptions } from "../renderer/scene/lighting/webani-materia
 import { Vector3 } from "../renderer/types/vector3.type";
 import { Colors } from "../renderer/scene/lighting/colors";
 
+/**
+ * Options for creating a connecting line between two 3D points.
+ */
 type ConnectingLineComponentOptions = {
+    /** Starting point of the line in 3D space. */
     start: Vector3;
+
+    /** Ending point of the line in 3D space. */
     end: Vector3;
+
+    /** Optional thickness of the line. Default is `5`. */
     thickness?: number;
+
+    /** Optional material for line styling. */
     material?: WebaniMaterialOptions;
 };
 
+/**
+ * A component that creates a line between two 3D points.
+ * 
+ * Computes the angle and length from the start and end vectors, then
+ * delegates to the base `Line` component.
+ */
 export class ConnectingLineComponent extends Component {
+    /**
+     * Constructs a `Line` between the start and end points.
+     *
+     * @param options - Configuration object with start, end, optional thickness and material.
+     * @returns A `Line` component positioned and rotated to match the input vectors.
+     */
     objectConstructor({ 
         start, 
         end, 
@@ -31,4 +53,7 @@ export class ConnectingLineComponent extends Component {
     }
 }
 
+/**
+ * A reusable generator instance for creating connecting line components.
+ */
 export const ConnectingLine = ConnectingLineComponent.GetGenerator();
