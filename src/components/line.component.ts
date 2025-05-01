@@ -8,7 +8,7 @@ import { Vector3 } from "../renderer/types/vector3.type";
 /**
  * Options for creating a line component.
  */
-type LineComponentOptions = {
+export type LineComponentOptions = {
     /** The position of the line in 3D space. */
     position: Vector3;
 

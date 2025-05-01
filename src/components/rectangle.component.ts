@@ -7,7 +7,7 @@ import { Vector3 } from "../renderer/types/vector3.type";
 /**
  * Options for creating a rectangle component.
  */
-type RectangleComponentOptions = {
+export type RectangleComponentOptions = {
     /** The position of the rectangle in 3D space. */
     position: Vector3;
 

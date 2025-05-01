@@ -1,0 +1,17 @@
+{
+    "entryPoints": ["src"],
+    "entryPointStrategy": "expand",
+    "out": "docs",
+    "categorizeByGroup": true,
+    "includeVersion": true,
+    "excludePrivate": true,
+    "excludeProtected": true,
+    "excludeInternal": true,
+    "hideGenerator": true,
+    "exclude": [
+        "**/index.ts",
+        "**/*.d.ts",
+        "**/runtime/**",
+        "**/shaders/**"
+    ],
+}
