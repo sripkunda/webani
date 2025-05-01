@@ -1,0 +1,1 @@
+export type CanvasUpdateLoop = (deltaTime: number) => void;

@@ -5,6 +5,7 @@
     "@types/ws": "^8.18.1",
     "eslint": "^9.23.0",
     "ts-loader": "^9.5.2",
+    "typedoc": "^0.28.3",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.28.0",
     "webpack": "^5.98.0",
@@ -18,8 +19,17 @@
     "mathjax": "^3.2.2",
     "ws": "^8.18.1"
   },
+  "bin": {
+    "webani": "./src/runtime/server.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "require": "./src/index.ts"
+    }
+  },
   "scripts": {
-    "start": "node ./src/server/server.js"
+    "start": "node ./src/runtime/server.js"
   },
   "name": "webani",
   "version": "1.0.0",

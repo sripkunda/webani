@@ -1,12 +1,18 @@
 {
-    "compilerOptions": {
-      "outDir": "./dist/",
-      "noImplicitAny": false,
-      "module": "ES2022",
-      "target": "ES2024",
-      "allowJs": true,
-      "declaration": true,
-      "moduleResolution": "node",
-      "useDefineForClassFields": false
-    }
+  "compilerOptions": {
+    "noImplicitAny": false,
+    "module": "ES2022",
+    "target": "ES2024",
+    "allowJs": true,
+    "declaration": true,
+    "moduleResolution": "node",
+    "useDefineForClassFields": false,
+    "outDir": "src/runtime/dist"
+  },
+  "exclude": [
+    "node_modules",
+    "src/runtime/dist",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ]
 }
