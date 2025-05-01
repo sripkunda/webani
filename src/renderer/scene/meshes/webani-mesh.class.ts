@@ -13,37 +13,111 @@ import { WebaniTransformable } from "../webani-transformable.class";
 import { WebaniCollection } from "../collections/webani-collection.class";
 import { MatrixUtils } from "../../util/matrix.utils";
 
+/**
+ * Options for initializing a WebaniMesh object.
+ */
 export type WebaniMeshOptions = {
-    position: Vector3, 
-    triangleVertices: Vector3[], 
-    vertexNormals: Vector3[], 
-    vertexUVs?: Vector2[]
-    vertexJoints?: Vector4[],
-    vertexWeights?: Vector4[],
-    joints?: WebaniMeshJoint[],
-    rotation?: Vector3; 
-    scale?: Vector3; 
-    rotationalCenter?: Vector3, 
-    material?: WebaniMaterial, 
-    extraTransforms?: WorldTransform[],
+    /**
+     * The position of the mesh in 3D space.
+     */
+    position: Vector3;
+
+    /**
+     * The triangle vertices of the mesh, represented as an array of `Vector3` objects.
+     */
+    triangleVertices: Vector3[];
+
+    /**
+     * The vertex normals of the mesh, represented as an array of `Vector3` objects.
+     */
+    vertexNormals: Vector3[];
+
+    /**
+     * The vertex UV coordinates of the mesh, represented as an array of `Vector2` objects.
+     * Optional property.
+     */
+    vertexUVs?: Vector2[];
+
+    /**
+     * The vertex joint indices, represented as an array of `Vector4` objects.
+     * Optional property.
+     */
+    vertexJoints?: Vector4[];
+
+    /**
+     * The vertex weights, represented as an array of `Vector4` objects.
+     * Optional property.
+     */
+    vertexWeights?: Vector4[];
+
+    /**
+     * The joints for the mesh.
+     * Optional property.
+     */
+    joints?: WebaniMeshJoint[];
+
+    /**
+     * The rotation of the mesh in 3D space, represented as a `Vector3`.
+     * Optional property, default is [0, 0, 0].
+     */
+    rotation?: Vector3;
+
+    /**
+     * The scale of the mesh, represented as a `Vector3`.
+     * Optional property, default is [1, 1, 1].
+     */
+    scale?: Vector3;
+
+    /**
+     * The rotational center of the mesh, represented as a `Vector3`.
+     * Optional property.
+     */
+    rotationalCenter?: Vector3;
+
+    /**
+     * The material applied to the mesh.
+     * Optional property.
+     */
+    material?: WebaniMaterial;
+
+    /**
+     * Extra transformations applied to the mesh.
+     * Optional property, default is an empty array.
+     */
+    extraTransforms?: WorldTransform[];
+
+    /**
+     * The animations associated with the mesh.
+     * Optional property.
+     */
     animations?: {
-        [key: string]: AnimationSet
-    }
+        [key: string]: AnimationSet;
+    };
 };
 
+/**
+ * A 3D mesh object with support for animations, geometry, and skinning transformations.
+ */
 export class WebaniMesh extends WebaniPrimitiveObject { 
     animationClass = WebaniMeshAnimation;
-    private triangleVertices!: Vector3[]
+    private triangleVertices!: Vector3[];
     private vertexNormals!: Vector3[];
     private vertexUVs!: Vector2[];
     private vertexJointIndices!: Vector4[];
     private vertexWeights!: Vector4[];
     private joints!: WebaniMeshJoint[];
 
+    /**
+     * The animations associated with the mesh.
+     */
     animations!: {
-        [key: string]: AnimationSet
+        [key: string]: AnimationSet;
     };
 
+    /**
+     * Creates a new WebaniMesh instance with the provided options.
+     * @param options The configuration options for the mesh.
+     */
     constructor({
         position, 
         triangleVertices, 
@@ -75,6 +149,9 @@ export class WebaniMesh extends WebaniPrimitiveObject {
         }
     }
 
+    /**
+     * Resolves the geometry of the mesh by filling arrays and updating vertex data.
+     */
     resolveObjectGeometry() {
         this.fillArrays(this.triangleVertices.length, this.joints.length);
         this.updateVertexData();
@@ -82,6 +159,14 @@ export class WebaniMesh extends WebaniPrimitiveObject {
         this._localCenter = VectorUtils.center(this.triangleVertices);
     }
 
+    /**
+     * Updates the vertex data, including triangle positions, normals, UVs, joint indices, and weights.
+     * @param normals Whether to update the vertex normals (default is `true`).
+     * @param trianglePositions Whether to update the triangle positions (default is `true`).
+     * @param uvs Whether to update the vertex UVs (default is `true`).
+     * @param jointIndices Whether to update the vertex joint indices (default is `true`).
+     * @param weights Whether to update the vertex weights (default is `true`).
+     */
     updateVertexData(normals = true, trianglePositions = true, uvs = true, jointIndices = true, weights = true) { 
         for (let i = 0; i < this.triangleVertices.length; i++) {
             if (trianglePositions) { 
@@ -102,6 +187,11 @@ export class WebaniMesh extends WebaniPrimitiveObject {
         }
     }
 
+    /**
+     * Updates the joint matrices, including the inverse bind matrices and joint object matrices.
+     * @param inverseBindMatrices Whether to update the inverse bind matrices (default is `true`).
+     * @param jointObjectMatrices Whether to update the joint object matrices (default is `true`).
+     */
     updateJoints(inverseBindMatrices = true, jointObjectMatrices = true) {
         for (let i = 0; i < this.joints.length; i++) {
             if (jointObjectMatrices) {
@@ -113,12 +203,21 @@ export class WebaniMesh extends WebaniPrimitiveObject {
         }
     }
 
+    /**
+     * Creates a shallow copy of the mesh, including the joints.
+     * @returns A shallow copy of the current `WebaniMesh` object.
+     */
     get shallowCopy() { 
         const clone = super.shallowCopy as this;
         clone.joints = [...clone.joints.map(joint => joint.shallowCopy)];
         return clone;
     }
- 
+
+    /**
+     * Imports a GLB file from a given path and returns a collection of `WebaniMesh` objects.
+     * @param path The path to the GLB file.
+     * @returns A promise that resolves to a `WebaniCollection` of `WebaniMesh` objects.
+     */
     static async import(path: string): Promise<WebaniCollection<WebaniMesh>> {
         const result = await importGLB(path);
         console.log(result);

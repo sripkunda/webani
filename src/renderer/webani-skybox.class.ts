@@ -2,22 +2,56 @@ import { Matrix4 } from "./types/matrix4.type";
 import { WebaniPerspectiveCamera } from "./scene/camera/webani-perspective-camera.class";
 import { WebaniCanvas } from "./webani-canvas.class";
 
+/**
+ * Represents a skybox for a WebGL-based scene, including PBR-related maps like irradiance,
+ * prefiltered environment maps, and BRDF LUTs.
+ */
 export class WebaniSkybox {
+    /** Input cube map images for the skybox. One per face. */
     images: ImageBitmap[];
+
+    /** Width and height (in pixels) of the cube map textures. */
     textureSize: number;
+
+    /** Vertex positions used to render a cube for environment mapping. */
     cubeVertices: Float32Array;
+
+    /** Vertex positions used to render a full-screen quad. */
     quadVertices: Float32Array;
+
+    /** WebGL cube texture representing the skybox. */
     cubeMapTexture!: WebGLTexture;
+
+    /** Normal map texture used in IBL (if needed). */
     normalMapTexture!: WebGLTexture;
+
+    /** Cube texture storing irradiance map for diffuse lighting. */
     irradianceTexture!: WebGLTexture;
+
+    /** Cube texture storing prefiltered environment map for specular IBL. */
     prefilteredTexture!: WebGLTexture;
+
+    /** Internal reference to cube map face enums used in rendering. */
     faces!: number[];
+
+    /** View matrices for each face of the cube map. */
     cameraModelMatrices!: Matrix4[];
+
+    /** Projection matrix used to render the cube faces. */
     projectionMatrix!: Matrix4;
+
+    /** Surface roughness used in specular reflection calculations. */
     roughness: number;
-    
+
+    /** Static texture used for BRDF LUT (shared across instances). */
     static brdfLUTTexture: WebGLTexture;
 
+    /**
+     * Creates a skybox with the given cube map images and optional roughness for PBR.
+     * @param canvas The canvas context used for rendering and texture creation.
+     * @param images Array of 6 ImageBitmap objects representing cube map faces.
+     * @param roughness Optional roughness value (default is 1.0).
+     */
     constructor(canvas: WebaniCanvas, images: ImageBitmap[], roughness: number = 1.0) {
         this.images = images;
         this.textureSize = images[0].width;
@@ -54,6 +88,12 @@ export class WebaniSkybox {
         this.reloadSkybox(canvas);
     }
 
+    /**
+     * Creates a solid color skybox from the canvas background color.
+     * Useful as a fallback or for non-environmental scenes.
+     * @param canvas The WebaniCanvas instance.
+     * @returns A WebaniSkybox instance with a single-color cube map.
+     */
     static async solidColor(canvas: WebaniCanvas) {
         const image = new ImageData(256, 256);
         for (let i = 0; i < image.data.length; i += 4) {
@@ -66,6 +106,11 @@ export class WebaniSkybox {
         return new WebaniSkybox(canvas, [ibm, ibm, ibm, ibm, ibm, ibm]);
     }
 
+    /**
+     * Reloads all skybox-related resources, including textures and geometry.
+     * Useful when changing environment maps or shader settings.
+     * @param canvas The rendering canvas context.
+     */
     reloadSkybox(canvas: WebaniCanvas) {
         this.createGeometry(canvas);
         this.createTextures(canvas);

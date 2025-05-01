@@ -1,19 +1,23 @@
 import { CanvasAnimationState } from "./types/canvas-animation-state.type";
 import { CanvasUpdateLoop } from "./types/canvas-update-loop.type";
 import { Playable } from "./types/playable.type";
-import { RenderableObject } from "./types/renderable-object.type";
 import { ShaderSet } from "./types/shader-set.type";
 import { Vector3 } from "./types/vector3.type";
 import { WebaniAnimation } from "./animation/webani-animation.class";
 import { brdfLUTComputeShaderSet, irradianceComputeShaderSet, objectShaderSet, prefilterComputeShaderSet, skyboxShaderSet } from "./scene/lighting/shaders/shaders";
-import { WebaniPerspectiveCamera } from "./scene/camera/webani-perspective-camera.class";
 import { Colors } from "./scene/lighting/colors";
-import { WebaniPointLight } from "./scene/lighting/webani-point-light.class";
 import { WebaniPrimitiveObject } from "./scene/webani-primitive-object.class";
 import { WebaniScene } from "./scene/webani-scene.class";
 import { WebaniSkybox } from "./webani-skybox.class";
 import { WebaniTransformable } from "./scene/webani-transformable.class";
 
+/**
+ * Represents the options for configuring a Webani canvas.
+ * @typedef {Object} WebaniRendererOptions
+ * @property {HTMLCanvasElement} canvas - The HTML canvas element to render on.
+ * @property {Vector3} [backgroundColor=Colors.BLACK] - The background color of the canvas.
+ * @property {boolean} [antialias=true] - Whether or not antialiasing should be enabled.
+ */
 export type WebaniRendererOptions = {
     canvas: HTMLCanvasElement,
     backgroundColor?: Vector3,
@@ -21,32 +25,121 @@ export type WebaniRendererOptions = {
 };
 
 export class WebaniCanvas {
+    /**
+         * The HTMLCanvasElement associated with the Webani canvas.
+         * @type {HTMLCanvasElement}
+         */
     htmlCanvas: HTMLCanvasElement;
+
+    /**
+     * The WebGL2 rendering context for drawing on the canvas.
+     * @type {WebGL2RenderingContext}
+     */
     gl: WebGL2RenderingContext;
+
+    /**
+     * The background color for the canvas.
+     * @type {Vector3}
+     */
     backgroundColor: Vector3;
-    
+
+    /**
+     * Queue of animations that are to be played.
+     * @private
+     * @type {WebaniAnimation[]}
+     */
     private animationQueue: WebaniAnimation[];
+
+    /**
+     * List of update loop handlers that will be called on every frame.
+     * @private
+     * @type {CanvasUpdateLoop[]}
+     */
     private updateLoops: CanvasUpdateLoop[];
+
+    /**
+     * List of handlers that are called when an animation finishes.
+     * @private
+     * @type {(() => void)[]}
+     */
     private animationFinishedHandlers: (() => void)[];
+
+    /**
+     * List of handlers that are called when the entire animation queue finishes.
+     * @private
+     * @type {(() => void)[]}
+     */
     private animationQueueFinishedHandlers: (() => void)[];
+
+    /**
+     * Boolean flag indicating whether the rendering has started.
+     * @private
+     * @type {boolean}
+     */
     private started = false;
-    
+
+    /**
+     * Video-related information, used for recording the canvas output.
+     * @private
+     * @type {{ recordedChunks?: BlobPart[]; mediaRecorder?: MediaRecorder }}
+     */
     private video: {
         recordedChunks?: BlobPart[];
         mediaRecorder?: MediaRecorder;
     };
 
+    /**
+     * The scene that contains all the objects, cameras, lights, etc.
+     * @type {WebaniScene}
+     */
     scene!: WebaniScene;
+
+    /**
+     * Boolean flag indicating whether the canvas is paused.
+     * @private
+     * @type {boolean}
+     */
     private paused = false;
-    
+
+    /**
+     * The skybox for the scene, optional.
+     * @type {WebaniSkybox | undefined}
+     */
     skybox?: WebaniSkybox;
-    
+
+    /**
+     * Record of shader programs associated with the canvas.
+     * @private
+     * @type {Record<string, WebGLProgram>}
+     */
     private shaderPrograms: Record<string, WebGLProgram> = {};
+
+    /**
+     * Record of attribute locations for shaders.
+     * @private
+     * @type {object}
+     */
     private attributeLocations: object = {};
+
+    /**
+     * Record of attribute buffers for shaders.
+     * @private
+     * @type {object}
+     */
     private attributeBuffers: object = {};
-    
+
+    /**
+     * The default WebaniCanvas instance.
+     * @static
+     * @type {WebaniCanvas}
+     */
     static defaultCanvas?: WebaniCanvas;
 
+    /**
+     * Creates an instance of the WebaniCanvas class.
+     * @param {WebaniRendererOptions} options - The configuration options for the canvas.
+     * @throws {Error} If WebGL cannot be initialized.
+     */
     constructor({
         canvas, 
         backgroundColor = Colors.BLACK,
@@ -83,16 +176,29 @@ export class WebaniCanvas {
         }
     }
 
+    /**
+     * Retrieves the location of a shader variable.
+     * @param {string} name - The name of the shader variable.
+     * @returns {WebGLUniformLocation | null} The location of the shader variable.
+     */
     getShaderVariableLocation(name: string) { 
         return this.attributeLocations[name];
     }
 
+    /**
+     * Sets the skybox of the scene.
+     * @param {ImageBitmap[]} images - The images for the skybox.
+     */
     setSkybox(images: ImageBitmap[]) {
         this.pause();
         this.skybox = new WebaniSkybox(this, images);
         this.resume();
     }
 
+    /**
+     * Sets the skybox as a solid background color.
+     * @param {Vector3} color - The color to set as the background.
+     */
     async setSolidBackground(color: Vector3) { 
         this.pause();
         this.backgroundColor = color;
@@ -100,6 +206,9 @@ export class WebaniCanvas {
         this.resume();
     }
 
+    /**
+     * Starts recording the canvas output as a video.
+     */
     startRecording(): void {
         this.video.recordedChunks = [];
         const stream = this.htmlCanvas.captureStream(60);
@@ -113,6 +222,10 @@ export class WebaniCanvas {
         this.video.mediaRecorder.start();
     }
 
+    /**
+     * Stops the recording and saves the video as a file after the most recently added animation finishes playing.
+     * @returns {Promise<void>} A promise that resolves once the recording is finished.
+     */
     async stopRecording(): Promise<void> {
         await this.finishPlaying();
         this.video.mediaRecorder!.stop();
@@ -126,6 +239,10 @@ export class WebaniCanvas {
         };
     }
 
+    /**
+     * Waits for all animations in the queue to finish.
+     * @returns {Promise<void>} A promise that resolves when all animations finish.
+     */
     finishPlaying(): Promise<void> {
         return new Promise(resolve => {
             if (this.animationQueue.length == 0) { 
@@ -135,12 +252,18 @@ export class WebaniCanvas {
         });
     }
 
+    /**
+     * Redraws the scene, including the skybox and objects.
+     */
     redraw(): void {
         this.glClear();
         this.drawSkybox();
         this.drawObjects();
     }
 
+    /**
+     * Clears the canvas with WebGL.
+     */
     glClear(): void {
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthMask(true);
@@ -151,20 +274,32 @@ export class WebaniCanvas {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
 
-
+    /**
+     * Clears the scene and resets the canvas.
+     */
     clear(): void {
         this.scene.clear();
         this.glClear();
     }
 
+    /**
+     * Pauses the rendering of the scene.
+     */
     pause() { 
         this.paused = true;
     }
 
+    /**
+     * Resumes the rendering of the scene.
+     */
     resume() { 
         this.paused = false;
     }
 
+    /**
+     * Starts rendering the provided animations on the canvas.
+     * @param {Playable[]} animations - The animations to render.
+     */
     render(...animations: Playable[]): void {
         for (const animation of animations) {
             if (animation instanceof WebaniAnimation) {
@@ -176,15 +311,27 @@ export class WebaniCanvas {
         this.start();
     }
 
+    /**
+     * Registers an update loop to be called on every frame.
+     * @param {CanvasUpdateLoop} handler - The handler to call every frame.
+     */
     onUpdate(handler: CanvasUpdateLoop): void {
         this.updateLoops.push(handler);
         this.start();
     }
 
+    /**
+     * Registers a handler to be called when the entire animation queue finishes.
+     * @param {() => void} handler - The handler to call when the queue finishes.
+     */
     onFinishAnimationQueue(handler: () => void): void {
         this.animationQueueFinishedHandlers.push(handler);
     }
 
+    /**
+     * Registers a handler to be called when a single animation finishes.
+     * @param {() => void} handler - The handler to call when an animation finishes.
+     */
     onFinishAnimation(handler: () => void): void {
         this.animationFinishedHandlers.push(handler);
     }

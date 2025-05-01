@@ -16,6 +16,11 @@ import { WebaniCollectionAnimation } from "./webani-collection-animation.class";
 export class WebaniCollection<T extends WebaniTransformable> extends WebaniTransformable {
     objectArray: T[];
     
+    /**
+     * Creates an instance of `WebaniCollection`.
+     * 
+     * @param options - Configuration options for the collection.
+     */
     constructor(objects: T[] | T) {
         super();
         this.objectArray = [];
