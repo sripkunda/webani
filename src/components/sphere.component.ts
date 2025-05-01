@@ -8,7 +8,7 @@ import { WebaniMesh } from "../renderer/scene/meshes/webani-mesh.class";
 /**
  * Options for creating a sphere component.
  */
-type SphereComponentOptions = {
+export type SphereComponentOptions = {
     /** The position of the sphere in 3D space. */
     position: Vector3;
 

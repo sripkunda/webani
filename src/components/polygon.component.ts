@@ -7,7 +7,7 @@ import { WebaniMaterial, WebaniMaterialOptions } from "../renderer/scene/lightin
 /**
  * Options for creating a polygon component.
  */
-type PolygonComponentOptions = {
+export type PolygonComponentOptions = {
     /** The array of points defining the polygon's vertices. */
     points: Vector3[];
 

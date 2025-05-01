@@ -8,7 +8,7 @@ import { Colors } from "../renderer/scene/lighting/colors";
 /**
  * Options for creating a circle component.
  */
-type CircleComponentOptions = {
+export type CircleComponentOptions = {
     /** The center of the circle in 2D space. */
     center: Vector2;
 

@@ -4,7 +4,7 @@ import { WebaniMaterial, WebaniMaterialOptions } from "../renderer/scene/lightin
 import { WebaniCollection } from "../renderer/scene/collections/webani-collection.class";
 import { WebaniMesh } from "../renderer/scene/meshes/webani-mesh.class";
 
-type MeshComponentOptions = {
+export type MeshComponentOptions = {
     mesh: WebaniCollection<WebaniMesh>;
     position?: Vector3;
     scale?: Vector3;
