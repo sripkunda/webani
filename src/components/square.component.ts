@@ -8,7 +8,7 @@ import { Colors } from "../renderer/scene/lighting/colors";
 /**
  * Options for creating a square component.
  */
-type SquareComponentOptions = {
+export type SquareComponentOptions = {
     /** The position of the square in 3D space. */
     position: Vector3;
 

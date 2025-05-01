@@ -15,7 +15,6 @@ export * from "./components/sphere.component";
 export * from "./components/square.component";
 export * from "./components/text.component";
 export * from "./components/mesh.component";
-export * from "./examples/examples";
 export * from "./renderer/webani-canvas.class";
 export * from "./renderer/webani-fps-display.class";
 export * from "./renderer/webani-skybox.class";

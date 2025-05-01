@@ -7,7 +7,7 @@ import { ConeMesh } from "./models/models";
 /**
  * Options for creating a cone component.
  */
-type ConeComponentOptions = {
+export type ConeComponentOptions = {
     /** The base position of the cone in 3D space. */
     position: Vector3;
 

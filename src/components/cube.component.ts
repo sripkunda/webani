@@ -7,7 +7,7 @@ import { WebaniMaterial, WebaniMaterialOptions } from "../renderer/scene/lightin
 /**
  * Options for creating a cube component.
  */
-type CubeComponentOptions = {
+export type CubeComponentOptions = {
     /** The center position of the cube in 3D space. */
     position: Vector3;
 

@@ -7,7 +7,7 @@ import { Colors } from "../renderer/scene/lighting/colors";
 /**
  * Options for creating a connecting line between two 3D points.
  */
-type ConnectingLineComponentOptions = {
+export type ConnectingLineComponentOptions = {
     /** Starting point of the line in 3D space. */
     start: Vector3;
 
