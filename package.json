@@ -21,7 +21,7 @@
     "yargs": "^17.7.2"
   },
   "bin": {
-    "webani": "./src/cli/cli.js"
+    "webani": "./src/runtime/cli.js"
   },
   "exports": {
     ".": {
@@ -30,7 +30,7 @@
     }
   },
   "scripts": {
-    "execute": "node ./src/cli/cli.js"
+    "execute": "node ./src/runtime/cli.js"
   },
   "name": "webani",
   "version": "1.0.0",

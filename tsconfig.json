@@ -4,7 +4,6 @@
     "module": "ES2022",
     "target": "ES2024",
     "allowJs": true,
-    "declaration": true,
     "moduleResolution": "node",
     "useDefineForClassFields": false,
     "outDir": "./dist"

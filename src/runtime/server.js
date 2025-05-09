@@ -9,7 +9,7 @@ import config from './webpack.config.cjs';
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
 
-const publicDir = join(_dirname, 'dist');
+const publicDir = join(process.cwd(), 'dist');
 
 const mimeTypes = {
   '.html': 'text/html',
