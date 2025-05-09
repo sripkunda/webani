@@ -7,11 +7,11 @@
     "declaration": true,
     "moduleResolution": "node",
     "useDefineForClassFields": false,
-    "outDir": "src/runtime/dist"
+    "outDir": "./dist"
   },
   "exclude": [
     "node_modules",
-    "src/runtime/dist",
+    "./dist",
     "**/*.spec.ts",
     "**/*.test.ts"
   ]
