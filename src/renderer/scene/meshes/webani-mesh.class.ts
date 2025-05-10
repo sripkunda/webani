@@ -220,7 +220,6 @@ export class WebaniMesh extends WebaniPrimitiveObject {
      */
     static async import(path: string): Promise<WebaniCollection<WebaniMesh>> {
         const result = await importGLB(path);
-        console.log(result);
         const meshes = result.meshes.map(meshData => new WebaniMesh({
             position: [0, 0, 0],
             triangleVertices: meshData.vertexData.triangles,

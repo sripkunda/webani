@@ -75,7 +75,7 @@ function isPortAvailable(port, callback) {
 }
 
 export function buildCompiler(path) {
-  if (path) { 
+  if (path) {
     config.entry.main.import = path
   }
   compiler = webpack(config);

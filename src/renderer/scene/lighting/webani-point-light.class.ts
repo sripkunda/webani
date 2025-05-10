@@ -51,7 +51,7 @@ export class WebaniPointLight extends WebaniTransformable {
         position = [0, 0, 1],
         rotation = [0, 0, 0],
         color = Colors.WHITE,
-        intensity = 2e+10,
+        intensity = 2e+3,
     }: WebaniLightOptions = {}) {
         super({
             position,

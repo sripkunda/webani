@@ -8,7 +8,7 @@ module.exports = {
     start: path.join(__dirname, 'start.ts'),
     main: {
       dependOn: 'start',
-      import: './index.ts'
+      import: path.resolve(process.cwd(), './index.ts')
     }
   },
   output: {
@@ -29,7 +29,12 @@ module.exports = {
       },
       {
         test: /\.ts$/,
-        use: 'ts-loader',
+        use: [{
+            loader: 'ts-loader',
+            options: {
+                configFile: path.join(__dirname, '../../tsconfig.json')
+            }
+        }],
         exclude: /node_modules/,
       }
     ],
