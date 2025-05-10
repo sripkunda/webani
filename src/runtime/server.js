@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { readFile } from 'fs';
 import { fileURLToPath } from 'url';
 import { join, extname, dirname } from 'path';
@@ -7,16 +6,10 @@ import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
 import config from './webpack.config.cjs';
 
-const args = process.argv.slice(2);
-
-if (args.length > 0) {
-    config.entry.main.import = args[0];
-}
-
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
-console.log(_dirname);
-const publicDir = join(_dirname, 'dist');
+
+const publicDir = join(process.cwd(), 'dist');
 
 const mimeTypes = {
   '.html': 'text/html',
@@ -54,7 +47,7 @@ const server = createServer((req, res) => {
 
 const wss = new WebSocketServer({ server });
 
-const compiler = webpack(config);
+let compiler;
 let sockets = [];
 
 // WebSocket handling
@@ -81,19 +74,26 @@ function isPortAvailable(port, callback) {
     .listen(port);
 }
 
-function startServerOnAvailablePortStartingAt(startingPort) {
+export function buildCompiler(path) {
+  if (path) {
+    config.entry.main.import = path
+  }
+  compiler = webpack(config);
+}
+
+export function startServerOnAvailablePortStartingAt(startingPort) {
   let portToTry = startingPort;
   isPortAvailable(portToTry, (available) => {
     if (available) {
       startServerOnPort(portToTry);
     } else {
-      portToTry++; // Increment port and check again
-      startServerOnAvailablePortStartingAt(portToTry); // Fix: pass new value
+      portToTry++; 
+      startServerOnAvailablePortStartingAt(portToTry); 
     }
   });
 }
 
-function startServerOnPort(port) {
+export function startServerOnPort(port) {
   server.listen(port, () => {
     console.log('\x1b[36m', `[Log: Server Started at http://localhost:${port}]`, '\x1b[0m');
 
@@ -113,5 +113,3 @@ function startServerOnPort(port) {
     });
   });
 }
-
-startServerOnAvailablePortStartingAt(3000);

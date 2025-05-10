@@ -8,12 +8,12 @@ module.exports = {
     start: path.join(__dirname, 'start.ts'),
     main: {
       dependOn: 'start',
-      import: './index.ts'
+      import: path.resolve(process.cwd(), './index.ts')
     }
   },
   output: {
     filename: '[name].js',
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(process.cwd(), './dist'),
     publicPath: '/',
     clean: true,
   },
@@ -29,7 +29,12 @@ module.exports = {
       },
       {
         test: /\.ts$/,
-        use: 'ts-loader',
+        use: [{
+            loader: 'ts-loader',
+            options: {
+                configFile: path.join(__dirname, '../../tsconfig.json')
+            }
+        }],
         exclude: /node_modules/,
       }
     ],
@@ -37,7 +42,7 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.js'],
   },
-  mode: 'development',
+  mode: 'production',
   plugins: [
     new HtmlWebpackPlugin({
       template: path.join(__dirname, 'index.html'),
