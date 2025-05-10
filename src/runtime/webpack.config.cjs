@@ -42,7 +42,7 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.js'],
   },
-  mode: 'development',
+  mode: 'production',
   plugins: [
     new HtmlWebpackPlugin({
       template: path.join(__dirname, 'index.html'),
